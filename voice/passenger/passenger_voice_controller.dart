@@ -1,0 +1,469 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../ride/ride_flow_manager.dart';
+import '../ai/gemini_voice_engine.dart';
+import '../tts/natural_voice_synthesizer.dart' as tts;
+import '../core/voice_orchestrator.dart';
+import '../states/voice_interaction_states.dart';
+import '../advanced/advanced_voice_processor.dart';
+import '../../services/firestore_service.dart';
+import '../../models/ride_model.dart';
+import '../../models/voice_models.dart';
+import '../../widgets/address_confirmation_screen.dart';
+import '../../screens/searching_for_driver_screen.dart';
+
+/// ✅ Helper: Obține limba curentă din SharedPreferences
+Future<String> _getCurrentLanguageCode() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString('locale');
+    return code ?? 'ro'; // Default română
+  } catch (e) {
+    debugPrint('🎤 [VOICE_CONTROLLER] Error getting language: $e');
+    return 'ro'; // Default română
+  }
+}
+
+/// ✅ Helper: Convertește languageCode la localeId pentru Speech Recognition
+String _languageCodeToLocaleId(String languageCode) {
+  switch (languageCode) {
+    case 'en':
+      return 'en_US';
+    case 'ro':
+    default:
+      return 'ro_RO';
+  }
+}
+
+/// 🎯 Controller-ul pentru vocea pasagerului - implementează callback-urile AI-ului
+class PassengerVoiceController extends ChangeNotifier {
+  late RideFlowManager _rideFlowManager;
+  late GeminiVoiceEngine _geminiEngine;
+  late tts.NaturalVoiceSynthesizer _tts;
+  late VoiceOrchestrator _voiceOrchestrator;
+  final FirestoreService _firestoreService;
+  VoiceProcessingState _processingState = VoiceProcessingState.idle;
+  bool _isInitialized = false;
+  
+  // ✅ Stări pentru UI - controller-ul gestionează starea
+  String? _pickupAddressForUI;
+  String? _destinationAddressForUI;
+  RideCategory? _selectedCategoryForUI;
+  bool _showRideConfirmation = false;
+  bool _showSearchingDriver = false;
+  String? _currentRideId;
+  final AdvancedVoiceProcessor _advancedVoiceProcessor = AdvancedVoiceProcessor();
+  StreamSubscription<WakeWordEvent>? _wakeWordSubscription;
+  bool _wakeWordEnabled = false;
+  bool _continuousListeningEnabled = false;
+  
+  // ✅ Getters pentru UI
+  String? get pickupAddressForUI => _pickupAddressForUI;
+  String? get destinationAddressForUI => _destinationAddressForUI;
+  RideCategory? get selectedCategoryForUI => _selectedCategoryForUI;
+  bool get showRideConfirmation => _showRideConfirmation;
+  bool get showSearchingDriver => _showSearchingDriver;
+  String? get currentRideId => _currentRideId;
+  bool get wakeWordEnabled => _wakeWordEnabled;
+  bool get continuousListeningEnabled => _continuousListeningEnabled;
+  RideFlowState get rideState => _rideFlowManager.currentState;
+  String get lastAiMessage => _rideFlowManager.lastSpokenMessage;
+  List<String> get availableDrivers => _rideFlowManager.availableDrivers;
+  bool get isInitialized => _isInitialized;
+
+  PassengerVoiceController({
+    required FirestoreService firestoreService,
+  }) : _firestoreService = firestoreService;
+
+  /// 🚀 Inițializează controller-ul
+  Future<void> initialize() async {
+    if (_isInitialized) {
+      debugPrint('🎤 [VOICE_CONTROLLER] Already initialized, skipping.');
+      return;
+    }
+    try {
+      debugPrint('🎤 [VOICE_CONTROLLER] Initializing...');
+      
+      // ✅ Inițializează serviciile
+      _geminiEngine = GeminiVoiceEngine();
+      _tts = tts.NaturalVoiceSynthesizer();
+      _voiceOrchestrator = VoiceOrchestrator();
+      
+      await _tts.initialize();
+      await _voiceOrchestrator.initialize();
+
+      // Wire STT callbacks to route results into the AI flow and reflect state to UI
+      _voiceOrchestrator.setSpeechResultCallback((result) async {
+        final normalized = _normalizeUtterance(result);
+        await processVoiceInput(normalized);
+      });
+      _voiceOrchestrator.setSpeechErrorCallback((error) {
+        notifyListeners();
+      });
+      _voiceOrchestrator.setStateChangeCallback((state) {
+        _processingState = state;
+        notifyListeners();
+      });
+      
+      // ✅ Inițializează RideFlowManager cu callback-urile implementate
+      _rideFlowManager = RideFlowManager(
+        geminiEngine: _geminiEngine,
+        tts: _tts,
+        firestoreService: _firestoreService,
+        voiceOrchestrator: _voiceOrchestrator,
+        
+        // ✅ Callback-uri implementate pentru acțiuni în UI
+        onFillAddressInUI: (pickup, destination, {pickupLat, pickupLng, destLat, destLng}) {
+          debugPrint('🎤 [VOICE_CONTROLLER] Filling address in UI: $pickup → $destination');
+          _pickupAddressForUI = pickup;
+          _destinationAddressForUI = destination;
+          // ✅ FIX: Dacă coordonatele sunt disponibile, le salvăm pentru a le folosi mai târziu
+          if (destLat != null && destLng != null) {
+            debugPrint('🎤 [VOICE_CONTROLLER] ✅ Destination coordinates received: $destLat, $destLng');
+          }
+          notifyListeners(); // UI-ul se reconstruiește cu noile adrese
+        },
+        
+        onSelectRideOptionInUI: (category) {
+          debugPrint('🎤 [VOICE_CONTROLLER] Selecting ride option: $category');
+          _selectedCategoryForUI = category;
+          _showRideConfirmation = true;
+          notifyListeners(); // UI-ul afișează confirmarea
+        },
+        
+        onPressConfirmButtonInUI: () {
+          debugPrint('🎤 [VOICE_CONTROLLER] Pressing confirm button');
+          _showRideConfirmation = false;
+          _showSearchingDriver = true;
+          notifyListeners(); // UI-ul navighează la căutarea șoferilor
+        },
+        
+        onNavigateToScreen: (screen) {
+          debugPrint('🎤 [VOICE_CONTROLLER] Navigating to screen: ${screen.runtimeType}');
+          // ✅ Folosește navigator-ul global pentru navigare
+          _navigateToScreen(screen);
+        },
+        
+        onCreateRideRequest: (rideRequest) async {
+          debugPrint('🎤 [VOICE_CONTROLLER] Creating ride request in Firebase');
+          // ✅ ÎMBUNĂTĂȚIT: Creează efectiv solicitarea în Firebase cu validări complete
+          // Convertim Map<String, dynamic> la RideRequest
+          
+          // ✅ FIX: Obține user ID real dacă lipsește
+          final passengerId = rideRequest['passengerId'] as String?;
+          if (passengerId == null || passengerId.isEmpty) {
+            final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+            if (currentUserId == null) {
+              throw Exception('Utilizatorul nu este autentificat.');
+            }
+            rideRequest['passengerId'] = currentUserId;
+          }
+          
+          // ✅ FIX: Validează că avem toate datele necesare
+          final pickup = rideRequest['pickup'] as String?;
+          final destination = rideRequest['destination'] as String?;
+          if (pickup == null || pickup.isEmpty || destination == null || destination.isEmpty) {
+            throw Exception('Adresele pickup sau destinație lipsesc.');
+          }
+          
+          // ✅ FIX: Extrage coordonatele (sunt necesare pentru validare)
+          final startLat = rideRequest['startLatitude'] as double?;
+          final startLng = rideRequest['startLongitude'] as double?;
+          final destLat = rideRequest['destinationLatitude'] as double?;
+          final destLng = rideRequest['destinationLongitude'] as double?;
+          
+          final rideRequestObj = RideRequest(
+            id: rideRequest['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+            passengerId: rideRequest['passengerId'] as String,
+            pickupLocation: rideRequest['pickup'] as String? ?? rideRequest['startAddress'] as String? ?? '',
+            destination: rideRequest['destination'] as String? ?? rideRequest['destinationAddress'] as String? ?? '',
+            estimatedPrice: (rideRequest['estimatedPrice'] as num?)?.toDouble() ?? 
+                           (rideRequest['totalCost'] as num?)?.toDouble() ?? 0.0,
+            category: rideRequest['category'] as String? ?? 'standard',
+            urgency: rideRequest['urgency'] as String? ?? 'normal',
+            timestamp: DateTime.now(),
+            status: rideRequest['status'] as String? ?? 'pending',
+            // ✅ FIX: Adaugă coordonatele dacă există
+            pickupLatitude: startLat,
+            pickupLongitude: startLng,
+            destinationLatitude: destLat,
+            destinationLongitude: destLng,
+          );
+          
+          final rideId = await _firestoreService.createRideRequest(rideRequestObj);
+          _currentRideId = rideId;
+          notifyListeners();
+          return rideId;
+        },
+        
+        onDriverResponse: (driverId, accepted) {
+          debugPrint('🎤 [VOICE_CONTROLLER] Driver response: $driverId, accepted: $accepted');
+          // ✅ Gestionează răspunsul șoferului
+          if (accepted) {
+            _showSearchingDriver = false;
+            // Navighează la ecranul cursei active
+            _navigateToActiveRide();
+          }
+          notifyListeners();
+        },
+        
+        onCloseAI: () {
+          debugPrint('🎤 [VOICE_CONTROLLER] Closing AI');
+          // ✅ Închide AI-ul și resetează stările
+          _resetVoiceStates();
+          notifyListeners();
+        },
+      );
+      
+      await _rideFlowManager.initialize();
+      
+      debugPrint('🎤 [VOICE_CONTROLLER] ✅ Initialized successfully');
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Initialization error: $e');
+      rethrow;
+    }
+  }
+
+  // Normalize utterances like: remove surrounding quotes and trim whitespace
+  String _normalizeUtterance(String text) {
+    String t = text.trim();
+    t = t.replaceAll(RegExp(r'^["“”]+'), '');
+    t = t.replaceAll(RegExp(r'["“”]+$'), '');
+    return t.trim();
+  }
+
+  /// 🎤 Procesează input-ul vocal
+  Future<void> processVoiceInput(String userInput) async {
+    try {
+      debugPrint('🎤 [VOICE_CONTROLLER] Processing voice input: $userInput');
+      await _rideFlowManager.processVoiceInput(userInput);
+    } catch (e) {
+      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Voice processing error: $e');
+    }
+  }
+
+  /// 🎤 Pornește conversația cu salut + continuous listening
+  Future<void> startContinuousConversation() async {
+    try {
+      // Salut
+      final greeting = 'Salut, unde doriți să mergeți?';
+      await _tts.speak(greeting);
+      // Adaugă la istoric pentru UI
+      _rideFlowManager.addAiMessage(greeting);
+      notifyListeners();
+      // ✅ NOU: Obțin limba curentă și o folosesc
+      final languageCode = await _getCurrentLanguageCode();
+      final localeId = _languageCodeToLocaleId(languageCode);
+      await _tts.setLanguage(languageCode);
+      
+      // Continuous listening imediat după salut
+      await _voiceOrchestrator.listen(timeoutSeconds: 30, pauseForSeconds: 10, localeId: localeId);
+    } catch (_) {}
+  }
+
+  /// Start a single listening session (used by integration loop)
+  Future<void> listenOnce({int timeoutSeconds = 30, int pauseForSeconds = 3, String? localeId}) async {
+    // ✅ NOU: Obțin limba curentă dacă nu este specificată
+    final finalLocaleId = localeId ?? _languageCodeToLocaleId(await _getCurrentLanguageCode());
+    await _voiceOrchestrator.listen(timeoutSeconds: timeoutSeconds, pauseForSeconds: pauseForSeconds, localeId: finalLocaleId);
+  }
+
+  Future<void> enableWakeWordDetection() async {
+    if (_wakeWordEnabled) return;
+    final initialized = await _advancedVoiceProcessor.initialize();
+    if (!initialized) {
+      debugPrint('🎤 [VOICE_CONTROLLER] Wake word initialization failed');
+      return;
+    }
+    _wakeWordSubscription ??= _advancedVoiceProcessor.wakeWordEvents.listen(_handleWakeWordDetected);
+    await _advancedVoiceProcessor.startWakeWordDetection();
+    _wakeWordEnabled = true;
+    notifyListeners();
+  }
+
+  Future<void> disableWakeWordDetection() async {
+    if (!_wakeWordEnabled) return;
+    await _advancedVoiceProcessor.stopListening();
+    await _wakeWordSubscription?.cancel();
+    _wakeWordSubscription = null;
+    _wakeWordEnabled = false;
+    notifyListeners();
+  }
+
+  Future<void> toggleWakeWordDetection() async {
+    if (_wakeWordEnabled) {
+      await disableWakeWordDetection();
+    } else {
+      await enableWakeWordDetection();
+    }
+  }
+
+  Future<void> enableContinuousListening() async {
+    if (_continuousListeningEnabled) return;
+    _continuousListeningEnabled = true;
+    notifyListeners();
+    unawaited(_startContinuousListeningLoop());
+  }
+
+  Future<void> disableContinuousListening() async {
+    if (!_continuousListeningEnabled) return;
+    _continuousListeningEnabled = false;
+    await _voiceOrchestrator.stopListening();
+    notifyListeners();
+  }
+
+  Future<void> toggleContinuousListening() async {
+    if (_continuousListeningEnabled) {
+      await disableContinuousListening();
+    } else {
+      await enableContinuousListening();
+    }
+  }
+
+  Future<void> _handleWakeWordDetected(WakeWordEvent event) async {
+    debugPrint('🎤 [VOICE_CONTROLLER] Wake word detected: ${event.text}');
+    if (!_wakeWordEnabled) return;
+    await _voiceOrchestrator.stopListening();
+    
+    // ✅ NOU: Obțin limba curentă și o folosesc
+    final languageCode = await _getCurrentLanguageCode();
+    final localeId = _languageCodeToLocaleId(languageCode);
+    await _tts.setLanguage(languageCode);
+    
+    final responseMessage = languageCode == 'en' ? 'Yes, I\'m listening.' : 'Da, vă ascult.';
+    await _tts.speak(responseMessage);
+    await _voiceOrchestrator.listen(
+      timeoutSeconds: 20,
+      pauseForSeconds: 5,
+      localeId: localeId,
+    );
+    if (_wakeWordEnabled) {
+      await _advancedVoiceProcessor.startWakeWordDetection();
+    }
+  }
+
+  Future<void> _startContinuousListeningLoop() async {
+    if (!_continuousListeningEnabled) return;
+    if (_voiceOrchestrator.isListening || _processingState == VoiceProcessingState.listening) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (_continuousListeningEnabled) {
+        await _startContinuousListeningLoop();
+      }
+      return;
+    }
+    // ✅ NOU: Obțin limba curentă și o folosesc
+    final languageCode = await _getCurrentLanguageCode();
+    final localeId = _languageCodeToLocaleId(languageCode);
+    await _tts.setLanguage(languageCode);
+    
+    await _voiceOrchestrator.listen(
+      timeoutSeconds: 25,
+      pauseForSeconds: 6,
+      localeId: localeId,
+    );
+    if (_continuousListeningEnabled) {
+      await Future.delayed(const Duration(milliseconds: 400));
+      await _startContinuousListeningLoop();
+    }
+  }
+
+  /// 🎯 Gestionează confirmarea adreselor din UI
+  Future<void> handleAddressConfirmation() async {
+    try {
+      debugPrint('🎤 [VOICE_CONTROLLER] Handling address confirmation from UI');
+      await _rideFlowManager.handleAddressConfirmation();
+    } catch (e) {
+      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Address confirmation error: $e');
+    }
+  }
+
+  /// 🎤 Getter pentru VoiceOrchestrator (pentru verificări de disponibilitate)
+  VoiceOrchestrator get voiceOrchestrator => _voiceOrchestrator;
+
+  /// 🚗 Gestionează confirmarea cursei din UI
+  Future<void> handleRideConfirmation() async {
+    try {
+      debugPrint('🎤 [VOICE_CONTROLLER] Handling ride confirmation from UI');
+      // Aici se va apela logica pentru confirmarea cursei
+      _showRideConfirmation = false;
+      _showSearchingDriver = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Ride confirmation error: $e');
+    }
+  }
+
+  /// 🎯 Navighează la un ecran
+  void _navigateToScreen(Widget screen) {
+    // ✅ Implementează navigarea prin context sau navigator global
+    // Pentru moment, doar actualizează stările
+    if (screen is AddressConfirmationScreen) {
+      _showRideConfirmation = false;
+      notifyListeners();
+    } else if (screen is SearchingForDriverScreen) {
+      _showSearchingDriver = true;
+      notifyListeners();
+    }
+  }
+
+  /// 🚗 Navighează la ecranul cursei active
+  void _navigateToActiveRide() {
+    if (_currentRideId != null) {
+      _showSearchingDriver = false;
+      // Aici se va naviga la ActiveRideScreen
+      notifyListeners();
+    }
+  }
+
+  /// 🧹 Resetează stările vocale
+  void _resetVoiceStates() {
+    _pickupAddressForUI = null;
+    _destinationAddressForUI = null;
+    _selectedCategoryForUI = null;
+    _showRideConfirmation = false;
+    _showSearchingDriver = false;
+    _currentRideId = null;
+  }
+
+  /// 🎯 Resetează controller-ul
+  void reset() {
+    _resetVoiceStates();
+    notifyListeners();
+  }
+
+  /// 🧹 Cleanup
+  @override
+  void dispose() {
+    _wakeWordSubscription?.cancel();
+    _wakeWordSubscription = null;
+    _advancedVoiceProcessor.stopListening();
+    _rideFlowManager.dispose();
+    _wakeWordEnabled = false;
+    _continuousListeningEnabled = false;
+    _resetVoiceStates();
+    _isInitialized = false;
+    super.dispose();
+  }
+
+  // Expose convo history and processing state for UI/overlay
+  List<String> get conversationHistory => _rideFlowManager.conversationHistoryCopy;
+  VoiceProcessingState get processingState => _processingState;
+  double? get estimatedPrice => _rideFlowManager.estimatedPrice;
+  double? get estimatedDistanceKm => _rideFlowManager.calculatedDistanceKm;
+  double? get estimatedDurationMinutes => _rideFlowManager.calculatedDurationMinutes;
+  Map<String, double>? get fareBreakdown => _rideFlowManager.fareBreakdown;
+  RideCategory get currentRideCategory => _rideFlowManager.currentRideCategory;
+  /// 🚀 Inițializează starea (delegat către initialize)
+  Future<void> initState() async {
+    await initialize();
+  }
+  
+    /// 🎤 Gestionează comanda vocală (delegat către processVoiceInput)
+  Future<void> onVoiceCommand(String command) async {
+    await processVoiceInput(command);
+  }
+  
+  }
