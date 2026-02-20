@@ -1,0 +1,1 @@
+ C:\\friendsride_app\\lib\\l10n\\app_localizations_en.dart C:\\friendsride_app\\lib\\l10n\\app_localizations_ro.dart C:\\friendsride_app\\lib\\l10n\\app_localizations.dart:  C:\\friendsride_app\\l10n.yaml C:\\friendsride_app\\lib\\l10n\\app_en.arb C:\\friendsride_app\\lib\\l10n\\app_ro.arb
