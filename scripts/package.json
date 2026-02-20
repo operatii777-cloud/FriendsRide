@@ -1,0 +1,26 @@
+{
+  "name": "friendsride-migration",
+  "version": "1.0.0",
+  "description": "Database migration scripts for FriendsRide app - Phase 1",
+  "main": "migrate_database.js",
+  "scripts": {
+    "migrate": "node migrate_database.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "firebase",
+    "firestore",
+    "migration",
+    "geohash",
+    "friendsride"
+  ],
+  "author": "FriendsRide Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

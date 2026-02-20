@@ -1,0 +1,203 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Helper functions for delivery
+    function isRestaurantOwner(restaurantId) {
+      return isAuthenticated() && 
+        request.auth.uid == resource.data.ownerId;
+    }
+    
+    function isDeliveryParticipant(orderId) {
+      return isAuthenticated() && 
+        (request.auth.uid == resource.data.customerId || 
+         request.auth.uid == resource.data.courierId ||
+         request.auth.uid == resource.data.restaurantOwnerId);
+    }
+    
+    function isCourier(courierId) {
+      return isAuthenticated() && 
+        request.auth.uid == courierId;
+    }
+    
+    // Users collection - trebuie să poată citi profilurile pentru afișarea numelor în bonuri
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // ✅ NOU: Payment methods subcollection pentru Wallet
+      match /payment_methods/{methodId} {
+        allow read, write, delete: if isAuthenticated() && isOwner(userId);
+      }
+      
+      // ✅ NOU: Vouchers subcollection pentru Wallet
+      match /vouchers/{voucherId} {
+        allow read, write, delete: if isAuthenticated() && isOwner(userId);
+      }
+    }
+    
+    // Ride requests collection - CRITICA pentru bonurile fiscale
+    match /ride_requests/{rideId} {
+      // ✅ PERMISIV: Orice user autentificat poate citi orice cursă (necesar pentru backward compatibility)
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+      
+      // Chat subcollection
+      match /chat/{messageId} {
+        allow read, create: if isAuthenticated();
+      }
+    }
+    
+    // Driver locations collection - CRITICA pentru switch disponibil
+    match /driver_locations/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(driverId);
+    }
+    
+    // Drivers collection
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(driverId);
+    }
+    
+    // Driver applications
+    match /driver_applications/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Driver incentives
+    match /driver_incentives/{incentiveId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if false; // Only admin/backend can create/update/delete
+    }
+    
+    // Saved addresses
+    match /users/{userId}/saved_addresses/{addressId} {
+      allow read, write, delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Payment methods
+    match /payment_methods/{methodId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Vouchers
+    match /vouchers/{voucherId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Support tickets
+    match /support_tickets/{ticketId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // ✅ NOU: Business profile requests pentru Wallet
+    match /business_profile_requests/{requestId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.userId);
+      allow delete: if false; // Keep request history
+    }
+    
+    // ✅ NOU: Referral codes pentru Wallet
+    match /referral_codes/{codeId} {
+      allow read: if isAuthenticated();
+      allow create: if false; // Only created by admin/backend
+      allow update: if isAuthenticated(); // For usage tracking
+      allow delete: if false; // Keep referral history
+    }
+    
+    // Ride history collection - CRITICA pentru bonurile fiscale
+    match /ride_history/{rideId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Chat messages
+    match /chat_messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 🚚 DELIVERY: Restaurants collection
+    match /restaurants/{restaurantId} {
+      allow read: if isAuthenticated(); // All authenticated users can read restaurants
+      // Allow create: authenticated users can create restaurants
+      // At creation, we check request.resource.data.ownerId (the new data being written)
+      allow create: if isAuthenticated() && 
+        (request.resource.data.ownerId == request.auth.uid || 
+         request.resource.data.ownerId == null); // Allow if ownerId matches or is null (for testing)
+      // Allow update: restaurant owner can update everything OR any authenticated user can update
+      // Note: For development/testing, we allow any authenticated user to update restaurants
+      // This allows setting webhookUrl and restaurantAppV3TenantId for integration purposes
+      allow update: if isAuthenticated();
+      allow delete: if false; // Keep restaurant history
+    }
+    
+    // 🚚 DELIVERY: Products collection (separate, not subcollection)
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Allow authenticated users to create products
+      allow update: if isAuthenticated(); // Allow authenticated users to update products
+      allow delete: if isAuthenticated(); // Allow authenticated users to delete products
+    }
+    
+    // 🚚 DELIVERY: Delivery orders collection
+    match /delivery_orders/{orderId} {
+      allow read: if isAuthenticated() && isDeliveryParticipant(orderId);
+      allow create: if isAuthenticated(); // Customers can create orders
+      allow update: if isAuthenticated() && 
+        (isOwner(resource.data.customerId) || 
+         isCourier(resource.data.courierId) ||
+         isRestaurantOwner(resource.data.restaurantId));
+      allow delete: if false; // Keep order history
+    }
+    
+    // 🚚 DELIVERY: Couriers collection
+    match /couriers/{courierId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isCourier(courierId);
+      allow update: if isAuthenticated() && isCourier(courierId);
+      allow delete: if false; // Keep courier history
+    }
+    
+    // 🚚 DELIVERY: Restaurant couriers (managed by restaurants)
+    match /restaurant_couriers/{courierId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Allow authenticated users to create
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
+    // 🚚 DELIVERY: API keys for restaurants
+    match /restaurant_api_keys/{keyId} {
+      allow read: if false; // API keys should never be readable by clients
+      allow create: if isAuthenticated(); // Allow authenticated users to create API keys (for onboarding)
+      allow update: if isAuthenticated(); // Allow authenticated users to update API keys
+      allow delete: if false; // Keep key history
+    }
+    
+    // 🚚 DELIVERY: Restaurant onboarding requests
+    match /restaurant_onboarding/{requestId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.ownerId);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.ownerId);
+      allow delete: if false; // Keep onboarding history
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

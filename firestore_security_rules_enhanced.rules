@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    // ✅ ENHANCED: Users collection with better security
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      // Prevent users from deleting their own profile
+      allow delete: if false;
+    }
+    
+    // ✅ ENHANCED: Ride requests with improved validation
+    match /ride_requests/{rideId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (isOwner(resource.data.passengerId) || 
+         isOwner(resource.data.driverId) || 
+         request.auth.uid == resource.data.passengerId ||
+         request.auth.uid == resource.data.driverId);
+      // Only allow deletion by ride owner or admin
+      allow delete: if isAuthenticated() && isOwner(resource.data.passengerId);
+      
+      // ✅ ENHANCED: Chat subcollection
+      match /chat/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        // Only allow editing own messages
+        allow update: if isAuthenticated() && isOwner(resource.data.senderId);
+        // Only allow deleting own messages
+        allow delete: if isAuthenticated() && isOwner(resource.data.senderId);
+      }
+    }
+    
+    // ✅ ENHANCED: Driver locations with stricter controls
+    match /driver_locations/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(driverId);
+      allow delete: if isAuthenticated() && isOwner(driverId);
+    }
+    
+    // ✅ ENHANCED: Drivers collection
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(driverId);
+      allow delete: if false; // Prevent driver profile deletion
+    }
+    
+    // ✅ ENHANCED: Driver applications
+    match /driver_applications/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      allow delete: if false; // Keep application history
+    }
+    
+    // ✅ ENHANCED: Saved addresses
+    match /users/{userId}/saved_addresses/{addressId} {
+      allow read, write, delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // ✅ ENHANCED: Payment methods with ownership
+    match /payment_methods/{methodId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow write: if isAuthenticated() && isOwner(resource.data.userId);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // ✅ ENHANCED: Vouchers with usage tracking
+    match /vouchers/{voucherId} {
+      allow read: if isAuthenticated();
+      allow create: if false; // Only created by admin/backend
+      allow update: if isAuthenticated(); // For usage tracking
+      allow delete: if false; // Keep voucher history
+    }
+    
+    // ✅ ENHANCED: Support tickets
+    match /support_tickets/{ticketId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.userId);
+      allow delete: if false; // Keep support history
+    }
+    
+    // ✅ ENHANCED: Ride history with better access control
+    match /ride_history/{rideId} {
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.passengerId) || isOwner(resource.data.driverId));
+      allow create: if isAuthenticated();
+      allow update: if false; // History should be immutable
+      allow delete: if false; // Keep history for legal/business purposes
+    }
+    
+    // ✅ ENHANCED: Chat messages with ownership
+    match /chat_messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(resource.data.senderId);
+      allow delete: if isAuthenticated() && isOwner(resource.data.senderId);
+    }
+    
+    // ✅ NEW: App configuration (read-only for clients)
+    match /app_config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only backend can update
+    }
+    
+    // ✅ NEW: Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if false; // Only backend creates notifications
+      allow update: if isAuthenticated() && isOwner(resource.data.userId); // Mark as read
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // Default deny all other documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
