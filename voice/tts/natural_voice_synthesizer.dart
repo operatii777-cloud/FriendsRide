@@ -94,25 +94,20 @@ class NaturalVoiceSynthesizer {
       debugPrint('🗣️ [NATURAL_TTS] ⚠️ Not initialized, initializing now...');
       await initialize();
     }
-    
     if (_isSpeaking) {
       debugPrint('🗣️ [NATURAL_TTS] ⚠️ Already speaking, stopping current speech...');
       await stop();
     }
-    
     try {
       debugPrint('🗣️ [NATURAL_TTS] Speaking: "$text"');
-      
-      // 🚀 Trimit textul la TTS
+      // FIX: Setează flag-ul înainte de TTS pentru a preveni race condition
+      _isSpeaking = true;
       await _flutterTts.speak(text);
-      
       // 🎯 Aștept să se termine
       while (_isSpeaking) {
         await Future.delayed(Duration(milliseconds: 100));
       }
-      
       debugPrint('🗣️ [NATURAL_TTS] ✅ Speech completed');
-      
     } catch (e) {
       debugPrint('🗣️ [NATURAL_TTS] ❌ Speech error: $e');
       _isSpeaking = false;

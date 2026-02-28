@@ -125,11 +125,15 @@ class VoiceOrchestrator {
       debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Already listening, stopping current session...');
       await stopListening();
     }
-    
-    if (_isSpeaking) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Currently speaking, stopping speech...');
-      await stopSpeaking();
+    // Blocare: așteaptă ca TTS să termine (din orice instanță)
+    int ttsWaitMs = 0;
+    while (_isSpeaking || naturalTts.isSpeaking) {
+      await Future.delayed(Duration(milliseconds: 100));
+      ttsWaitMs += 100;
+      if (ttsWaitMs > 5000) break; // Timeout 5s
     }
+    // Buffer suplimentar post-TTS
+    await Future.delayed(Duration(milliseconds: 300));
     
     try {
       _isListening = true;
@@ -188,10 +192,15 @@ class VoiceOrchestrator {
       debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Currently listening, stopping...');
       await stopListening();
     }
-    
-    if (_isSpeaking) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Already speaking, stopping current speech...');
+    if (_isSpeaking || naturalTts.isSpeaking) {
+      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Already speaking (TTS), stopping current speech...');
       await stopSpeaking();
+      int ttsWaitMs = 0;
+      while (_isSpeaking || naturalTts.isSpeaking) {
+        await Future.delayed(Duration(milliseconds: 100));
+        ttsWaitMs += 100;
+        if (ttsWaitMs > 5000) break;
+      }
     }
     
     try {
@@ -372,11 +381,11 @@ class VoiceOrchestrator {
   /// 🎧 Verifică dacă ascultă
   bool get isListening => _isListening;
   
-  /// 🗣️ Verifică dacă vorbește
-  bool get isSpeaking => _isSpeaking;
+  /// 🗣️ Verifică dacă vorbește (include TTS)
+  bool get isSpeaking => _isSpeaking || naturalTts.isSpeaking;
   
-  /// 🎯 Verifică dacă e disponibil
-  bool get isAvailable => _isInitialized && !_isListening && !_isSpeaking;
+  /// 🎯 Verifică dacă e disponibil (blochează dacă TTS/STT activ)
+  bool get isAvailable => _isInitialized && !_isListening && !_isSpeaking && !naturalTts.isSpeaking;
   
   /// 🎯 AUTOMAT: Pornește ascultarea imediat după TTS
   Future<void> _startAutomaticListening() async {
