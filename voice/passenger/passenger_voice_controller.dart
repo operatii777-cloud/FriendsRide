@@ -88,11 +88,13 @@ class PassengerVoiceController extends ChangeNotifier {
       
       // ✅ Inițializează serviciile
       _geminiEngine = GeminiVoiceEngine();
-      _tts = tts.NaturalVoiceSynthesizer();
       _voiceOrchestrator = VoiceOrchestrator();
       
-      await _tts.initialize();
+      // ✅ FIX: Initialize orchestrator first so its shared NaturalVoiceSynthesizer
+      // is created, then reuse that same instance for _tts. This ensures
+      // VoiceOrchestrator can always observe the TTS speaking state.
       await _voiceOrchestrator.initialize();
+      _tts = _voiceOrchestrator.naturalTts;
 
       // Wire STT callbacks to route results into the AI flow and reflect state to UI
       _voiceOrchestrator.setSpeechResultCallback((result) async {

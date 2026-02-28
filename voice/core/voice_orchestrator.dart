@@ -131,6 +131,18 @@ class VoiceOrchestrator {
       await stopSpeaking();
     }
     
+    // ✅ FIX: Also wait for the shared NaturalVoiceSynthesizer to finish if it
+    // is currently speaking (e.g. called directly from RideFlowManager).
+    if (naturalTts.isSpeaking) {
+      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ TTS still active, waiting for it to finish...');
+      while (naturalTts.isSpeaking) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      // Wait an extra 300 ms after speech ends so the mic doesn't capture
+      // the tail end of the TTS audio as user input.
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+    
     try {
       _isListening = true;
       _updateState(VoiceProcessingState.listening);
@@ -376,7 +388,10 @@ class VoiceOrchestrator {
   bool get isSpeaking => _isSpeaking;
   
   /// 🎯 Verifică dacă e disponibil
-  bool get isAvailable => _isInitialized && !_isListening && !_isSpeaking;
+  // ✅ FIX: Also check naturalTts.isSpeaking so the continuous-listen loop
+  // does not start a new STT session while TTS (called from RideFlowManager)
+  // is still playing back a response.
+  bool get isAvailable => _isInitialized && !_isListening && !_isSpeaking && !naturalTts.isSpeaking;
   
   /// 🎯 AUTOMAT: Pornește ascultarea imediat după TTS
   Future<void> _startAutomaticListening() async {

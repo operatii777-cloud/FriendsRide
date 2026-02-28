@@ -104,6 +104,9 @@ class NaturalVoiceSynthesizer {
       debugPrint('🗣️ [NATURAL_TTS] Speaking: "$text"');
       
       // 🚀 Trimit textul la TTS
+      // ✅ FIX: Set _isSpeaking=true BEFORE calling speak so the wait loop
+      // below doesn't exit early when setStartHandler fires after the await.
+      _isSpeaking = true;
       await _flutterTts.speak(text);
       
       // 🎯 Aștept să se termine
