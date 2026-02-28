@@ -100,7 +100,14 @@ class NaturalVoiceSynthesizer {
     }
     try {
       debugPrint('🗣️ [NATURAL_TTS] Speaking: "$text"');
+<<<<<<< HEAD
       // FIX: Setează flag-ul înainte de TTS pentru a preveni race condition
+=======
+      
+      // 🚀 Trimit textul la TTS
+      // ✅ FIX: Set _isSpeaking=true BEFORE calling speak so the wait loop
+      // below doesn't exit early when setStartHandler fires after the await.
+>>>>>>> 17be32b9bbe521f758ac88fcacde49deb5401cc8
       _isSpeaking = true;
       await _flutterTts.speak(text);
       // 🎯 Aștept să se termine

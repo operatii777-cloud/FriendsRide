@@ -4,6 +4,46 @@ Acest folder conține teste de integrare complete pentru sistemul AI vocal al ap
 
 ## 📋 Teste Disponibile
 
+### 🚗 `e2e_ride_flow_test.dart` ← **Test End-to-End principal**
+
+Validează **întregul flux de la rostirea adresei de către client până la găsirea unui șofer disponibil și afișarea datelor necesare** fără a depinde de rețea sau hardware audio real.
+
+#### Grupe de teste incluse:
+
+1. **🧠 GeminiVoiceEngine — procesare locală determinism** (11 teste)
+   - Extragerea destinațiilor cunoscute: "gara", "aeroport", "centru", etc.
+   - Confirmări pozitive: "da", "bine", "confirm", "perfect"
+   - Confirmare șofer în starea `awaitingDriverAcceptance`
+   - Refuz / anulare: "nu"
+   - Salut → greeting
+
+2. **🚗 RideFlowManager — tranziții de stare E2E** (8 teste)
+   - Etapa 1: clientul spune adresa → UI umplut, stare avansată
+   - Etapa 2: clientul confirmă → stare de căutare/confirmare
+   - Etapa 3: TTS înregistrat pe tot parcursul fluxului
+   - Etapa 4: istoricul conversației conține mesajele client+AI
+   - Etapa 5: destinația și prețul estimat sunt disponibile
+   - Etapa 6: anulare flow (refuz) → stare resetată
+   - Etapa 7: corectarea destinației
+
+3. **📊 Date afișate clientului** (4 teste)
+   - `lastSpokenMessage` non-empty după adresă
+   - `onFillAddressInUI` primește destinația corectă
+   - Istoricul conține mesajele AI despre cursă
+   - Flux complet happy-path: adresă → confirmare → verificare date
+
+4. **⏱️ Performanța procesării AI** (3 teste)
+   - Procesarea locală a adresei: < 500ms
+   - Procesarea confirmării: < 200ms
+   - 5 adrese diferite procesate: < 2000ms total
+
+#### Caracteristici tehnice:
+- **`_SilentTts`** — stub TTS care înregistrează mesajele fără audio real
+- **`_FlowHarness`** — harness cu callback-uri capturate pentru verificare
+- **VoiceOrchestrator** real (singleton) — eșuează graţios în test (STT în try/catch)
+- Fără dependință de rețea (procesare locală Gemini)
+- Fără Firebase real (callback `onCreateRideRequest` mock)
+
 ### 🎤 `voice_flow_integration_test.dart`
 Test de integrare complet pentru fluxul AI vocal, care simulează un utilizator real de la pornirea interacțiunii vocale până la finalizarea comenzii.
 
@@ -45,22 +85,28 @@ Test de integrare complet pentru fluxul AI vocal, care simulează un utilizator 
 
 ### Rularea Testelor
 
-#### 1. Test Individual
+#### 1. Test E2E Flux Complet (recomandat)
 ```bash
-# Rulează un test specific
+# Rulează testul end-to-end principal
+flutter test integration_test/e2e_ride_flow_test.dart
+```
+
+#### 2. Test Individual
+```bash
+# Rulează testul de integrare UI
 flutter test integration_test/voice_flow_integration_test.dart
 ```
 
-#### 2. Test de Integrare Complet
+#### 3. Toate Testele de Integrare
 ```bash
 # Rulează toate testele de integrare
 flutter test integration_test/
 ```
 
-#### 3. Rulare pe Dispozitiv/Emulator
+#### 4. Rulare pe Dispozitiv/Emulator
 ```bash
 # Rulează pe un dispozitiv specific
-flutter test integration_test/voice_flow_integration_test.dart --device-id <device_id>
+flutter test integration_test/e2e_ride_flow_test.dart --device-id <device_id>
 ```
 
 ### Verificarea Dispozitivelor Disponibile
