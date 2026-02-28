@@ -1,1 +1,0 @@
- C:\\friendsride_app\\.dart_tool\\flutter_build\\ca97d8ff687e2c3b9e19d52a9379f827\\native_assets.json: 
