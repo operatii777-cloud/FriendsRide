@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+/// Threshold în grade de coordonate care reprezintă aproximativ 11 metri la ecuator
+const double _coordinateEpsilon = 0.0001;
+
 /// Model pentru un punct de pe heatmap
 class HeatmapPoint {
   final double latitude;
@@ -181,7 +184,7 @@ class _HeatmapPainter extends CustomPainter {
     final latRange = (maxLat - minLat).abs();
     final lonRange = (maxLon - minLon).abs();
     // Când toate punctele au aceleași coordonate, le centrăm în widget
-    final singlePoint = latRange < 0.0001 && lonRange < 0.0001;
+    final singlePoint = latRange < _coordinateEpsilon && lonRange < _coordinateEpsilon;
 
     for (final point in points) {
       double x, y;
@@ -189,10 +192,10 @@ class _HeatmapPainter extends CustomPainter {
         x = size.width / 2;
         y = size.height / 2;
       } else {
-        x = lonRange > 0.0001
+        x = lonRange > _coordinateEpsilon
             ? ((point.longitude - minLon) / lonRange) * (size.width - 40) + 20
             : size.width / 2;
-        y = latRange > 0.0001
+        y = latRange > _coordinateEpsilon
             ? (1.0 - (point.latitude - minLat) / latRange) * (size.height - 40) + 20
             : size.height / 2;
       }

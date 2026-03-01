@@ -247,9 +247,12 @@ class _GiftRideScreenState extends State<GiftRideScreen>
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (v) {
-                if ((v == null || v.trim().isEmpty) &&
-                    _phoneController.text.trim().isEmpty) {
+                final email = v?.trim() ?? '';
+                if (email.isEmpty && _phoneController.text.trim().isEmpty) {
                   return 'Completați email sau telefon';
+                }
+                if (email.isNotEmpty && !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
+                  return 'Introduceți un email valid';
                 }
                 return null;
               },

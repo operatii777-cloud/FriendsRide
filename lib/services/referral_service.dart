@@ -197,15 +197,12 @@ class ReferralService {
     }
   }
 
-  /// Generează un cod unic bazat pe userId
+  /// Generează un cod unic folosind UUID pentru a preveni ghicirea codurilor
   String _generateCode(String userId) {
     const prefix = 'FR';
-    final rawSuffix = userId.length >= 4 ? userId.substring(0, 4) : userId.padRight(4, '0');
-    final suffix = rawSuffix.toUpperCase();
-    final random = (DateTime.now().millisecondsSinceEpoch % 10000)
-        .toString()
-        .padLeft(4, '0');
-    return '$prefix$suffix$random';
+    // Folosim UUID pentru a genera o parte aleatorie sigură
+    final uuid = const Uuid().v4().replaceAll('-', '').substring(0, 8).toUpperCase();
+    return '$prefix$uuid';
   }
 
   /// Obține utilizatorul curent autentificat
