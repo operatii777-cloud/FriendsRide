@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/ride_sharing_model.dart';
-import 'package:friendsride_app/services/firestore_service.dart';
 import 'dart:math' as math;
 
 /// Serviciu pentru ride sharing (călătorie partajată) - Uber-like
@@ -142,15 +141,16 @@ class RideSharingService {
 
       // ✅ NOU: Trimite mesaje de sistem pentru ambele curse
       try {
-        final firestoreService = FirestoreService();
-        await firestoreService.sendSystemMessage(
-          share1.rideId,
-          '🎉 Cursă partajată găsită! Costul tău: ${sharedCost1.toStringAsFixed(2)} RON (economie de ${(share1.originalCost! - sharedCost1).toStringAsFixed(2)} RON)',
-        );
-        await firestoreService.sendSystemMessage(
-          share2.rideId,
-          '🎉 Cursă partajată găsită! Costul tău: ${sharedCost2.toStringAsFixed(2)} RON (economie de ${(share2.originalCost! - sharedCost2).toStringAsFixed(2)} RON)',
-        );
+        await _db.collection('ride_system_messages').add({
+          'rideId': share1.rideId,
+          'message': '🎉 Cursă partajată găsită! Costul tău: ${sharedCost1.toStringAsFixed(2)} RON (economie de ${(share1.originalCost! - sharedCost1).toStringAsFixed(2)} RON)',
+          'createdAt': Timestamp.now(),
+        });
+        await _db.collection('ride_system_messages').add({
+          'rideId': share2.rideId,
+          'message': '🎉 Cursă partajată găsită! Costul tău: ${sharedCost2.toStringAsFixed(2)} RON (economie de ${(share2.originalCost! - sharedCost2).toStringAsFixed(2)} RON)',
+          'createdAt': Timestamp.now(),
+        });
       } catch (e) {
         debugPrint('⚠️ [RIDE_SHARING] Error sending system messages: $e');
       }
@@ -200,6 +200,146 @@ class RideSharingService {
       if (snapshot.docs.isEmpty) return null;
       return RideShare.fromMap(snapshot.docs.first.data());
     });
+  }
+
+  // ---- Criterii avansate de matching ----
+
+  static const double _maxDetourPercentage = 0.30; // 30% detour maxim
+  static const int _timeWindowMinutes = 15; // ± 15 minute fereastră de timp
+
+  /// Verifică dacă două cereri sunt compatibile folosind criterii avansate
+  bool _areRoutesCompatibleAdvanced(
+    RideShare share1,
+    RideShare share2, {
+    Map<String, dynamic>? prefs1,
+    Map<String, dynamic>? prefs2,
+  }) {
+    // 1. Distanță pickup
+    final pickupDistance = _calculateDistance(
+      share1.pickupLatitude,
+      share1.pickupLongitude,
+      share2.pickupLatitude,
+      share2.pickupLongitude,
+    );
+
+    // 2. Distanță destinație
+    final destDistance = _calculateDistance(
+      share1.destinationLatitude,
+      share1.destinationLongitude,
+      share2.destinationLatitude,
+      share2.destinationLongitude,
+    );
+
+    if (pickupDistance >= 2.0 || destDistance >= 2.0) return false;
+
+    // 3. Detour check: distanța suplimentară față de ruta directă nu depășește _maxDetourPercentage
+    // Calculăm distanța reală cu detour (pickup la pickup2, destinație la destinație2)
+    // vs distanța directă (pickup la destinație)
+    final baseDist1 = _calculateDistance(
+      share1.pickupLatitude,
+      share1.pickupLongitude,
+      share1.destinationLatitude,
+      share1.destinationLongitude,
+    );
+    // Ruta combinată: share1.pickup -> share2.pickup -> share2.destination -> share1.destination
+    final combinedDist = pickupDistance +
+        _calculateDistance(
+          share2.pickupLatitude,
+          share2.pickupLongitude,
+          share2.destinationLatitude,
+          share2.destinationLongitude,
+        ) +
+        destDistance;
+    final detourRatio = baseDist1 > 0 ? (combinedDist - baseDist1) / baseDist1 : 0.0;
+    if (detourRatio > _maxDetourPercentage) return false;
+
+    // 4. Fereastră de timp (dacă requestedAt este disponibil)
+    final timeDiff = share1.requestedAt.toDate()
+        .difference(share2.requestedAt.toDate())
+        .inMinutes
+        .abs();
+    if (timeDiff > _timeWindowMinutes) return false;
+
+    // 5. Preferințe pasager (fumător / animale)
+    if (prefs1 != null && prefs2 != null) {
+      final smoker1 = prefs1['smoker'] as bool? ?? false;
+      final smoker2 = prefs2['smoker'] as bool? ?? false;
+      final pets1 = prefs1['petFriendly'] as bool? ?? false;
+      final pets2 = prefs2['petFriendly'] as bool? ?? false;
+
+      // Dacă unul fumează și celălalt nu – incompatibili
+      if (smoker1 != smoker2) return false;
+      // Dacă unul are animale și celălalt nu acceptă – incompatibili
+      if (pets1 && !pets2) return false;
+    }
+
+    return true;
+  }
+
+  /// Calculează scorul de potrivire (mai mare = mai bun)
+  double _computeMatchScore(RideShare share1, RideShare share2) {
+    double score = 100.0;
+
+    final pickupDist = _calculateDistance(
+      share1.pickupLatitude,
+      share1.pickupLongitude,
+      share2.pickupLatitude,
+      share2.pickupLongitude,
+    );
+    final destDist = _calculateDistance(
+      share1.destinationLatitude,
+      share1.destinationLongitude,
+      share2.destinationLatitude,
+      share2.destinationLongitude,
+    );
+
+    // Penalizare distanță (max -40 puncte)
+    score -= (pickupDist / 2.0) * 20;
+    score -= (destDist / 2.0) * 20;
+
+    // Penalizare diferență timp (max -20 puncte)
+    final timeDiff = share1.requestedAt.toDate()
+        .difference(share2.requestedAt.toDate())
+        .inMinutes
+        .abs();
+    score -= (timeDiff / _timeWindowMinutes) * 20;
+
+    return score.clamp(0.0, 100.0);
+  }
+
+  /// Găsește cel mai bun match pentru o cerere de ride sharing
+  Future<RideShare?> findBestMatch(RideShare request) async {
+    try {
+      final pendingShares = await _db
+          .collection('ride_shares')
+          .where('status', isEqualTo: 'pending')
+          .where('passengerId', isNotEqualTo: request.passengerId)
+          .get();
+
+      RideShare? bestCandidate;
+      double bestScore = -1;
+
+      for (final doc in pendingShares.docs) {
+        final candidate = RideShare.fromMap(doc.data());
+        if (!_areRoutesCompatibleAdvanced(request, candidate)) continue;
+
+        final score = _computeMatchScore(request, candidate);
+        if (score > bestScore) {
+          bestScore = score;
+          bestCandidate = candidate;
+        }
+      }
+
+      debugPrint(
+        bestCandidate != null
+            ? '✅ [RIDE_SHARING] Best match: ${bestCandidate.id} (score: $bestScore)'
+            : '⚠️ [RIDE_SHARING] No best match found for ${request.id}',
+      );
+      return bestCandidate;
+    } catch (e) {
+      debugPrint('⚠️ [RIDE_SHARING] Error finding best match: $e');
+      return null;
+    }
   }
 }
 
