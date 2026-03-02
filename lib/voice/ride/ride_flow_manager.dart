@@ -451,7 +451,7 @@ class RideFlowManager {
       
       // ✅ MESAJ CU PREȚ PREVIEW
       final priceString = _estimatedPrice != null 
-          ? '${_estimatedPrice!.toStringAsFixed(0)} lei'
+          ? '${_estimatedPrice!.toStringAsFixed(2)} lei'
           : 'un preț estimat';
       // ✅ FIX: Obțin limba curentă și mesajul tradus
       final languageCode = await _getCurrentLanguageCode();
@@ -658,7 +658,7 @@ class RideFlowManager {
       ];
 
       _currentState = RideFlowState.driversFound;
-      final priceString = _estimatedPrice != null ? _estimatedPrice!.toStringAsFixed(0) : '—';
+      final priceString = _estimatedPrice != null ? _estimatedPrice!.toStringAsFixed(2) : '—';
       final resultsMessage =
           'Am găsit un șofer la ${etaResult.durationInMinutes} minute, la ${etaResult.distanceInKm.toStringAsFixed(1)} kilometri distanță. '
           'Cursa costă aproximativ $priceString lei. Confirmăm rezervarea?';
