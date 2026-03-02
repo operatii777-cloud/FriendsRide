@@ -80,7 +80,7 @@ class RideSharingService {
   }
 
   /// Verifică dacă două rute sunt compatibile pentru sharing
-  bool _areRoutesCompatible(RideShare share1, RideShare share2) {
+  bool areRoutesCompatible(RideShare share1, RideShare share2) {
     // Calculează distanța între pickup points
     final pickupDistance = _calculateDistance(
       share1.pickupLatitude,

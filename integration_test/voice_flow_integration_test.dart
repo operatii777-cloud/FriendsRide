@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:friendsride_app/main.dart' as app;
-import 'package:friendsride_app/voice/passenger/passenger_voice_controller_adapter.dart';
+import '../voice/passenger/passenger_voice_controller_adapter.dart';
 import 'package:provider/provider.dart';
 
 

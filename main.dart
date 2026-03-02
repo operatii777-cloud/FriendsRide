@@ -1,3 +1,5 @@
+// ...existing code...
+
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:firebase_core/firebase_core.dart';
 // Firebase App Check will be added when needed for production security
@@ -6,6 +8,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:friendsride_app/screens/auth_screen.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
+import 'package:friendsride_app/screens/gift_ride_screen.dart';
+import 'package:friendsride_app/screens/onboarding_wizard_screen.dart';
+import 'package:friendsride_app/screens/referral_screen.dart';
+import 'package:friendsride_app/screens/scheduled_ride_notifications_screen.dart';
+import 'package:friendsride_app/screens/social_login_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 // import 'package:friendsride_app/services/tts_service.dart';
 import 'package:friendsride_app/theme/app_theme.dart';
@@ -159,6 +166,14 @@ class MyApp extends StatelessWidget {
           
           // MODIFICAT: Aplicația pornește acum cu SplashScreen
           home: const SplashScreen(),
+
+          routes: {
+            '/onboarding': (_) => const OnboardingWizardScreen(),
+            '/login': (_) => const SocialLoginScreen(),
+            '/referral': (_) => const ReferralScreen(),
+            '/gift-ride': (_) => const GiftRideScreen(),
+            '/scheduled-rides': (_) => const ScheduledRideNotificationsScreen(),
+          },
           
           debugShowCheckedModeBanner: false,
           showPerformanceOverlay: AppDrawer.showPerfOverlay,

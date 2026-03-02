@@ -17,13 +17,13 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:friendsride_app/voice/ai/gemini_voice_engine.dart';
-import 'package:friendsride_app/voice/states/voice_interaction_states.dart';
-import 'package:friendsride_app/voice/ride/ride_flow_manager.dart';
-import 'package:friendsride_app/voice/tts/natural_voice_synthesizer.dart' as tts;
-import 'package:friendsride_app/voice/core/voice_orchestrator.dart';
-import 'package:friendsride_app/services/firestore_service.dart';
-import 'package:friendsride_app/models/ride_model.dart';
+import '../voice/ai/gemini_voice_engine.dart';
+import '../voice/states/voice_interaction_states.dart';
+import '../voice/ride/ride_flow_manager.dart';
+import '../voice/tts/natural_voice_synthesizer.dart' as tts;
+import '../voice/core/voice_orchestrator.dart';
+import '../services/firestore_service.dart';
+import '../models/ride_model.dart';
 
 // ---------------------------------------------------------------------------
 // Stub TTS — interceptează apelurile de vorbire fără a accesa hardware-ul

@@ -1,3 +1,535 @@
+class SurgeMapWidget extends StatelessWidget {
+  final List<Map<String, dynamic>> surgeZones;
+
+  const SurgeMapWidget({
+    super.key,
+    required this.surgeZones,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Exemplu: Integrare cu Mapbox pentru zonele cu surge
+    return Container(
+      height: 300,
+      child: MapWidget(
+        onMapCreated: (map) {
+          for (var zone in surgeZones) {
+            map.style.addLayer(
+              FillLayer(
+                id: 'surge-zone-${zone['id']}',
+                source: GeoJsonSource(
+                  id: 'surge-source-${zone['id']}',
+                  data: zone['geojson'],
+                ),
+                fillColor: Colors.red.withOpacity(0.4),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+
+class HeatmapWidget extends StatelessWidget {
+  final List<Point> demandPoints;
+  final double intensity;
+
+  const HeatmapWidget({
+    super.key,
+    required this.demandPoints,
+    this.intensity = 1.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Exemplu: Integrare cu Mapbox folosind Layer
+    return Container(
+      height: 300,
+      child: MapWidget(
+        onMapCreated: (map) {
+          // Adaugă heatmap layer pe hartă
+          map.style.addLayer(
+            HeatmapLayer(
+              id: 'demand-heatmap',
+              source: GeoJsonSource(
+                id: 'demand-source',
+                data: GeoJsonFeatureCollection(
+                  features: demandPoints.map((p) => GeoJsonFeature(
+                    geometry: GeoJsonPoint(
+                      coordinates: [p.coordinates.longitude, p.coordinates.latitude],
+                    ),
+                  )).toList(),
+                ),
+              ),
+              heatmapIntensity: intensity,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+class OnboardingWizard extends StatefulWidget {
+  final VoidCallback? onCompleted;
+
+  const OnboardingWizard({super.key, this.onCompleted});
+
+  @override
+  State<OnboardingWizard> createState() => _OnboardingWizardState();
+}
+
+class _OnboardingWizardState extends State<OnboardingWizard> {
+  int _step = 0;
+
+  void _nextStep() {
+    setState(() {
+      _step++;
+    });
+    if (_step > 4 && widget.onCompleted != null) widget.onCompleted!();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget content;
+    switch (_step) {
+      case 0:
+        content = Column(
+          children: [
+            const Text('Bine ai venit!'),
+            const Text('Autentifică-te cu Google, Facebook sau Apple.'),
+            ElevatedButton(
+              onPressed: _nextStep,
+              child: const Text('Continuă'),
+            ),
+          ],
+        );
+        break;
+      case 1:
+        content = Column(
+          children: [
+            const Text('Setează preferințele pentru curse.'),
+            ElevatedButton(
+              onPressed: _nextStep,
+              child: const Text('Continuă'),
+            ),
+          ],
+        );
+        break;
+      case 2:
+        content = Column(
+          children: [
+            const Text('Permite localizarea pentru o experiență optimă.'),
+            ElevatedButton(
+              onPressed: _nextStep,
+              child: const Text('Continuă'),
+            ),
+          ],
+        );
+        break;
+      case 3:
+        content = Column(
+          children: [
+            const Text('Datele tale sunt protejate conform GDPR și legislației locale.'),
+            const Text('Aplicația este compatibilă cu Android, iOS, Web și desktop.'),
+            ElevatedButton(
+              onPressed: _nextStep,
+              child: const Text('Continuă'),
+            ),
+          ],
+        );
+        break;
+      case 4:
+        content = Column(
+          children: [
+            const Text('Descoperă funcționalitățile aplicației!'),
+            ElevatedButton(
+              onPressed: _nextStep,
+              child: const Text('Finalizare'),
+            ),
+          ],
+        );
+        break;
+      default:
+        content = const Text('Onboarding finalizat!');
+    }
+    return Card(
+      margin: const EdgeInsets.all(24),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: content,
+      ),
+    );
+  }
+}
+class RidePreferencesPanel extends StatefulWidget {
+  final Map<String, dynamic> preferences;
+  final ValueChanged<Map<String, dynamic>>? onPreferencesChanged;
+
+  const RidePreferencesPanel({
+    super.key,
+    required this.preferences,
+    this.onPreferencesChanged,
+  });
+
+  @override
+  State<RidePreferencesPanel> createState() => _RidePreferencesPanelState();
+}
+
+class _RidePreferencesPanelState extends State<RidePreferencesPanel> {
+  late Map<String, dynamic> _prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefs = Map.from(widget.preferences);
+  }
+
+  void _updatePref(String key, dynamic value) {
+    setState(() {
+      _prefs[key] = value;
+    });
+    widget.onPreferencesChanged?.call(_prefs);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.all(8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Preferințe cursă', style: Theme.of(context).textTheme.headline6),
+            SwitchListTile(
+              title: const Text('Muzică în mașină'),
+              value: _prefs['music'] ?? false,
+              onChanged: (v) => _updatePref('music', v),
+            ),
+            SwitchListTile(
+              title: const Text('Conversație cu șoferul'),
+              value: _prefs['conversation'] ?? false,
+              onChanged: (v) => _updatePref('conversation', v),
+            ),
+            ListTile(
+              title: const Text('Temperatură preferată'),
+              trailing: SizedBox(
+                width: 80,
+                child: TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(hintText: '°C'),
+                  onChanged: (v) => _updatePref('temperature', int.tryParse(v)),
+                ),
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('Animale de companie'),
+              value: _prefs['pets'] ?? false,
+              onChanged: (v) => _updatePref('pets', v),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class MultipleStopsPanel extends StatefulWidget {
+  final List<String> stops;
+  final ValueChanged<List<String>>? onStopsChanged;
+
+  const MultipleStopsPanel({
+    super.key,
+    required this.stops,
+    this.onStopsChanged,
+  });
+
+  @override
+  State<MultipleStopsPanel> createState() => _MultipleStopsPanelState();
+}
+
+class _MultipleStopsPanelState extends State<MultipleStopsPanel> {
+  late List<String> _stops;
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _stops = List.from(widget.stops);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _addStop() {
+    final stop = _controller.text.trim();
+    if (stop.isNotEmpty) {
+      setState(() {
+        _stops.add(stop);
+        _controller.clear();
+      });
+      widget.onStopsChanged?.call(_stops);
+    }
+  }
+
+  void _removeStop(int index) {
+    setState(() {
+      _stops.removeAt(index);
+    });
+    widget.onStopsChanged?.call(_stops);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: AppLocalizations.of(context)?.multipleStopsPanel ?? 'Multiple Stops Panel',
+      child: Card(
+        margin: const EdgeInsets.all(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppLocalizations.of(context)?.multipleStopsTitle ?? 'Opriri multiple', style: Theme.of(context).textTheme.headline6),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: _stops.length,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(_stops[index]),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    tooltip: AppLocalizations.of(context)?.removeStop ?? 'Șterge oprire',
+                    onPressed: () => _removeStop(index),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(hintText: AppLocalizations.of(context)?.addStopHint ?? 'Adaugă oprire'),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_location_alt),
+                    tooltip: AppLocalizations.of(context)?.addStop ?? 'Adaugă oprire',
+                    onPressed: _addStop,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+class SurgePricingInfo extends StatelessWidget {
+  final double surgeMultiplier;
+  final double basePrice;
+  final double finalPrice;
+  final String? reason;
+
+  const SurgePricingInfo({
+    super.key,
+    required this.surgeMultiplier,
+    required this.basePrice,
+    required this.finalPrice,
+    this.reason,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: surgeMultiplier > 1.0 ? Colors.orange.shade50 : Colors.green.shade50,
+      margin: const EdgeInsets.all(8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Surge Pricing', style: Theme.of(context).textTheme.headline6),
+            Text('Multiplicator: x${surgeMultiplier.toStringAsFixed(2)}'),
+            Text('Preț de bază: ${basePrice.toStringAsFixed(2)} RON'),
+            Text('Preț final: ${finalPrice.toStringAsFixed(2)} RON', style: const TextStyle(fontWeight: FontWeight.bold)),
+            if (reason != null) Text('Motiv: $reason'),
+            if (surgeMultiplier > 1.0)
+              Text('Prețul este crescut din cauza cererii ridicate în zonă.', style: const TextStyle(color: Colors.red)),
+            if (surgeMultiplier == 1.0)
+              Text('Preț normal, fără surge.'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class AcceptRideTimer extends StatefulWidget {
+  final int seconds;
+  final VoidCallback onTimeout;
+  final VoidCallback? onAccept;
+  final String? accessibilityLabel;
+
+  const AcceptRideTimer({
+    super.key,
+    required this.seconds,
+    required this.onTimeout,
+    this.onAccept,
+    this.accessibilityLabel,
+  });
+
+  @override
+  State<AcceptRideTimer> createState() => _AcceptRideTimerState();
+}
+
+class _AcceptRideTimerState extends State<AcceptRideTimer> {
+  late int _remaining;
+  late Timer _timer;
+  bool _expired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = widget.seconds;
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_remaining > 0) {
+        setState(() => _remaining--);
+        if (_remaining == 0) {
+          _expired = true;
+          widget.onTimeout();
+          t.cancel();
+          // Feedback auditiv
+          SystemSound.play(SystemSoundType.alert);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: widget.accessibilityLabel ?? 'Timer acceptare cursă',
+      child: Column(
+        children: [
+          Text('Timp rămas pentru acceptare:', style: Theme.of(context).textTheme.bodyMedium),
+          Text('$_remaining s', style: Theme.of(context).textTheme.headline4?.copyWith(color: _expired ? Colors.red : Colors.green)),
+          if (!_expired && widget.onAccept != null)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.check),
+              label: const Text('Acceptă cursa'),
+              onPressed: widget.onAccept,
+            ),
+          if (_expired)
+            Text('Timpul a expirat!', style: const TextStyle(color: Colors.red)),
+        ],
+      ),
+    );
+  }
+}
+// Widget modular pentru UI ride sharing
+class RideSharingPanel extends StatelessWidget {
+  final String rideId;
+  final String? userName;
+  final double? price;
+  final double? surgeMultiplier;
+  final List<String>? stops;
+  final Map<String, dynamic>? preferences;
+  final VoidCallback? onGiftRide;
+  final VoidCallback? onReferral;
+  final VoidCallback? onShowSurgeMap;
+  final VoidCallback? onShowHeatmap;
+  final VoidCallback? onShowEstimate;
+
+  const RideSharingPanel({
+    super.key,
+    required this.rideId,
+    this.userName,
+    this.price,
+    this.surgeMultiplier,
+    this.stops,
+    this.preferences,
+    this.onGiftRide,
+    this.onReferral,
+    this.onShowSurgeMap,
+    this.onShowHeatmap,
+    this.onShowEstimate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: AppLocalizations.of(context)?.rideSharingPanel ?? 'Ride Sharing Panel',
+      child: Card(
+        margin: const EdgeInsets.all(12),
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppLocalizations.of(context)?.rideSharingTitle ?? 'Ride Sharing', style: Theme.of(context).textTheme.headline6),
+              if (userName != null) Text('${AppLocalizations.of(context)?.passenger ?? 'Pasager'}: $userName'),
+              if (price != null) Text('${AppLocalizations.of(context)?.priceEstimate ?? 'Preț estimat'}: ${price!.toStringAsFixed(2)} RON'),
+              if (surgeMultiplier != null && surgeMultiplier! > 1.0)
+                Text('${AppLocalizations.of(context)?.surgePricing ?? 'Surge pricing'}: x${surgeMultiplier!.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red)),
+              if (stops != null && stops!.isNotEmpty)
+                Text('${AppLocalizations.of(context)?.stops ?? 'Opriri'}: ${stops!.join(", ")}'),
+              if (preferences != null && preferences!.isNotEmpty)
+                Text('${AppLocalizations.of(context)?.preferences ?? 'Preferințe'}: ${preferences!.entries.map((e) => "${e.key}: ${e.value}").join(", ")}'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.card_giftcard),
+                    label: Text(AppLocalizations.of(context)?.giftRide ?? 'Gift Ride'),
+                    onPressed: onGiftRide,
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.group_add),
+                    label: Text(AppLocalizations.of(context)?.referral ?? 'Referral'),
+                    onPressed: onReferral,
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.map),
+                    label: Text(AppLocalizations.of(context)?.surgeMap ?? 'Surge Map'),
+                    onPressed: onShowSurgeMap,
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.heat_pump),
+                    label: Text(AppLocalizations.of(context)?.heatmap ?? 'Heatmap'),
+                    onPressed: onShowHeatmap,
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.price_check),
+                    label: Text(AppLocalizations.of(context)?.estimate ?? 'Estimate'),
+                    onPressed: onShowEstimate,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;

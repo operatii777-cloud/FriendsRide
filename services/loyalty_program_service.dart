@@ -1,4 +1,34 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+class LoyaltyProgramService {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Adaugă puncte de loialitate pentru o cursă finalizată
+  Future<void> addLoyaltyPoints(double amount) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) throw Exception('User not authenticated');
+    await _db.collection('loyalty_points').add({
+      'userId': userId,
+      'amount': amount,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Obține totalul punctelor de loialitate
+  Future<double> getTotalPoints() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) throw Exception('User not authenticated');
+    final points = await _db.collection('loyalty_points').where('userId', isEqualTo: userId).get();
+    double total = 0;
+    for (var doc in points.docs) {
+      total += (doc.data()['amount'] ?? 0);
+    }
+    return total;
+  }
+}import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/loyalty_program_model.dart';
 import 'package:friendsride_app/models/ride_model.dart';

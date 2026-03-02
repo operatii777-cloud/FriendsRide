@@ -1,339 +1,313 @@
-# 🚗 FriendsRide - Intelligent Ride-Sharing App
+﻿# ðŸš— FriendsRide - Intelligent Ride-Sharing App
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.16-blue.svg)](https://flutter.dev/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.16+-blue.svg)](https://flutter.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.0-orange.svg)](https://firebase.google.com/)
 [![Mapbox](https://img.shields.io/badge/Mapbox-10.0-lightblue.svg)](https://mapbox.com/)
+[![Analyze](https://img.shields.io/badge/flutter%20analyze-0%20issues-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**FriendsRide** este o aplicație de ride-sharing inteligentă care conectează pasagerii cu șoferi parteneri, oferind o experiență vocală avansată cu AI, navigație în timp real și funcționalități de siguranță.
-
-## 🌟 Caracteristici Principale
-
-### 🎤 Asistent Vocal AI
-- **Control vocal complet** - Rezervă curse prin comenzi vocale
-- **Procesare inteligentă** - AI înțelege destinații și confirmări
-- **Sincronizare perfectă** - TTS-STT sincronizat pentru conversații naturale
-- **Beep-uri de feedback** - Indicații audio pentru interacțiune
-
-### 🗺️ Hartă Interactivă
-- **POI-uri inteligente** - Restaurante, hoteluri, aeroporturi, gări
-- **Clustering optimizat** - Randare GPU pentru performanță
-- **Trasee în timp real** - Navigație cu trafic live
-- **Zoom gates** - Optimizări pentru performanță
-
-### 👥 Două Moduri de Utilizare
-- **Mod Pasager** - Rezervă curse, urmărește în timp real
-- **Mod Șofer** - Acceptă curse, gestionează câștigurile
-
-### 🛡️ Siguranță și Securitate
-- **Verificare șoferi** - Background check și documente
-- **Partajare locație** - Siguranță în timpul cursei
-- **Sistem urgență** - Buton panic și contacte de urgență
-- **Rating și feedback** - Sistem de evaluare comunitar
-
-## 📱 Capturi de Ecran
-
-### Ecranul Principal
-- Hartă interactivă cu POI-uri
-- Buton AI pentru comenzi vocale
-- Adrese pickup și destinație
-- Trasee în timp real
-
-### Asistentul Vocal
-- Interfață vocală intuitivă
-- Feedback audio în timp real
-- Procesare inteligentă a comenzilor
-- Sincronizare perfectă TTS-STT
-
-### Modul Șofer
-- Dashboard cu curse disponibile
-- Tracking în timp real
-- Gestionare câștiguri
-- Rating și feedback
-
-## 🚀 Instalare și Configurare
-
-### Cerințe de Sistem
-- **Android**: 7.0 (API level 24) sau mai nou
-- **iOS**: 12.0 sau mai nou
-- **Flutter**: 3.16 sau mai nou
-- **Dart**: 3.2 sau mai nou
-
-### Instalare Development
-```bash
-# Clonează repository-ul
-git clone https://github.com/your-username/friendsride_app.git
-cd friendsride_app
-
-# Instalează dependențele
-flutter pub get
-
-# Configurează Firebase
-# Copiază firebase_options.dart în lib/
-# Actualizează google-services.json (Android) și GoogleService-Info.plist (iOS)
-
-# Configurează Mapbox
-# Actualizează MAPBOX_ACCESS_TOKEN în lib/utils/mapbox_config.dart
-
-# Rulează aplicația
-flutter run
-```
-
-### Configurare Firebase
-1. Creează un proiect Firebase
-2. Activează Authentication, Firestore, Storage
-3. Configurează regulile de securitate
-4. Actualizează firebase_options.dart
-
-### Configurare Mapbox
-1. Creează cont Mapbox
-2. Generează acces token
-3. Actualizează MAPBOX_ACCESS_TOKEN
-
-## 🏗️ Arhitectura Aplicației
-
-### Structura Proiectului
-```
-lib/
-├── main.dart                 # Entry point
-├── config/                   # Configurări aplicație
-├── models/                   # Modele de date
-├── providers/                # State management
-├── screens/                  # Ecrane aplicație
-├── services/                 # Servicii backend
-├── voice/                    # Sistem vocal AI
-│   ├── ai/                   # Gemini Voice Engine
-│   ├── core/                 # Voice Orchestrator
-│   ├── integration/          # FriendsRide Integration
-│   ├── passenger/            # Passenger Controller
-│   ├── ride/                 # Ride Flow Manager
-│   └── tts/                  # Text-to-Speech
-├── widgets/                  # Widget-uri reutilizabile
-├── utils/                    # Utilitare
-└── l10n/                     # Localizare
-```
-
-### Servicii Principale
-- **FirestoreService** - Gestionare date Firebase
-- **RoutingService** - Calculare trasee
-- **GeocodingService** - Geocoding adrese
-- **VoiceOrchestrator** - Orchestrare TTS/STT
-- **GeminiVoiceEngine** - AI processing
-- **RealTimeTrackingService** - Tracking timp real
-
-## 🎤 Sistemul Vocal AI
-
-### Componente
-- **VoiceOrchestrator** - Sincronizare TTS-STT
-- **GeminiVoiceEngine** - Procesare AI cu fallback local
-- **RideFlowManager** - Gestionare flux curse vocal
-- **FriendsRideVoiceIntegration** - Integrare cu UI
-
-### Fluxul Conversației
-1. **Salut** - AI salută utilizatorul
-2. **Destinație** - Utilizator specifică destinația
-3. **Confirmare** - AI confirmă destinația
-4. **Pickup** - AI detectează locația curentă
-5. **Căutare** - AI caută șoferi disponibili
-6. **Finalizare** - AI finalizează rezervarea
-
-### Comenzi Vocale Disponibile
-- `"Solicită cursă"` - Începe rezervarea
-- `"Către [destinație]"` - Specifică destinația
-- `"De la [adresă]"` - Specifică pickup-ul
-- `"Anulează"` - Anulează cursa
-- `"Unde sunt?"` - Afișează locația
-- `"Sună șoferul"` - Contactează șoferul
-
-## 🗺️ Sistemul de Hartă
-
-### Tehnologii
-- **Mapbox Maps** - Randare hartă
-- **SymbolLayer + Clustering** - Optimizare POI-uri
-- **Real-time routing** - Trasee în timp real
-- **GPS tracking** - Localizare precisă
-
-### Optimizări Performanță
-- **GPU rendering** - Randare hardware
-- **Zoom gates** - Randare condițională
-- **Limitare POI-uri** - Max 200 POI-uri
-- **Cache inteligent** - Cache pentru geocoding
-
-## 📊 Funcționalități Avansate
-
-### Sistemul de POI-uri
-- **Categorii**: Restaurante, hoteluri, transport, shopping
-- **Clustering**: Grupare automată pentru performanță
-- **Interacțiune**: Selecție prin touch
-- **Detalii**: Informații complete despre POI-uri
-
-### Sistemul de Trasee
-- **Algoritm optim** - Cel mai bun traseu
-- **Trafic real-time** - Considerare trafic
-- **Alternative** - Trasee alternative
-- **Recalculare** - Recalculare automată
-
-### Sistemul de Plată
-- **Automată** - Procesare automată
-- **Sigură** - Criptare end-to-end
-- **Multiple metode** - Card, PayPal, Apple/Google Pay
-- **Chitanțe** - Chitanțe automate
-
-## 🧪 Testare
-
-### Teste Unitare
-```bash
-# Rulează toate testele
-flutter test
-
-# Teste specifice
-flutter test test/voice/
-flutter test test/services/
-```
-
-### Teste Integration
-```bash
-# Teste end-to-end
-flutter test integration_test/
-```
-
-### Teste AI
-```bash
-# Teste sistem vocal
-dart test_ai_button_end_to_end.dart
-dart test_real_devices_ai_flow.dart
-```
-
-## 📈 Performanță
-
-### Optimizări Implementate
-- **Lazy loading** - Încărcare la cerere
-- **Background services** - Servicii în background
-- **Cache inteligent** - Cache pentru date
-- **Debouncing** - Optimizare input-uri
-
-### Monitorizare
-- **Performance monitor** - Monitorizare performanță
-- **Crash reporting** - Raportare erori
-- **Analytics** - Analitică utilizare
-- **Real-time tracking** - Tracking în timp real
-
-## 🌍 Localizare și Traducere
-
-### Limbi Suportate
-- **Română** (ro) - Limba principală (implicită)
-- **Engleză** (en) - Suport complet pentru toate funcționalitățile
-
-### Funcționalități de Traducere
-- **Schimbare limbă dinamică** - Prin meniul hamburger → "Limba"
-- **Traducere completă a interfeței** - Toate butoanele, meniurile și textele
-- **Conținut tradus** - Ecranele "Despre" și "Juridic" complet traduse
-- **Persistența alegerii** - Limba selectată se păstrează între sesiuni
-
-### Fișiere Localizare
-- `lib/l10n/app_ro.arb` - 223 traduceri în română
-- `lib/l10n/app_en.arb` - 223 traduceri în engleză
-- `lib/l10n/app_localizations.dart` - Generator automat Flutter
-- `lib/providers/locale_provider.dart` - Gestionare limbă
-
-### Elemente Traduse
-- ✅ **Meniu principal** - Toate opțiunile din hamburger menu (18 elemente)
-- ✅ **Ecranul "Despre"** - Titluri, butoane, texte explicative (12 elemente)
-- ✅ **Ecranul "Juridic"** - Termeni și condiții, politica de confidențialitate (33 elemente)
-- ✅ **Sistemul vocal AI** - Mesaje și confirmări (158 elemente existente)
-- ✅ **Interfața de navigare** - Butoane și etichete
-- ✅ **Mesaje de eroare** - Feedback pentru utilizatori
-
-### Statistici Traducere
-- **Total string-uri**: 223 (100% traduse)
-- **Limbi suportate**: Română (implicită), Engleză
-- **Persistența**: Alegerile utilizatorului se salvează automat
-- **Acoperire**: 100% din interfața utilizatorului
-
-## 🔧 Configurare Development
-
-### Variabile de Mediu
-```bash
-# Firebase
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_API_KEY=your-api-key
-
-# Mapbox
-MAPBOX_ACCESS_TOKEN=your-mapbox-token
-
-# Gemini AI
-GEMINI_API_KEY=your-gemini-key
-```
-
-### Scripts Utile
-```bash
-# Clean și rebuild
-flutter clean && flutter pub get
-
-# Analiză cod
-flutter analyze
-
-# Formatare cod
-dart format .
-
-# Teste cu coverage
-flutter test --coverage
-```
-
-## 📚 Documentație
-
-### Ghiduri Disponibile
-- **[Manual de Utilizare](USER_MANUAL.md)** - Ghid complet utilizator (actualizat cu funcționalități de traducere)
-- **[AI Implementation Guide](VOICE_IMPLEMENTATION_GUIDE.md)** - Implementare AI
-- **[Mapbox Setup Guide](MAPBOX_SETUP_GUIDE.md)** - Configurare Mapbox
-- **[Firebase Setup Guide](FIREBASE_CONSOLE_SETUP_GUIDE.md)** - Configurare Firebase
-- **[Ghid de Traducere](USER_MANUAL.md#ghid-de-traducere-și-localizare)** - Instrucțiuni pentru schimbarea limbii
-
-### API Documentation
-- **[Voice AI API](lib/voice/)** - Documentație sistem vocal
-- **[Services API](lib/services/)** - Documentație servicii
-- **[Models API](lib/models/)** - Documentație modele
-
-## 🤝 Contribuții
-
-### Cum să Contribui
-1. Fork repository-ul
-2. Creează o ramură pentru feature (`git checkout -b feature/AmazingFeature`)
-3. Commit modificările (`git commit -m 'Add some AmazingFeature'`)
-4. Push la ramură (`git push origin feature/AmazingFeature`)
-5. Deschide un Pull Request
-
-### Guidelines
-- Folosește `dart format` pentru formatare
-- Adaugă teste pentru funcționalități noi
-- Actualizează documentația
-- Respectă convențiile de cod
-
-## 📄 Licență
-
-Acest proiect este licențiat sub licența MIT - vezi fișierul [LICENSE](LICENSE) pentru detalii.
-
-## 👥 Echipa
-
-- **Frontend Development** - Flutter, Dart
-- **Backend Development** - Firebase, Firestore
-- **AI/ML Development** - Gemini AI, Voice Processing
-- **DevOps** - CI/CD, Deployment
-
-## 📞 Contact
-
-- **Email**: support@friendsride.com
-- **Website**: https://friendsride.com
-- **Documentație**: https://docs.friendsride.com
-
-## 🙏 Mulțumiri
-
-- **Flutter Team** - Pentru framework-ul excelent
-- **Firebase Team** - Pentru backend-ul robust
-- **Mapbox Team** - Pentru hărțile interactive
-- **Google AI** - Pentru Gemini AI
-- **Comunitatea Flutter** - Pentru suport și feedback
+**FriendsRide** este o aplicaÈ›ie de ride-sharing inteligentÄƒ care conecteazÄƒ pasagerii cu È™oferi parteneri, oferind o experienÈ›Äƒ vocalÄƒ avansatÄƒ cu AI, navigaÈ›ie Ã®n timp real, funcÈ›ionalitÄƒÈ›i sociale (cadouri, referral, social login) È™i notificÄƒri smart.
 
 ---
 
-**FriendsRide** - Conectând oamenii prin tehnologie inteligentă 🚗✨
+## ðŸŒŸ Caracteristici Principale
+
+### ðŸŽ¤ Asistent Vocal AI (PR #1 â€” Ã®mbunÄƒtÄƒÈ›it)
+- **Sincronizare TTS-STT perfectÄƒ** â€” STT nu mai porneÈ™te Ã®n timp ce TTS vorbeÈ™te
+- **Control vocal complet** â€” RezervÄƒ curse prin comenzi vocale naturale
+- **Beep-uri de feedback** â€” IndicaÈ›ii audio clare pentru start/stop ascultare
+- **Flux AI end-to-end** â€” Salut â†’ DestinaÈ›ie â†’ Confirmare â†’ Pickup â†’ CursÄƒ
+
+### ðŸŽ Gift Ride â€” Cadouri de CursÄƒ (PR #3 â€” nou)
+- **Trimite curse cadou** â€” Oferi o cursÄƒ unui prieten sau familiar
+- **Cod unic de revendicare** â€” Format `GFTxxxxxx`, valabil 365 zile
+- **Revendicare simplÄƒ** â€” Destinatarul introduce codul la checkout
+- **Gestionare cadouri** â€” VizualizeazÄƒ cadourile trimise È™i statusul lor
+- **State machine** â€” `pending â†’ claimed / expired / cancelled`
+
+### ðŸ‘¥ Sistem Referral (PR #3 â€” nou)
+- **Cod personal** â€” Fiecare utilizator are un cod unic `FRxxxxxxxx`
+- **Recompense duble** â€” Invitantul primeÈ™te 15 RON, invitatul 10 RON
+- **Statistici live** â€” Total, completate, cÃ¢È™tiguri acumulate
+- **Share nativ** â€” Distribuie codul prin orice aplicaÈ›ie instalatÄƒ
+- **ProtecÈ›ie auto-referral** â€” Sistemul previne abuzurile
+
+### ðŸ” Social Login (PR #3 â€” nou)
+- **Google Sign-In** â€” Autentificare cu un singur tap
+- **Apple Sign-In** â€” Suport complet iOS (Sign in with Apple)
+- **Facebook Login** â€” Autentificare via Facebook
+- **Fallback email/parolÄƒ** â€” Clasic, cu recuperare parolÄƒ
+
+### ðŸ“… Curse Programate + NotificÄƒri (PR #3 â€” nou)
+- **Programare curse** â€” SeteazÄƒ cursÄƒ pentru o datÄƒ/orÄƒ viitoare
+- **NotificÄƒri locale** â€” Reminder automat cu 30 min Ã®nainte
+- **Toggle notificÄƒri** â€” ActiveazÄƒ/dezactiveazÄƒ per cursÄƒ
+- **Gestionare listÄƒ** â€” AdaugÄƒ, modificÄƒ, È™terge curse programate
+
+### ðŸ§­ Onboarding Wizard (PR #3 â€” nou)
+- **Tutorial pas cu pas** â€” 4 ecrane animate pentru utilizatori noi
+- **Prezentare funcÈ›ionalitÄƒÈ›i** â€” HartÄƒ, vocal AI, plÄƒÈ›i, siguranÈ›Äƒ
+- **Skip oricÃ¢nd** â€” Utilizatorul poate sÄƒri tutorialul
+
+### ðŸ—ºï¸ HartÄƒ InteractivÄƒ + Heatmap Cerere (PR #3 â€” nou)
+- **Heatmap vizual** â€” Gradient color pentru densitatea cererii (verde â†’ galben â†’ roÈ™u)
+- **GrilÄƒ suprapusÄƒ** â€” Ajutor vizual pentru zone de cerere
+- **Date tempo real** â€” `HeatmapPoint` cu latitudine, longitudine, intensitate
+- **POI-uri inteligente** â€” Clustering GPU, zoom gates, max 200 POI-uri
+
+### ðŸ’¸ Ride Sharing Avansat (PR #3 â€” Ã®mbunÄƒtÄƒÈ›it)
+- **Algoritm Haversine** â€” DistanÈ›Äƒ precisÄƒ Ã®ntre coordonate GPS
+- **Prag compatibilitate** â€” Pickup < 2 km + DestinaÈ›ie < 2 km
+- **Matching static testabil** â€” `RideSharingService.areRoutesCompatible(s1, s2)`
+- **Mesaje sistem automate** â€” Notificare Ã®n chat la match confirmat
+- **Reducere 30%** â€” Cost partajat calculat automat
+
+### ðŸ”” Multiple Stops + Surge Pricing (PR #3 â€” nou)
+- **Multiple opriri** â€” AdaugÄƒ pÃ¢nÄƒ la N opriri intermediare pe traseu
+- **Surge pricing transparent** â€” Widget dedicat care explicÄƒ multiplicatorul preÈ›ului
+- **Acceptance timer** â€” Countdown animat pentru acceptarea cursei de È™ofer
+
+### ðŸŽ¨ Sistem Design Unificat (PR #3 â€” nou)
+- **`AppColors`** â€” PaletÄƒ cromaticÄƒ centralizatÄƒ (primary, secondary, background, surface, error, textHint, border)
+- **`AppTextStyles`** â€” Tipografie consistentÄƒ (heading1-4, bodySmall/Medium/Large, button)
+- **Dark/Light mode ready** â€” StructurÄƒ pregÄƒtitÄƒ pentru teme multiple
+
+---
+
+## ðŸ“ Structura Proiectului
+
+```
+lib/
+â”œâ”€â”€ main.dart                          # Entry point + routes
+â”œâ”€â”€ theme/
+â”‚   â”œâ”€â”€ app_colors.dart                # âœ¨ Nou: paleta de culori centralizatÄƒ
+â”‚   â””â”€â”€ app_text_styles.dart           # âœ¨ Nou: stiluri text unificate
+â”œâ”€â”€ models/
+â”‚   â”œâ”€â”€ gift_ride_model.dart           # âœ¨ Nou: model cadou cursÄƒ
+â”‚   â”œâ”€â”€ referral_model.dart            # âœ¨ Nou: model referral + ReferralStats
+â”‚   â”œâ”€â”€ ride_model.dart
+â”‚   â”œâ”€â”€ ride_sharing_model.dart
+â”‚   â””â”€â”€ ...
+â”œâ”€â”€ services/
+â”‚   â”œâ”€â”€ gift_ride_service.dart         # âœ¨ Nou: trimitere, revendicare, anulare
+â”‚   â”œâ”€â”€ referral_service.dart          # âœ¨ Nou: coduri referral, statistici, recompense
+â”‚   â”œâ”€â”€ local_notifications_service.dart # âœ¨ Nou: notificÄƒri locale programate
+â”‚   â”œâ”€â”€ social_auth_service.dart       # âœ¨ Nou: Google/Apple/Facebook auth
+â”‚   â”œâ”€â”€ ride_sharing_service.dart      # âœ… ÃŽmbunÄƒtÄƒÈ›it: matching avansat + static API
+â”‚   â”œâ”€â”€ firestore_service.dart
+â”‚   â””â”€â”€ ...
+â”œâ”€â”€ screens/
+â”‚   â”œâ”€â”€ gift_ride_screen.dart          # âœ¨ Nou: UI trimitere + vizualizare cadouri
+â”‚   â”œâ”€â”€ referral_screen.dart           # âœ¨ Nou: UI cod referral + statistici + listÄƒ
+â”‚   â”œâ”€â”€ onboarding_wizard_screen.dart  # âœ¨ Nou: tutorial utilizatori noi
+â”‚   â”œâ”€â”€ social_login_screen.dart       # âœ¨ Nou: ecran login social
+â”‚   â”œâ”€â”€ scheduled_ride_notifications_screen.dart # âœ¨ Nou: curse programate
+â”‚   â””â”€â”€ ...
+â”œâ”€â”€ widgets/
+â”‚   â”œâ”€â”€ acceptance_timer_widget.dart   # âœ¨ Nou: countdown acceptare È™ofer
+â”‚   â”œâ”€â”€ heatmap_widget.dart            # âœ¨ Nou: heatmap cerere cu CustomPainter
+â”‚   â”œâ”€â”€ multiple_stops_widget.dart     # âœ¨ Nou: opriri multiple pe traseu
+â”‚   â”œâ”€â”€ surge_pricing_transparency_widget.dart # âœ¨ Nou: explicaÈ›ie surge pricing
+â”‚   â””â”€â”€ ...
+â”œâ”€â”€ utils/
+â”‚   â””â”€â”€ logger.dart                    # âœ¨ Nou: logger structurat (debug/info/warning/error)
+â””â”€â”€ voice/                             # âœ… ÃŽmbunÄƒtÄƒÈ›it: PR #1 sync TTS-STT
+    â”œâ”€â”€ ai/
+    â”œâ”€â”€ core/
+    â”œâ”€â”€ integration/
+    â”œâ”€â”€ passenger/
+    â”œâ”€â”€ ride/
+    â””â”€â”€ tts/
+```
+
+---
+
+## ðŸš€ Instalare È™i Configurare
+
+### CerinÈ›e de Sistem
+- **Android**: 7.0 (API level 24) sau mai nou
+- **iOS**: 12.0 sau mai nou
+- **Flutter**: 3.16+ / **Dart**: 3.2+
+
+### Instalare
+```bash
+git clone https://github.com/operatii777-cloud/FriendsRide.git
+cd FriendsRide
+flutter pub get
+
+# ConfigureazÄƒ Firebase (google-services.json + GoogleService-Info.plist)
+# ConfigureazÄƒ Mapbox token Ã®n lib/utils/mapbox_config.dart
+# ConfigureazÄƒ Gemini API key
+
+flutter run
+```
+
+### Variabile de Mediu
+```bash
+MAPBOX_ACCESS_TOKEN=pk.xxx
+GEMINI_API_KEY=AIzaSy...
+```
+
+---
+
+## ðŸŽ¤ Fluxul Vocal AI
+
+```
+Utilizator apasÄƒ buton AI
+  â†’ TTS: "BunÄƒ ziua! Unde doriÈ›i sÄƒ mergeÈ›i?"
+  â†’ STT porneÈ™te (dupÄƒ ce TTS terminÄƒ â€” fix PR #1)
+  â†’ Utilizator: "La aeroport"
+  â†’ AI confirmÄƒ destinaÈ›ia
+  â†’ STT pentru pickup (dacÄƒ necesar)
+  â†’ CursÄƒ rezervatÄƒ
+```
+
+**Comenzi vocale disponibile:**
+| ComandÄƒ | AcÈ›iune |
+|---------|---------|
+| `"SolicitÄƒ cursÄƒ"` | ÃŽncepe rezervarea |
+| `"CÄƒtre [destinaÈ›ie]"` | SeteazÄƒ destinaÈ›ia |
+| `"De la [adresÄƒ]"` | SeteazÄƒ pickup |
+| `"AnuleazÄƒ"` | AnuleazÄƒ cursa curentÄƒ |
+| `"Unde sunt?"` | AfiÈ™eazÄƒ locaÈ›ia curentÄƒ |
+| `"SunÄƒ È™oferul"` | ApeleazÄƒ È™oferul activ |
+
+---
+
+## ðŸŽ Flux Gift Ride
+
+```
+Expeditor â†’ completeazÄƒ formular (nume, email/telefon, sumÄƒ, mesaj)
+  â†’ GiftRideService.sendGiftRide() â†’ cod unic generat + salvat Ã®n Firestore
+  â†’ Destinatar primeÈ™te codul (email/SMS extern)
+  â†’ Destinatar â†’ introduce codul la checkout
+  â†’ GiftRideService.claimGiftRide(cod, userId) â†’ suma creditatÄƒ
+```
+
+---
+
+## ðŸ‘¥ Flux Referral
+
+```
+Utilizator A â†’ ReferralService.getReferralCode(uid) â†’ cod "FR12345678"
+  â†’ Share nativ â†’ Utilizator B se Ã®nregistreazÄƒ cu codul
+  â†’ ReferralService.processReferralCode(cod, newUserId)
+  â†’ Referral creat Ã®n Firestore
+  â†’ Utilizator B face prima cursÄƒ â†’ rewardedAt setat
+  â†’ A primeÈ™te 15 RON + B primeÈ™te 10 RON
+```
+
+---
+
+## ðŸ§ª Testare
+
+```bash
+# Toate testele
+flutter test
+
+# Test matching ride sharing
+flutter test test/ride_sharing_service_test.dart
+
+# AnalizÄƒ cod (0 issues)
+flutter analyze --no-fatal-infos
+
+# Integration tests
+flutter test integration_test/
+```
+
+**Stare curentÄƒ analizÄƒ:**
+```
+No issues found! âœ…  (0 errors, 0 warnings, 0 infos)
+```
+
+---
+
+## ðŸ“Š Servicii Principale
+
+| Serviciu | Responsabilitate |
+|---------|----------------|
+| `FirestoreService` | CRUD Firestore cu retry logic |
+| `GiftRideService` | Cadouri curse (creare, revendicare, anulare) |
+| `ReferralService` | Coduri referral, statistici, recompense |
+| `RideSharingService` | Matching pasageri (algoritm Haversine) |
+| `LocalNotificationsService` | NotificÄƒri locale programate |
+| `SocialAuthService` | Google / Apple / Facebook autentificare |
+| `RoutingService` | Calculare trasee Mapbox |
+| `VoiceOrchestrator` | Sincronizare TTS â†” STT |
+| `GeminiVoiceEngine` | Procesare AI comenzi vocale |
+| `RealTimeTrackingService` | Tracking GPS timp real |
+
+---
+
+## ðŸŒ Localizare
+
+| FiÈ™ier | LimbÄƒ | Strings |
+|--------|-------|---------|
+| `lib/l10n/app_ro.arb` | RomÃ¢nÄƒ (implicitÄƒ) | 223+ |
+| `lib/l10n/app_en.arb` | EnglezÄƒ | 223+ |
+
+Schimbare limbÄƒ: **Meniu hamburger â†’ Limba**. Alegerea se salveazÄƒ automat.
+
+---
+
+## ðŸ“ˆ PerformanÈ›Äƒ
+
+- **GPU rendering** â€” Mapbox + CustomPainter pentru heatmap
+- **Clustering POI** â€” Max 200 POI-uri, zoom gates
+- **TTS-STT sync** â€” Eliminat race condition (PR #1)
+- **Lazy loading** â€” Servicii iniÈ›ializate la cerere
+- **Logger structurat** â€” `Logger.debug/info/warning/error` cu tag È™i stack trace
+
+---
+
+## ðŸ”§ Routes ÃŽnregistrate Ã®n main.dart
+
+```dart
+routes: {
+  '/onboarding': (_) => const OnboardingWizardScreen(),
+  '/login':      (_) => const SocialLoginScreen(),
+  '/referral':   (_) => const ReferralScreen(),
+  '/gift-ride':  (_) => const GiftRideScreen(),
+  '/scheduled-rides': (_) => const ScheduledRideNotificationsScreen(),
+}
+```
+
+---
+
+## ðŸ“š DocumentaÈ›ie
+
+- **[AI Implementation Guide](VOICE_IMPLEMENTATION_GUIDE.md)**
+- **[Complete Mapbox Setup](COMPLETE_MAPBOX_SETUP.md)**
+- **[Firebase Setup Guide](FIREBASE_CONSOLE_SETUP_GUIDE.md)**
+- **[Flux End-to-End](FLUX_APLICATIE_END_TO_END.md)**
+
+---
+
+## ðŸ¤ ContribuÈ›ii
+
+1. Fork repository-ul
+2. CreeazÄƒ ramurÄƒ: `git checkout -b feature/NumeFeature`
+3. Commit: `git commit -m 'Add NumeFeature'`
+4. Push: `git push origin feature/NumeFeature`
+5. Deschide Pull Request
+
+**Before PR:** `flutter analyze --no-fatal-infos` trebuie sÄƒ returneze `No issues found!`
+
+---
+
+## ðŸ“„ LicenÈ›Äƒ
+
+MIT License â€” vezi [LICENSE](LICENSE).
+
+---
+
+## ðŸ“ž Contact
+
+- **Email**: support@friendsride.com
+- **GitHub**: https://github.com/operatii777-cloud/FriendsRide
+
+---
+
+*FriendsRide â€” ConectÃ¢nd oamenii prin tehnologie inteligentÄƒ ðŸš—âœ¨*
+*Ultima actualizare: Martie 2026 â€” PR #1 (Voice sync) + PR #3 (Gift, Referral, Social Login, Scheduled Rides, Heatmap, Onboarding)*
+

@@ -102,6 +102,7 @@ dev_dependencies:
   mockito: ^5.4.4
   integration_test:
     sdk: flutter
+  firebase_core_platform_interface: ^6.0.0
 
 # App Icons Configuration
 flutter_launcher_icons:
@@ -126,7 +127,6 @@ flutter:
 
   assets:
     # Declararea folderelor principale de resurse
-    - .env  # <--- ADAUGĂ ACEASTĂ LINIE
     - assets/images/
     - assets/icons/
     - assets/fonts/
@@ -137,26 +137,7 @@ flutter:
     # NOU: Adăugat folder pentru sunetele de notificare
     - assets/sounds/
 
-  fonts:
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Roboto-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Roboto-Bold.ttf
-          weight: 700
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700
-    - family: DancingScript
-      fonts:
-        - asset: assets/fonts/DancingScript-VariableFont_wght.ttf
+  # fonts eliminate temporar pentru testare automată
 
 flutter_native_splash:
   color: "#3682F3"

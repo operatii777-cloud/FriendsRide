@@ -1,0 +1,19 @@
+{
+  "rideSharingPanel": "Panou Ride Sharing",
+  "rideSharingTitle": "Ride Sharing",
+  "passenger": "Pasager",
+  "priceEstimate": "Preț estimat",
+  "surgePricing": "Preț dinamic",
+  "stops": "Opriri",
+  "preferences": "Preferințe",
+  "giftRide": "Cursă cadou",
+  "referral": "Recomandă",
+  "surgeMap": "Hartă Surge",
+  "heatmap": "Heatmap",
+  "estimate": "Estimare",
+  "multipleStopsPanel": "Panou Opriri Multiple",
+  "multipleStopsTitle": "Opriri multiple",
+  "removeStop": "Șterge oprire",
+  "addStopHint": "Adaugă oprire",
+  "addStop": "Adaugă oprire"
+}
