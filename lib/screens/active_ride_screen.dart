@@ -30,6 +30,8 @@ import 'package:friendsride_app/widgets/ride/ride_stuck_panel.dart';
 import 'package:friendsride_app/widgets/ride/ride_driver_navigation_overlay.dart';
 import 'package:friendsride_app/widgets/ride/draggable_chat_window.dart';
 import 'package:friendsride_app/widgets/ride/ride_passenger_tracking.dart';
+import 'package:friendsride_app/widgets/ride/ride_turn_by_turn_widget.dart';
+import 'package:friendsride_app/widgets/ride/ride_destination_entrance_chips.dart';
 
 // import 'package:friendsride_app/services/eta_service.dart'; // Eliminat
 import 'package:url_launcher/url_launcher.dart';
@@ -3050,7 +3052,13 @@ if (newStaticAnnotations.isNotEmpty) {
               // AI button ascuns temporar
 
               if (_showTurnByTurnUI && _isDriverView && _currentNavigationStep != null)
-                _buildTurnByTurnUI(),
+                RideTurnByTurnWidget(
+                  currentNavigationStep: _currentNavigationStep!,
+                  voiceMuted: _voiceMuted,
+                  ttsService: _ttsService,
+                  onVoiceMutedChanged: (muted) => setState(() { _voiceMuted = muted; }),
+                  onDismiss: () => setState(() { _showTurnByTurnUI = false; }),
+                ),
 
               // Recenter button for passenger when map is moved
               if (_showRecenterButton && !_isDriverView)
@@ -3290,7 +3298,7 @@ if (newStaticAnnotations.isNotEmpty) {
                   bottom: 96,
                   left: 16,
                   right: 16,
-                  child: _buildDestinationEntranceChips(),
+                  child: RideDestinationEntranceChips(onEntrySelected: _onSelectDestinationEntrance),
                 ),
 
 
@@ -3937,216 +3945,6 @@ if (newStaticAnnotations.isNotEmpty) {
   
 
 
-  Widget _buildTurnByTurnUI() {
-    if (_currentNavigationStep == null) return const SizedBox.shrink();
-    
-    final step = _currentNavigationStep!;
-    final distance = step.distance;
-    final instruction = step.instruction;
-    
-    Color backgroundColor;
-    Color textColor;
-    
-    if (step.type == 'turn') {
-      if (step.modifier == 'left') {
-        backgroundColor = Colors.blue;
-        textColor = Colors.white;
-      } else if (step.modifier == 'right') {
-        backgroundColor = Colors.green;
-        textColor = Colors.white;
-      } else {
-        backgroundColor = Colors.orange;
-        textColor = Colors.white;
-      }
-    } else if (step.type == 'arrive') {
-      backgroundColor = Colors.green;
-      textColor = Colors.white;
-    } else {
-      backgroundColor = Theme.of(context).colorScheme.primary;
-      textColor = Theme.of(context).colorScheme.onPrimary;
-    }
-    
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Semantics(
-        label: 'Banner navigație. ${step.type ?? ''} ${step.modifier ?? ''}. Distanță ${distance.toStringAsFixed(0)} metri.',
-        liveRegion: true,
-        child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha((255 * 0.3).round()),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: textColor.withAlpha((255 * 0.2).round()),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                _getInstructionIcon(step),
-                color: textColor,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    instruction,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.visible,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${distance.toStringAsFixed(0)} m',
-                    style: TextStyle(
-                      color: textColor.withAlpha((255 * 0.8).round()),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Lane guidance chips (approximation based on modifier)
-                  _buildLaneGuidanceChips(step, textColor),
-                ],
-              ),
-            ),
-            
-            Row(children: [
-              // Repeat instruction
-              IconButton(
-                tooltip: 'Repetă',
-                onPressed: () async {
-                  try { if (!_voiceMuted) await _ttsService.speak(instruction); } catch (_) {}
-                },
-                icon: Icon(Icons.volume_up, color: textColor, size: 20),
-              ),
-              // Mute/unmute
-              StatefulBuilder(
-                builder: (context, setSB) {
-                  return IconButton(
-                    tooltip: _voiceMuted ? 'Unmute voce' : 'Mute voce',
-                    onPressed: () async {
-                      setSB(() { _voiceMuted = !_voiceMuted; });
-                      try {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('nav_voice_muted', _voiceMuted);
-                      } catch (_) {}
-                      if (_voiceMuted) { _ttsService.stop(); }
-                    },
-                    icon: Icon(_voiceMuted ? Icons.volume_off : Icons.volume_up, color: textColor, size: 20),
-                  );
-                },
-              ),
-              // Close banner
-              IconButton(
-                tooltip: 'Ascunde',
-                onPressed: () {
-                  setState(() { _showTurnByTurnUI = false; });
-                },
-                icon: Icon(Icons.close, color: textColor, size: 20),
-              ),
-            ]),
-          ],
-        ),
-      ),
-      ),
-    );
-  }
-
-  Widget _buildLaneGuidanceChips(NavigationStep step, Color textColor) {
-    final List<Map<String, dynamic>> lanes = _deriveLanesFromStep(step);
-    if (lanes.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: 6,
-      runSpacing: 4,
-      children: lanes.map((lane) {
-        final bool isRecommended = lane['rec'] == true;
-        final IconData icon = lane['icon'] as IconData;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: isRecommended ? textColor.withAlpha((255 * 0.18).round()) : textColor.withAlpha((255 * 0.08).round()),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isRecommended ? textColor : textColor.withAlpha((255 * 0.5).round()), width: isRecommended ? 1.5 : 1.0),
-          ),
-          child: Icon(icon, size: 16, color: textColor),
-        );
-      }).toList(),
-    );
-  }
-
-  List<Map<String, dynamic>> _deriveLanesFromStep(NavigationStep step) {
-    // Heuristic lane guidance based on modifier and type when lane data is unavailable
-    // We present 3 lanes where the middle/left/right is recommended depending on modifier
-    final String? modifier = step.modifier;
-    if (modifier == null) return [];
-    IconData left = Icons.turn_left;
-    IconData straight = Icons.straight;
-    IconData right = Icons.turn_right;
-    final lanes = [
-      {'icon': left, 'rec': modifier.contains('left')},
-      {'icon': straight, 'rec': modifier.contains('straight') || modifier == 'slight left' || modifier == 'slight right'},
-      {'icon': right, 'rec': modifier.contains('right')},
-    ];
-    return lanes;
-  }
-
-  IconData _getInstructionIcon(NavigationStep step) {
-    switch (step.type) {
-      case 'turn':
-        switch (step.modifier) {
-          case 'left':
-            return Icons.arrow_back;
-          case 'right':
-            return Icons.arrow_forward;
-          case 'slight left':
-            return Icons.arrow_back;
-          case 'slight right':
-            return Icons.arrow_forward;
-          case 'sharp left':
-            return Icons.arrow_back;
-          case 'sharp right':
-            return Icons.arrow_forward;
-          case 'uturn':
-            return Icons.refresh;
-          default:
-            return Icons.arrow_forward;
-        }
-      case 'arrive':
-        return Icons.location_on;
-      case 'depart':
-        return Icons.directions_car;
-      case 'merge':
-        return Icons.arrow_forward;
-      case 'exit':
-        return Icons.arrow_forward;
-      default:
-        return Icons.navigation;
-    }
-  }
-
   bool _shouldShowDestinationEntranceChips(Ride ride) {
     if (_currentUserId != ride.driverId) return false;
     if (ride.status != 'in_progress') return false;
@@ -4158,41 +3956,6 @@ if (newStaticAnnotations.isNotEmpty) {
       _destinationLocation!.coordinates.lng,
     ) * 1000.0;
     return meters <= 200.0; // show chips when close to destination
-  }
-
-  Widget _buildDestinationEntranceChips() {
-    final entries = ['Nord', 'Est', 'Sud', 'Vest'];
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Alege intrarea',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: entries.map((e) {
-                return ActionChip(
-                  label: Text(e),
-                  onPressed: () => _onSelectDestinationEntrance(e),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _onSelectDestinationEntrance(String label) async {
