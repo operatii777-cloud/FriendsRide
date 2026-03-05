@@ -38,6 +38,9 @@ import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/widgets/assistant_status_overlay.dart';
 import 'package:friendsride_app/providers/assistant_status_provider.dart';
 import 'package:friendsride_app/widgets/map/map_voice_overlay.dart';
+import 'package:friendsride_app/widgets/map/map_ride_offer_popup.dart';
+import 'package:friendsride_app/widgets/map/map_driver_waiting.dart';
+import 'package:friendsride_app/widgets/map/map_poi_card.dart';
 
 
 
@@ -2453,7 +2456,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               const Center(child: CircularProgressIndicator())
           else if (_currentRole == UserRole.driver && _isDriverAvailable)
             if (_currentRideOffer != null)
-              _buildRideOfferPopup()
+              MapRideOfferPopup(
+                ride: _currentRideOffer!,
+                remainingSeconds: _remainingSeconds,
+                isProcessingAccept: _isProcessingAccept,
+                isProcessingDecline: _isProcessingDecline,
+                onAccept: () => _acceptRide(_currentRideOffer!),
+                onDecline: () => _declineRide(_currentRideOffer!),
+              )
             else
               _buildDriverInterface(),
           
@@ -2493,7 +2503,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
                       },
                       child: SizedBox(
                         width: cardWidth,
-                        child: _buildPoiCard(),
+                        child: MapPoiCard(
+                          poi: _selectedPoi!,
+                          onClose: _closePoiCard,
+                          onSetAsPickup: () => _setPOIAsPickup(_selectedPoi!),
+                          onSetAsDestination: () => _setPOIAsDestination(_selectedPoi!),
+                          onAddAsStop: () => _addPOIAsStop(_selectedPoi!),
+                        ),
                       ),
                     ),
                   );
@@ -2739,121 +2755,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     );
   }
 
-  Widget _buildRideOfferPopup() {
-    final ride = _currentRideOffer;
-    if (ride == null) return const SizedBox.shrink();
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView( // ✅ FIX: Adăugat pentru a preveni overflow
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded( // ✅ FIX: Adăugat Expanded pentru titlu
-                      child: Text(
-                        'Cursă nouă',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black12),
-                      child: Text('${_remainingSeconds}s', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.place, color: Colors.red, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded( // ✅ FIX: Adăugat Expanded
-                        child: Text(
-                          ride.destinationAddress,
-                          maxLines: 3,
-                          overflow: TextOverflow.visible,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 6),
-                    Row(children: [
-                      const Icon(Icons.trip_origin, color: Colors.green, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded( // ✅ FIX: Adăugat Expanded
-                        child: Text(
-                          ride.startAddress,
-                          maxLines: 2,
-                          overflow: TextOverflow.visible,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ]),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessingDecline ? null : () => _declineRide(ride),
-                      icon: _isProcessingDecline 
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.close, size: 18),
-                      label: Text(_isProcessingDecline ? 'Refuz...' : 'Refuză'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.red.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessingAccept ? null : () => _acceptRide(ride),
-                      icon: _isProcessingAccept 
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.check, size: 18),
-                      label: Text(_isProcessingAccept ? 'Accept...' : 'Acceptă'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.green.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
 double _calculateDirectDistance(double lat1, double lon1, double lat2, double lon2) {
     const double earthRadius = 6371; // km
@@ -2910,7 +2811,10 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
               }
             });
           }
-          return _buildDriverWaitingIndicator();
+          return MapDriverWaiting(
+            driverCategoryName: _driverCategory?.name,
+            pendingRidesCount: _pendingRides.length,
+          );
         }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3173,232 +3077,6 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
     );
   }
 
-  Widget _buildDriverWaitingIndicator() {
-    return Positioned(
-      bottom: 120,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              colors: [Colors.green.shade400, Colors.green.shade600],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(51),
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Căutăm curse în zona ta...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Categoria: ${_driverCategory?.name ?? 'standard'} • ${_pendingRides.length} curse disponibile",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withAlpha(204),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =================
-  // POI UI WIDGETS
-  // =================
-
-  /// Construiește card-ul informativ pentru POI selectat
-  Widget _buildPoiCard() {
-    final poi = _selectedPoi!;
-    
-    return Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header cu imagine și buton închidere
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                  child: Image.network(
-                    poi.imageUrl,
-                    height: 150,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 150,
-                        color: Colors.grey.shade300,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          size: 48,
-                          color: Colors.grey,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: _closePoiCard,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Color.fromARGB(153, 0, 0, 0),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Conținut
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Titlu
-                  Text(
-                    poi.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Descriere
-                  Text(
-                    poi.description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Butoane de acțiune - NOU: 3 butoane pentru pickup, destination, stop
-                  _buildPOIActions(poi),
-                ],
-              ),
-            ),
-          ],
-      ),
-    );
-  }
-
-  /// Construiește butoanele de acțiune pentru POI cu 3 opțiuni
-  Widget _buildPOIActions(PointOfInterest poi) {
-    return Column(
-      children: [
-        // Prima linie - Plecare și Destinație
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _setPOIAsPickup(poi),
-                icon: const Icon(Icons.my_location, size: 18),
-                label: const Text('Plecare'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _setPOIAsDestination(poi),
-                icon: const Icon(Icons.flag, size: 18),
-                label: const Text('Destinație'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 8),
-        
-        // A doua linie - Oprire intermediară
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _addPOIAsStop(poi),
-            icon: const Icon(Icons.add_location, size: 18),
-            label: const Text('Adaugă ca oprire'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   // =================
   // POI CATEGORY CHIPS OVERLAY + ACTIONS
