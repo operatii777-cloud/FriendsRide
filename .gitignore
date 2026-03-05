@@ -8,6 +8,11 @@ build/
 .idea/
 .vscode/
 *.iml
+devtools_options.yaml
+modules.xml
+workspace.xml
+settings.json
+tasks.json
 
 # OS
 .DS_Store
@@ -18,8 +23,25 @@ Thumbs.db
 [0-9a-f][0-9a-f][0-9a-f]/
 [0-9a-f][0-9a-f][0-9a-f][0-9a-f]/
 
+# Dart tool files at root
+package_config.json
+package_graph.json
+version
+
+# Git hook samples
+*.sample
+exclude
+
+# Flutter/Dart artifacts at root
+dartpad/
+extension_discovery/
+libraries/
+logs/
+runConfigurations/
+
 # Test scripts de lucru (nu cele din test/)
 test_*.dart
+ai_flow_manual_analysis.dart
 *_test_manual.dart
 verify_*.dart
 verificare_*.dart
@@ -32,6 +54,44 @@ test_*.ps1
 test_*.sh
 
 # Note de lucru AI (nu documentație)
+ADDRESS_SEARCH_OPTIMIZATION_REPORT.md
+AI_*.md
+ALTERNATIVE_*.md
+ANDROID_SDK_SETUP_GUIDE.md
+AUTONOMOUS_*.md
+CLEANUP_*.md
+COMPLETE_*.md
+COMPREHENSIVE_*.md
+CUM_*.md
+CURSOR_RULES.md
+DRIVER_*.md
+ENVIRONMENT_SETUP.md
+EXPLICATII_*.md
+FIREBASE_CONSOLE_SETUP.md
+FIREBASE_CONSOLE_SETUP_GUIDE.md
+FIX_*.md
+GEMINI_*.md
+IMPACT_*.md
+IMPLEMENTATION_CHECKLIST.md
+INTEGRARE_*.md
+LOCATION_DATABASE_README.md
+MAPBOX_*.md
+MIGRATION_GUIDE.md
+NLU_SYSTEM_README.md
+NOI_*.md
+POLITE_CONVERSATION_README.md
+PROBLEME_*.md
+PRODUCTION_DEPLOYMENT_GUIDE.md
+README_DIAGNOSTIC.md
+REAL_*.md
+REPLACE_*.md
+SECURITY_*.md
+SERVER_*.md
+TESTARE_*.md
+TESTING_SUMMARY.md
+TODO.md
+USER_*.md
+VOICE_*.md
 ANALIZA_*.md
 AUDIT_*.md
 IMPLEMENTARE_*.md
@@ -47,6 +107,13 @@ REMEDIERI_*.md
 REZULTATE_*.md
 PROGRES_*.md
 DIAGNOSTIC_*.md
+firebase_debug_commands.md
+firebase_test_checklist.md
+new-rule.md
+
+# Duplicate firestore rules
+firestore_rules_complete.rules
+firestore_security_rules_enhanced.rules
 
 # Fișiere executabile
 *.exe
