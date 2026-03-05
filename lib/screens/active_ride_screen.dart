@@ -25,6 +25,9 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:friendsride_app/theme/app_colors.dart';
 import 'package:friendsride_app/widgets/theme_toggle_button.dart';
 // import 'package:friendsride_app/widgets/draggable_ai_button.dart'; // AI button ascuns temporar
+import 'package:friendsride_app/widgets/ride/ride_emergency_card.dart';
+import 'package:friendsride_app/widgets/ride/ride_stuck_panel.dart';
+import 'package:friendsride_app/widgets/ride/ride_driver_navigation_overlay.dart';
 
 // import 'package:friendsride_app/services/eta_service.dart'; // Eliminat
 import 'package:url_launcher/url_launcher.dart';
@@ -747,7 +750,17 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       
       if (timeDiff > 0) {
         _currentSpeed = distance / timeDiff; // meters per second
-        
+
+        // Throttle overspeed haptics (once per 3 seconds)
+        final speedKmh = _currentSpeed * 3.6;
+        if (speedKmh > _currentSpeedLimitKmh + 3) {
+          final now2 = DateTime.now();
+          if (_lastOverspeedHapticAt == null || now2.difference(_lastOverspeedHapticAt!).inSeconds >= 3) {
+            HapticFeedback.heavyImpact();
+            _lastOverspeedHapticAt = now2;
+          }
+        }
+
         debugPrint('🚗 Speed: ${(_currentSpeed * 3.6).toStringAsFixed(1)} km/h');
       }
     }
@@ -785,88 +798,18 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
   // ✅ PHASE 3: Enhanced role-based UI helper
   Widget _buildRoleBasedUIOverlay() {
     if (_isDriverNavigationMode) {
-      return _buildDriverNavigationOverlay();
+      return RideDriverNavigationOverlay(
+        currentSpeed: _currentSpeed,
+        currentSpeedLimit: _currentSpeedLimitKmh,
+        onSpeedLimitChanged: (newLimit) async {
+          if (mounted) setState(() { _currentSpeedLimitKmh = newLimit; });
+          try { final prefs = await SharedPreferences.getInstance(); await prefs.setInt('nav_speed_limit_kmh', newLimit); } catch (_) {}
+        },
+      );
     } else if (_isPassengerTrackingMode) {
       return _buildPassengerTrackingUI();
     }
     return const SizedBox.shrink();
-  }
-
-  // ✅ Driver navigation overlay
-  Widget _buildDriverNavigationOverlay() {
-    final speedKmh = _currentSpeed * 3.6;
-    final bool isOverSpeed = speedKmh > _currentSpeedLimitKmh + 3; // small tolerance
-    // Throttle overspeed haptics (once per 3 seconds)
-    if (isOverSpeed) {
-      final now = DateTime.now();
-      if (_lastOverspeedHapticAt == null || now.difference(_lastOverspeedHapticAt!).inSeconds >= 3) {
-        HapticFeedback.heavyImpact();
-        _lastOverspeedHapticAt = now;
-      }
-    }
-    
-    return Positioned(
-      top: 50,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              '🧭 Driver Navigation',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            Row(
-              children: [
-                // Speed limit pill
-                GestureDetector(
-                  onTap: () async {
-                    // Cycle common limits 30→50→60→70→80→90→100→50
-                    final List<int> limits = [30, 50, 60, 70, 80, 90, 100];
-                    final idx = limits.indexOf(_currentSpeedLimitKmh);
-                    final next = limits[(idx >= 0 ? (idx + 1) % limits.length : 1)];
-                    if (mounted) setState(() { _currentSpeedLimitKmh = next; });
-                    try { final prefs = await SharedPreferences.getInstance(); await prefs.setInt('nav_speed_limit_kmh', next); } catch (_) {}
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isOverSpeed ? Colors.red : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isOverSpeed ? Colors.red.shade700 : Colors.grey.shade400),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.speed, size: 16, color: isOverSpeed ? Colors.white : Colors.black87),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_currentSpeedLimitKmh',
-                          style: TextStyle(
-                            color: isOverSpeed ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  '${speedKmh.toStringAsFixed(0)} km/h',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   // ✅ NEW: Passenger tracking info overlay (PASSENGER ONLY)
@@ -1181,74 +1124,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     return false;
   }
 
-  Widget _buildStuckRidePanel(Ride ride) {
-    return Material(
-      elevation: 10,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        width: double.infinity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 48),
-            const SizedBox(height: 16),
-            const Text(
-              'Problemă de comunicare',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Ceva nu pare în regulă cu această cursă. A rămas blocată în starea "${ride.status}" de prea mult timp. Puteți forța anularea ei.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () async {
-                try {
-                  await _firestoreService.updateRideStatus(ride.id, 'cancelled');
-                  if (!mounted) return;
-                  final l10n = AppLocalizations.of(context)!;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.rideCancelledSuccessfully), backgroundColor: Colors.green),
-                  );
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const MapScreen()),
-                    (route) => false,
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Builder(
-                      builder: (context) {
-                        final l10n = AppLocalizations.of(context)!;
-                        return Text(l10n.errorCancelling(e.toString()));
-                      },
-                    ), backgroundColor: Colors.red),
-                  );
-                }
-              },
-              icon: const Icon(Icons.cancel_outlined),
-              label: Builder(
-                builder: (context) {
-                  final l10n = AppLocalizations.of(context)!;
-                  return Text(l10n.forceCancelRide);
-                },
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
   void _showStopAddedNotification() async {
     _audioService.playMessageReceivedSound(); 
     await _centerMapIfReady();
@@ -2040,86 +1915,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         ),
       );
     }
-  }
-
-  Widget _buildEmergencyPromptCard() {
-    return Material(
-      elevation: 6,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade200),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.emergency_outlined, color: Colors.red),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'SOS activat',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.red.shade800,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Echipa de siguranță a fost informată. Confirmați când sunteți în siguranță sau continuați să partajați traseul cu contactele de încredere.',
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Text(l10n.iAmSafe);
-                    },
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () => _resolveEmergencyAlert(),
-                ),
-                OutlinedButton(
-                  onPressed: () => _resolveEmergencyAlert(falseAlarm: true),
-                  child: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Text(l10n.falseAlarm);
-                    },
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _openSafetyShareSheet,
-                  icon: const Icon(Icons.share_location),
-                  label: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Text(l10n.shareRoute);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _onMapCreated(MapboxMap mapboxMap) async {
@@ -3344,7 +3139,7 @@ if (newStaticAnnotations.isNotEmpty) {
           final isDriver = _currentUserId == ride.driverId;
 
           if (_isRideStuck(ride)) {
-            return Center(child: _buildStuckRidePanel(ride));
+            return Center(child: RideStuckPanel(ride: ride, firestoreService: _firestoreService));
           }
 
           // Compute arrival panel visibility: driver approaching passenger (< 100 m)
@@ -3452,7 +3247,11 @@ if (newStaticAnnotations.isNotEmpty) {
                   top: 96,
                   left: 16,
                   right: 16,
-                  child: _buildEmergencyPromptCard(),
+                  child: RideEmergencyCard(
+                    onIAmSafe: () => _resolveEmergencyAlert(),
+                    onFalseAlarm: () => _resolveEmergencyAlert(falseAlarm: true),
+                    onShareRoute: _openSafetyShareSheet,
+                  ),
                 ),
               
               // 🗺️ FIX: Loading indicator pentru routing
