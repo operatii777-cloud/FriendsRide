@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// ✅ Helper pentru traduceri în modulul AI vocal (fără BuildContext)
 class VoiceTranslations {
@@ -9,7 +10,7 @@ class VoiceTranslations {
       final code = prefs.getString('locale');
       return code ?? 'ro'; // Default română
     } catch (e) {
-      debugPrint('🎤 [VOICE_TRANSLATIONS] Error getting language: $e');
+      Logger.error('Error getting language: $e', tag: 'VOICE_TRANSLATIONS', error: e);
       return 'ro'; // Default română
     }
   }

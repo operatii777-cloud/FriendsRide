@@ -13,6 +13,7 @@ import 'package:friendsride_app/models/driver_incentive_model.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 // Enum pentru a gestiona starea filtrului listei
 enum DriverListFilter { all, today }
@@ -86,7 +87,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             }
           },
           onError: (error) {
-            debugPrint('❌ [DASHBOARD] Error loading incentives: $error');
+            Logger.error('Error loading incentives: $error', tag: 'DASHBOARD', error: error);
             // Nu facem crash - doar logăm eroarea și continuăm cu lista goală
             if (mounted) {
               setState(() {
@@ -116,7 +117,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint('❌ [DASHBOARD] Error initializing driver system: $e');
+      Logger.error('Error initializing driver system: $e', tag: 'DASHBOARD', error: e);
     }
   }
 
@@ -127,7 +128,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         .getActiveDriverRideStream()
         .listen(
           (ride) {
-            debugPrint('🚗 [DASHBOARD] Active ride status: ${ride?.status}');
+            Logger.debug('Active ride status: ${ride?.status}', tag: 'DASHBOARD');
             if (mounted) {
               setState(() {
                 _activeRide = ride;
@@ -135,7 +136,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             }
           },
           onError: (error) {
-            debugPrint('❌ [DASHBOARD] Error listening for active ride: $error');
+            Logger.error('Error listening for active ride: $error', tag: 'DASHBOARD', error: error);
             // Nu facem crash - doar logăm eroarea și continuăm cu null
             if (mounted) {
               setState(() {

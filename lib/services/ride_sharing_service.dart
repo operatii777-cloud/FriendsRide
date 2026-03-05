@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/ride_sharing_model.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 import 'dart:math' as math;
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Serviciu pentru ride sharing (călătorie partajată) - Uber-like
 class RideSharingService {
@@ -49,7 +50,7 @@ class RideSharingService {
 
       return rideShare;
     } catch (e) {
-      debugPrint('⚠️ [RIDE_SHARING] Error creating ride share request: $e');
+      Logger.error('Error creating ride share request: $e', tag: 'RIDE_SHARING', error: e);
       return null;
     }
   }
@@ -75,7 +76,7 @@ class RideSharingService {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [RIDE_SHARING] Error trying to match ride share: $e');
+      Logger.error('Error trying to match ride share: $e', tag: 'RIDE_SHARING', error: e);
     }
   }
 
@@ -150,12 +151,12 @@ class RideSharingService {
           '🎉 Cursă partajată găsită! Costul tău: ${sharedCost2.toStringAsFixed(2)} RON (economie de ${(share2.originalCost! - sharedCost2).toStringAsFixed(2)} RON)',
         );
       } catch (e) {
-        debugPrint('⚠️ [RIDE_SHARING] Error sending system messages: $e');
+        Logger.error('Error sending system messages: $e', tag: 'RIDE_SHARING', error: e);
       }
 
-      debugPrint('✅ [RIDE_SHARING] Match created between ${share1.id} and ${share2.id}');
+      Logger.info('Match created between ${share1.id} and ${share2.id}', tag: 'RIDE_SHARING');
     } catch (e) {
-      debugPrint('⚠️ [RIDE_SHARING] Error creating match: $e');
+      Logger.error('Error creating match: $e', tag: 'RIDE_SHARING', error: e);
     }
   }
 
@@ -171,7 +172,7 @@ class RideSharingService {
       if (snapshot.docs.isEmpty) return null;
       return RideShare.fromMap(snapshot.docs.first.data());
     } catch (e) {
-      debugPrint('⚠️ [RIDE_SHARING] Error getting ride share: $e');
+      Logger.error('Error getting ride share: $e', tag: 'RIDE_SHARING', error: e);
       return null;
     }
   }
@@ -183,7 +184,7 @@ class RideSharingService {
         'status': 'cancelled',
       });
     } catch (e) {
-      debugPrint('⚠️ [RIDE_SHARING] Error cancelling ride share: $e');
+      Logger.error('Error cancelling ride share: $e', tag: 'RIDE_SHARING', error: e);
     }
   }
 

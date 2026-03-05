@@ -1,50 +1,36 @@
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// Firebase App Check will be added when needed for production security
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:friendsride_app/screens/auth_screen.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
-// import 'package:friendsride_app/services/tts_service.dart';
 import 'package:friendsride_app/theme/app_theme.dart';
-// import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:friendsride_app/theme/theme_provider.dart';
-// import 'firebase_options.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:friendsride_app/providers/locale_provider.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart' as l10n;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async' show unawaited;
-// NOU: Providerii pentru refactoring
 import 'package:friendsride_app/providers/driver_state_provider.dart';
 import 'package:friendsride_app/providers/map_camera_provider.dart';
 import 'package:friendsride_app/providers/assistant_status_provider.dart';
 
-// Voice AI providers - NOU SISTEM VOCAL
+// Voice AI providers
 import 'package:friendsride_app/voice/integration/friendsride_voice_integration.dart';
 import 'package:friendsride_app/voice/passenger/passenger_voice_controller.dart';
 import 'package:friendsride_app/voice/passenger/passenger_voice_controller_adapter.dart';
 import 'package:friendsride_app/voice/driver/driver_voice_controller.dart';
 
-// IMPORT NOU: Adaugă calea către ecranul de pornire
 import 'package:friendsride_app/screens/splash_screen.dart';
 import 'package:friendsride_app/services/app_initializer.dart';
 
-// Mapbox Configuration
-// import 'package:friendsride_app/utils/mapbox_config.dart';
 import 'package:friendsride_app/config/environment.dart';
-// import 'package:friendsride_app/services/app_monitor.dart';
-// import 'package:friendsride_app/services/offline_manager.dart' as offline_manager_service;
-// import 'package:friendsride_app/voice/nlp/ride_intent_processor.dart';
 import 'package:friendsride_app/widgets/app_drawer.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:friendsride_app/services/startup_timer.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-
-// Voice screens
-// Voice settings and demo screens are imported when needed
+import 'package:friendsride_app/utils/logger.dart';
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -124,7 +110,7 @@ Future<String?> _resolveSentryDsn() async {
       StartupTimer.instance.mark('env.preloaded');
     }
   } catch (e) {
-    debugPrint('⚠️ Sentry DSN env load skipped: $e');
+    Logger.warning('Sentry DSN env load skipped: $e');
   }
 
   final envDsn = dotenv.maybeGet('SENTRY_DSN');
@@ -380,9 +366,9 @@ Future<void> _initializeBackground() async {
     // Configure font fallbacks to avoid Noto font errors
     await _configureFonts();
     
-    debugPrint('✅ Background initialization completed');
+    Logger.info('Background initialization completed');
   } catch (e) {
-    debugPrint('⚠️ Background initialization error (non-fatal): $e');
+    Logger.error('Background initialization error (non-fatal): $e', error: e);
   }
 }
 
@@ -391,8 +377,8 @@ Future<void> _configureFonts() async {
   try {
     // Set default font family to avoid Noto font errors
     // This will use system default fonts when Noto is not available
-    debugPrint('ℹ️ Font fallbacks configured to avoid Noto errors');
+    Logger.info('Font fallbacks configured to avoid Noto errors');
   } catch (e) {
-    debugPrint('⚠️ Font configuration error (non-fatal): $e');
+    Logger.error('Font configuration error (non-fatal): $e', error: e);
   }
 }

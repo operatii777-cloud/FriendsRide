@@ -13,6 +13,7 @@ import 'package:friendsride_app/screens/driver_scheduled_rides_screen.dart';
 import 'package:friendsride_app/widgets/driver_verification_badge_widget.dart';
 import 'package:friendsride_app/models/driver_verification_model.dart';
 import 'package:friendsride_app/screens/ride_preferences_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -31,7 +32,7 @@ class _AccountScreenState extends State<AccountScreen> {
       // For now, return empty list
       return [];
     } catch (e) {
-      debugPrint('Error getting driver verifications: $e');
+      Logger.error('Error getting driver verifications: $e', error: e);
       return [];
     }
   }

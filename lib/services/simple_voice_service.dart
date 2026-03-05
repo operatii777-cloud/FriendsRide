@@ -1,5 +1,6 @@
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Simple voice service to replace speech_to_text
 class SimpleVoiceService {
@@ -21,7 +22,7 @@ class SimpleVoiceService {
       await _flutterTts.setPitch(1.0);
       _isInitialized = true;
     } catch (e) {
-      debugPrint('Voice service initialization failed: $e');
+      Logger.error('Voice service initialization failed: $e', error: e);
     }
   }
 
@@ -32,7 +33,7 @@ class SimpleVoiceService {
     try {
       await _flutterTts.speak(text);
     } catch (e) {
-      debugPrint('Speech failed: $e');
+      Logger.error('Speech failed: $e', error: e);
     }
   }
 
@@ -41,7 +42,7 @@ class SimpleVoiceService {
     try {
       await _flutterTts.stop();
     } catch (e) {
-      debugPrint('Stop speech failed: $e');
+      Logger.error('Stop speech failed: $e', error: e);
     }
   }
 
@@ -50,7 +51,7 @@ class SimpleVoiceService {
     try {
       await _flutterTts.setLanguage(languageCode);
     } catch (e) {
-      debugPrint('Language setting failed: $e');
+      Logger.error('Language setting failed: $e', error: e);
     }
   }
 
@@ -59,7 +60,7 @@ class SimpleVoiceService {
     try {
       await _flutterTts.setSpeechRate(rate);
     } catch (e) {
-      debugPrint('Speech rate setting failed: $e');
+      Logger.error('Speech rate setting failed: $e', error: e);
     }
   }
 

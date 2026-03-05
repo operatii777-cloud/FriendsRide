@@ -19,7 +19,7 @@ class DriverIncentivesService {
           .map((doc) => DriverIncentive.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      debugPrint('⚠️ [INCENTIVES] Error getting driver incentives: $e');
+      Logger.error('Error getting driver incentives: $e', tag: 'INCENTIVES', error: e);
       return [];
     }
   }
@@ -30,7 +30,7 @@ class DriverIncentivesService {
       final allIncentives = await getDriverIncentives(driverId);
       return allIncentives.where((incentive) => incentive.isActive).toList();
     } catch (e) {
-      debugPrint('⚠️ [INCENTIVES] Error getting active incentives: $e');
+      Logger.error('Error getting active incentives: $e', tag: 'INCENTIVES', error: e);
       return [];
     }
   }
@@ -47,7 +47,7 @@ class DriverIncentivesService {
         if (newProgress >= 100) 'completedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint('⚠️ [INCENTIVES] Error updating incentive progress: $e');
+      Logger.error('Error updating incentive progress: $e', tag: 'INCENTIVES', error: e);
     }
   }
 
@@ -62,7 +62,7 @@ class DriverIncentivesService {
           .map((doc) => DriverIncentive.fromMap({'id': doc.id, ...doc.data()}))
           .toList();
     }).handleError((error) {
-      debugPrint('⚠️ [INCENTIVES] Stream error: $error');
+      Logger.error('Stream error: $error', tag: 'INCENTIVES', error: error);
       return <DriverIncentive>[]; // Return empty list on error
     });
   }

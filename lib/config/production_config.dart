@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Production configuration and deployment management
 class ProductionConfig {
@@ -60,7 +61,7 @@ class ProductionConfig {
       
       _isInitialized = true;
     } catch (e) {
-      debugPrint('Failed to initialize production config: $e');
+      Logger.error('Failed to initialize production config: $e', error: e);
       _validationErrors.add('Initialization failed: $e');
     }
   }
@@ -269,9 +270,9 @@ class ProductionConfig {
         _currentEnvironment = Environment.development;
       }
       
-      debugPrint('Detected environment: $_currentEnvironment');
+      Logger.debug('Detected environment: $_currentEnvironment');
     } catch (e) {
-      debugPrint('Failed to detect environment: $e');
+      Logger.error('Failed to detect environment: $e', error: e);
       _currentEnvironment = Environment.development;
     }
   }
@@ -285,7 +286,7 @@ class ProductionConfig {
         _config.addAll(data);
       }
     } catch (e) {
-      debugPrint('Failed to load configuration: $e');
+      Logger.error('Failed to load configuration: $e', error: e);
     }
   }
 
@@ -295,7 +296,7 @@ class ProductionConfig {
       final configJson = jsonEncode(_config);
       await _prefs.setString(_configKey, configJson);
     } catch (e) {
-      debugPrint('Failed to save configuration: $e');
+      Logger.error('Failed to save configuration: $e', error: e);
     }
   }
 
@@ -316,7 +317,7 @@ class ProductionConfig {
         }
       }
     } catch (e) {
-      debugPrint('Failed to load feature flags: $e');
+      Logger.error('Failed to load feature flags: $e', error: e);
     }
   }
 
@@ -326,7 +327,7 @@ class ProductionConfig {
       final flagsJson = jsonEncode(_featureFlags);
       await _prefs.setString(_featureFlagsKey, flagsJson);
     } catch (e) {
-      debugPrint('Failed to save feature flags: $e');
+      Logger.error('Failed to save feature flags: $e', error: e);
     }
   }
 
@@ -347,7 +348,7 @@ class ProductionConfig {
       _deploymentInfo['deployment_timestamp'] = DateTime.now().toIso8601String();
       _deploymentInfo['environment'] = _currentEnvironment.toString();
     } catch (e) {
-      debugPrint('Failed to load deployment info: $e');
+      Logger.error('Failed to load deployment info: $e', error: e);
     }
   }
 
@@ -357,7 +358,7 @@ class ProductionConfig {
       final deploymentJson = jsonEncode(_deploymentInfo);
       await _prefs.setString(_deploymentKey, deploymentJson);
     } catch (e) {
-      debugPrint('Failed to save deployment info: $e');
+      Logger.error('Failed to save deployment info: $e', error: e);
     }
   }
 

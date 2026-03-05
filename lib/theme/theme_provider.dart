@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Extensii custom pentru clasa Color, conform sugestiilor din compilator.
 extension ColorExtensions on Color {
@@ -50,7 +51,7 @@ class ThemeProvider extends ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading theme preferences: $e');
+      Logger.error('Error loading theme preferences: $e', error: e);
     }
   }
 
@@ -63,7 +64,7 @@ class ThemeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_darkModeKey, _isDarkMode);
     } catch (e) {
-      debugPrint('Error saving theme preference: $e');
+      Logger.error('Error saving theme preference: $e', error: e);
     }
   }
 
@@ -76,7 +77,7 @@ class ThemeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_darkModeKey, _isDarkMode);
     } catch (e) {
-      debugPrint('Error saving theme preference: $e');
+      Logger.error('Error saving theme preference: $e', error: e);
     }
   }
 
@@ -88,7 +89,7 @@ class ThemeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_highContrastKey, _isHighContrast);
     } catch (e) {
-      debugPrint('Error saving high contrast preference: $e');
+      Logger.error('Error saving high contrast preference: $e', error: e);
     }
   }
 }

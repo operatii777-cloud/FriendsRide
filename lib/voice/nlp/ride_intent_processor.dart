@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:friendsride_app/config/environment.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🚀 ISOLATE OPTIMIZATION: Advanced NLP processing in background isolates
 /// 
@@ -39,13 +40,13 @@ class RideIntentProcessor {
   static Future<void> initializeIsolate() async {
     // *** CORECTAT: Verificare dublă pentru a preveni multiple isolate-uri ***
     if (_isIsolateInitialized && _processingIsolate != null && _isolateSendPort != null) {
-      debugPrint('✅ [ISOLATE_NLP] Isolate already initialized and ready, skipping...');
+      Logger.info('Isolate already initialized and ready, skipping...', tag: 'ISOLATE_NLP');
       return;
     }
     
     // *** CORECTAT: Verificare dacă se inițializează deja ***
     if (_isInitializing) {
-      debugPrint('⏳ [ISOLATE_NLP] Isolate is already initializing, waiting...');
+      Logger.debug('Isolate is already initializing, waiting...', tag: 'ISOLATE_NLP');
       // Așteaptă până se termină inițializarea
       while (_isInitializing) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -56,17 +57,17 @@ class RideIntentProcessor {
     _isInitializing = true;
     
     try {
-      debugPrint('🚀 [ISOLATE_NLP] Initializing background NLP isolate...');
+      Logger.info('Initializing background NLP isolate...', tag: 'ISOLATE_NLP');
       
       // *** CORECTAT: Cleanup complet înainte de recreare ***
       if (_mainReceivePort != null) {
-        debugPrint('🧹 [ISOLATE_NLP] Cleaning up existing ports...');
+        Logger.debug('Cleaning up existing ports...', tag: 'ISOLATE_NLP');
         _mainReceivePort!.close();
         _mainReceivePort = null;
       }
       
       if (_processingIsolate != null) {
-        debugPrint('🧹 [ISOLATE_NLP] Killing existing isolate...');
+        Logger.debug('Killing existing isolate...', tag: 'ISOLATE_NLP');
         _processingIsolate!.kill();
         _processingIsolate = null;
       }
@@ -100,10 +101,10 @@ class RideIntentProcessor {
       // *** CORECTAT: Nu mai asculta de două ori pe același port ***
       // _mainReceivePort!.listen(_handleIsolateMessage); // REMOVED - duplicat!
       
-      debugPrint('✅ [ISOLATE_NLP] Background NLP isolate initialized successfully');
+      Logger.info('Background NLP isolate initialized successfully', tag: 'ISOLATE_NLP');
       
     } catch (e) {
-      debugPrint('❌ [ISOLATE_NLP] Failed to initialize isolate: $e');
+      Logger.error('Failed to initialize isolate: $e', tag: 'ISOLATE_NLP', error: e);
       _isIsolateInitialized = false;
       _mainReceivePort?.close();
       _mainReceivePort = null;
@@ -125,7 +126,7 @@ class RideIntentProcessor {
       'sendPort': isolateReceivePort.sendPort,
     });
     
-    debugPrint('🚀 [ISOLATE_NLP] NLP isolate started successfully');
+    Logger.info('NLP isolate started successfully', tag: 'ISOLATE_NLP');
     
     // Listen for processing requests
     await for (final message in isolateReceivePort) {
@@ -133,7 +134,7 @@ class RideIntentProcessor {
         try {
           await _processRequestInIsolate(Map<String, dynamic>.from(message), mainSendPort);
         } catch (e) {
-          debugPrint('❌ [ISOLATE_NLP] Error processing request in isolate: $e');
+          Logger.error('Error processing request in isolate: $e', tag: 'ISOLATE_NLP', error: e);
           mainSendPort.send({
             'type': 'error',
             'requestId': message['requestId'],
@@ -154,7 +155,7 @@ class RideIntentProcessor {
     final type = request['type'] as String;
     
     try {
-      debugPrint('🔄 [ISOLATE_NLP] Processing request in isolate: $requestId');
+      Logger.debug('Processing request in isolate: $requestId', tag: 'ISOLATE_NLP');
       
       RideIntent result;
       
@@ -178,10 +179,10 @@ class RideIntentProcessor {
         'result': result.toMap(),
       });
       
-      debugPrint('✅ [ISOLATE_NLP] Request processed successfully: $requestId');
+      Logger.info('Request processed successfully: $requestId', tag: 'ISOLATE_NLP');
       
     } catch (e) {
-      debugPrint('❌ [ISOLATE_NLP] Error in isolate processing: $e');
+      Logger.error('Error in isolate processing: $e', tag: 'ISOLATE_NLP', error: e);
       mainSendPort.send({
         'type': 'error',
         'requestId': requestId,
@@ -285,7 +286,7 @@ class RideIntentProcessor {
       final cacheKey = text.toLowerCase().trim();
       final cached = _getCachedIntent(cacheKey);
       if (cached != null) {
-        debugPrint('🚀 [ISOLATE_NLP] Using cached intent for: $text');
+        Logger.info('Using cached intent for: $text', tag: 'ISOLATE_NLP');
         return cached;
       }
       
@@ -318,7 +319,7 @@ class RideIntentProcessor {
       return result;
       
     } catch (e) {
-      debugPrint('❌ [ISOLATE_NLP] Error processing intent: $e');
+      Logger.error('Error processing intent: $e', tag: 'ISOLATE_NLP', error: e);
       // Fallback to local processing
       return _processLocalPatterns(text);
     }
@@ -333,7 +334,7 @@ class RideIntentProcessor {
           .toList() ?? [];
       
     } catch (e) {
-      debugPrint('❌ [ISOLATE_NLP] Error extracting locations: $e');
+      Logger.error('Error extracting locations: $e', tag: 'ISOLATE_NLP', error: e);
       return _extractLocationsFromText(text);
     }
   }
@@ -547,7 +548,7 @@ class RideIntentProcessor {
           content = content.replaceFirst('```', '').replaceFirst('```', '').trim();
         }
         
-        debugPrint('🔧 [GEMINI_API] Cleaned content: $content');
+        Logger.debug('Cleaned content: $content', tag: 'GEMINI_API');
         final intentData = jsonDecode(content);
 
         return RideIntent(
@@ -559,12 +560,12 @@ class RideIntentProcessor {
         );
       } else {
         // Dacă API-ul dă eroare, revenim la procesarea locală
-        debugPrint('❌ [GEMINI_API] Error: ${response.statusCode} - ${response.body}');
+        Logger.error('Error: ${response.statusCode} - ${response.body}', tag: 'GEMINI_API');
         return _processLocalPatterns(text);
       }
 
     } catch (e) {
-      debugPrint('❌ [GEMINI_API] Processing failed: $e');
+      Logger.error('Processing failed: $e', tag: 'GEMINI_API', error: e);
       // Fallback la procesarea locală în caz de orice eroare
       return _processLocalPatterns(text);
     }
@@ -623,10 +624,10 @@ class RideIntentProcessor {
       _processingTimes.clear();
       _isIsolateInitialized = false;
       
-      debugPrint('✅ [ISOLATE_NLP] Resources disposed successfully');
+      Logger.info('Resources disposed successfully', tag: 'ISOLATE_NLP');
       
     } catch (e) {
-      debugPrint('❌ [ISOLATE_NLP] Error disposing resources: $e');
+      Logger.error('Error disposing resources: $e', tag: 'ISOLATE_NLP', error: e);
     }
   }
 }

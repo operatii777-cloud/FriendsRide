@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/services/debug_console_monitor.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Interceptor pentru consola de debug
 class DebugConsoleInterceptor {
@@ -51,10 +52,10 @@ class DebugConsoleInterceptor {
       _flushTimer = Timer.periodic(const Duration(seconds: 5), (_) => _flushBuffer());
       
       _isInitialized = true;
-      debugPrint('✅ [DEBUG_INTERCEPTOR] Initialized. Log file: ${_logFile!.path}');
+      Logger.info('Initialized. Log file: ${_logFile!.path}', tag: 'DEBUG_INTERCEPTOR');
       
     } catch (e) {
-      debugPrint('❌ [DEBUG_INTERCEPTOR] Failed to initialize: $e');
+      Logger.error('Failed to initialize: $e', tag: 'DEBUG_INTERCEPTOR', error: e);
     }
   }
   
@@ -85,7 +86,7 @@ class DebugConsoleInterceptor {
       await _logFile!.writeAsString(content, mode: FileMode.append);
       _messageBuffer.clear();
     } catch (e) {
-      debugPrint('❌ [DEBUG_INTERCEPTOR] Failed to flush buffer: $e');
+      Logger.error('Failed to flush buffer: $e', tag: 'DEBUG_INTERCEPTOR', error: e);
     }
   }
   
@@ -106,7 +107,7 @@ class DebugConsoleInterceptor {
       }
       return content;
     } catch (e) {
-      debugPrint('❌ [DEBUG_INTERCEPTOR] Failed to read log: $e');
+      Logger.error('Failed to read log: $e', tag: 'DEBUG_INTERCEPTOR', error: e);
       return null;
     }
   }

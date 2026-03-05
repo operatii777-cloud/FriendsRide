@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/notification_model.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Service pentru gestionarea notificărilor delivery
 class DeliveryNotificationService {
@@ -54,7 +55,7 @@ class DeliveryNotificationService {
       }, SetOptions(merge: true));
     } catch (e) {
       // Log error but don't throw
-      debugPrint('Error saving FCM token: $e');
+      Logger.error('Error saving FCM token: $e', error: e);
     }
   }
 

@@ -21,8 +21,8 @@ import 'package:friendsride_app/widgets/ride_sharing_option_widget.dart';
 import 'package:friendsride_app/widgets/category_card.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:intl/intl.dart';
-// import 'package:friendsride_app/services/eta_service.dart'; // Eliminat
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class RideRequestScreen extends StatefulWidget {
   final geolocator.Position startPosition;
@@ -148,7 +148,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     if (_startPoint == null || _endPoint == null) return;
 
     setState(() => _isLoading = true);
-    debugPrint("--- Starting route and ETA calculation ---");
+    Logger.debug("--- Starting route and ETA calculation ---");
 
     try {
       final List<Point> waypoints = [_startPoint!, _endPoint!];
@@ -177,13 +177,13 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
 
       _listenForDriverUpdates();
 
-      debugPrint("--- Route and ETA calculation successful ---");
+      Logger.debug("--- Route and ETA calculation successful ---");
     } on TimeoutException {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Operation timed out. Please check your connection.'), backgroundColor: Colors.red));
         }
     } catch (e) {
-      debugPrint("Error in _calculateRouteAndEta: ${e.toString()}");
+      Logger.error("Error in _calculateRouteAndEta: ${e.toString()}");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error calculating route: ${e.toString().replaceAll("Exception: ", "")}'), backgroundColor: Colors.red));
       }
@@ -196,9 +196,9 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
 
   void _listenForDriverUpdates() {
     _driverLocationSubscription?.cancel();
-    debugPrint("--- [LIVE ETA] Pornit ascultătorul pentru locațiile șoferilor ---");
+    Logger.debug("Pornit ascultătorul pentru locațiile șoferilor ---", tag: 'LIVE ETA');
     _driverLocationSubscription = _firestoreService.getNearbyAvailableDrivers().listen((snapshot) {
-      debugPrint("--- [LIVE ETA] Detectat update la șoferi. Se recalculează ETA... ---");
+      Logger.debug("Detectat update la șoferi. Se recalculează ETA... ---", tag: 'LIVE ETA');
       if (mounted && _faresByCategory.isNotEmpty) {
          _calculateEtaForAllCategories();
       }
@@ -206,7 +206,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
   }
 
   void _stopListeningForDriverUpdates() {
-    debugPrint("--- [LIVE ETA] Oprit ascultătorul pentru locațiile șoferilor ---");
+    Logger.debug("Oprit ascultătorul pentru locațiile șoferilor ---", tag: 'LIVE ETA');
     _driverLocationSubscription?.cancel();
     _driverLocationSubscription = null;
     _etaClearTimer?.cancel();
@@ -236,10 +236,10 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       if (atLeastOneDriverFound) {
         setState(() => _etaByCategory = etaResults);
       } else {
-        debugPrint("--- [LIVE ETA] Niciun șofer găsit. Se va șterge ETA în 5 secunde dacă situația persistă.");
+        Logger.debug("Niciun șofer găsit. Se va șterge ETA în 5 secunde dacă situația persistă.", tag: 'LIVE ETA');
         _etaClearTimer = Timer(const Duration(seconds: 5), () {
           if (mounted) {
-            debugPrint("--- [LIVE ETA] Timer expirat. Se confirmă ștergerea ETA.");
+            Logger.debug("Timer expirat. Se confirmă ștergerea ETA.", tag: 'LIVE ETA');
             setState(() => _etaByCategory.clear());
           }
         });
@@ -453,9 +453,9 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
           destinationLongitude: newRide.destinationLongitude!,
           originalCost: fareDetails['totalCost'] ?? 0.0,
         );
-        debugPrint('✅ Ride sharing request created for ride $rideId');
+        Logger.info('Ride sharing request created for ride $rideId');
       } catch (e) {
-        debugPrint('⚠️ Error creating ride sharing request: $e');
+        Logger.error('Error creating ride sharing request: $e', error: e);
         // Continuă cu cererea normală chiar dacă ride sharing eșuează
       }
     }
@@ -714,7 +714,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     // ✅ Auto-start căutare șoferi după 2.5 secunde (comportament Uber/Bolt)
     _autoStartTimer = Timer(const Duration(milliseconds: 2500), () {
       if (mounted && _faresByCategory.isNotEmpty && _startPoint != null && _endPoint != null) {
-        debugPrint('🚗 [AUTO-START] Căutare șoferi declanșată automat pentru categoria: ${category.name}');
+        Logger.debug('Căutare șoferi declanșată automat pentru categoria: ${category.name}', tag: 'AUTO-START');
         setState(() {
           _isAutoStarting = true; // Afișează indicator
         });

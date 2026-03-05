@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 // MODIFICAT: Am adăugat 'family'
 enum RideCategory { standard, family, energy, best }
@@ -212,7 +213,7 @@ class Ride {
     
     // Debug pentru problemele cu driver_found
     if (status == 'driver_found' && driverId != null) {
-      debugPrint('🎯 [RIDE_MODEL] Driver found status detected - Driver ID: $driverId');
+      Logger.info('Driver found status detected - Driver ID: $driverId', tag: 'RIDE_MODEL');
     }
     
     return Ride(

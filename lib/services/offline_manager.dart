@@ -11,6 +11,7 @@ import 'package:friendsride_app/services/firestore_service.dart';
 // Mapbox offline prefetch (aliased to avoid name conflicts)
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 import 'package:friendsride_app/widgets/app_drawer.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🔄 OFFLINE CAPABILITIES: Advanced offline management system
 /// 
@@ -67,7 +68,7 @@ class OfflineManager {
     if (_isInitialized) return;
     
     try {
-      debugPrint('🔄 [OFFLINE_MANAGER] Initializing offline capabilities...');
+      Logger.debug('Initializing offline capabilities...', tag: 'OFFLINE_MANAGER');
       
       // Initialize local database
       await _initializeDatabase();
@@ -86,10 +87,10 @@ class OfflineManager {
       
       _isInitialized = true;
       
-      debugPrint('✅ [OFFLINE_MANAGER] Offline capabilities initialized successfully');
+      Logger.info('Offline capabilities initialized successfully', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to initialize: $e');
+      Logger.error('Failed to initialize: $e', tag: 'OFFLINE_MANAGER', error: e);
       rethrow;
     }
 
@@ -97,7 +98,7 @@ class OfflineManager {
     if (!emergencyPerformanceMode) {
       _schedulePrefetchIfEligible();
     } else {
-      debugPrint('🚫 [OFFLINE_MANAGER] Prefetch disabled (emergency performance mode)');
+      Logger.debug('Prefetch disabled (emergency performance mode)', tag: 'OFFLINE_MANAGER');
     }
   }
 
@@ -105,12 +106,12 @@ class OfflineManager {
   /// Rulează non-blocant și idempotent (nu repornește dacă deja a rulat)
   Future<void> prefetchBucharestIlfov() async {
     if (emergencyPerformanceMode) {
-      debugPrint('🚫 [OFFLINE_MANAGER] Style pack and tile region prefetch disabled');
+      Logger.debug('Style pack and tile region prefetch disabled', tag: 'OFFLINE_MANAGER');
       return;
     }
     if (_mapTilesPrefetched) return;
     try {
-      debugPrint('🗺️ [OFFLINE_MANAGER] Prefetch Mapbox style pack & tile regions (Bucharest + Ilfov)');
+      Logger.debug('Prefetch Mapbox style pack & tile regions (Bucharest + Ilfov)', tag: 'OFFLINE_MANAGER');
 
       // 1) Style packs (LIGHT + DARK) pentru paritate offline și switch instant
       final offlineManager = await mapbox.OfflineManager.create();
@@ -122,7 +123,7 @@ class OfflineManager {
             final pct = p.requiredResourceCount == 0
                 ? 0
                 : ((p.completedResourceCount / p.requiredResourceCount) * 100).clamp(0, 100).toInt();
-            debugPrint('🎨 [STYLE $label] $pct% (${p.completedResourceCount}/${p.requiredResourceCount})');
+            Logger.debug('[STYLE $label] $pct% (${p.completedResourceCount}/${p.requiredResourceCount})');
           },
         );
       }
@@ -171,7 +172,7 @@ class OfflineManager {
         );
         final estSize = estimate.transferSize;
         if (estSize > 150 * 1024 * 1024) {
-          debugPrint('⏭️ [ESTIMATE] Center region too large (~${(estSize / (1024*1024)).toStringAsFixed(1)}MB), skipping');
+          Logger.debug('Center region too large (~${(estSize / (1024*1024)).toStringAsFixed(1)}MB), skipping', tag: 'ESTIMATE');
         } else {
           await tileStore.loadTileRegion(
             'bucharest_center',
@@ -186,13 +187,13 @@ class OfflineManager {
               final done = progress.completedResourceCount;
               if (req > 0) {
                 final pct = ((done / req) * 100).clamp(0, 100).toInt();
-                debugPrint('⬇️ [TILES center] $pct% ($done/$req)');
+                Logger.info('⬇ [TILES center] $pct% ($done/$req)');
               }
             },
           );
         }
       } catch (e) {
-        debugPrint('⚠️ [ESTIMATE] Center region estimate/load failed: $e');
+        Logger.error('Center region estimate/load failed: $e', tag: 'ESTIMATE', error: e);
       }
 
       // Regiunea 2: Ilfov (bounding box mai larg)
@@ -218,7 +219,7 @@ class OfflineManager {
         );
         final estSizeIlfov = estimateIlfov.transferSize;
         if (estSizeIlfov > 300 * 1024 * 1024) {
-          debugPrint('⏭️ [ESTIMATE] Ilfov region too large (~${(estSizeIlfov / (1024*1024)).toStringAsFixed(1)}MB), skipping');
+          Logger.debug('Ilfov region too large (~${(estSizeIlfov / (1024*1024)).toStringAsFixed(1)}MB), skipping', tag: 'ESTIMATE');
         } else {
           await tileStore.loadTileRegion(
             'ilfov_region',
@@ -233,19 +234,19 @@ class OfflineManager {
               final done = progress.completedResourceCount;
               if (req > 0) {
                 final pct = ((done / req) * 100).clamp(0, 100).toInt();
-                debugPrint('⬇️ [TILES ilfov] $pct% ($done/$req)');
+                Logger.info('⬇ [TILES ilfov] $pct% ($done/$req)');
               }
             },
           );
         }
       } catch (e) {
-        debugPrint('⚠️ [ESTIMATE] Ilfov region estimate/load failed: $e');
+        Logger.error('Ilfov region estimate/load failed: $e', tag: 'ESTIMATE', error: e);
       }
 
       _mapTilesPrefetched = true;
-      debugPrint('✅ [OFFLINE_MANAGER] Map tiles prefetch completed');
+      Logger.info('Map tiles prefetch completed', tag: 'OFFLINE_MANAGER');
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Prefetch error: $e');
+      Logger.error('Prefetch error: $e', tag: 'OFFLINE_MANAGER', error: e);
       rethrow;
     }
   }
@@ -281,13 +282,13 @@ class OfflineManager {
     String? regionId,
   }) async {
     if (emergencyPerformanceMode) {
-      debugPrint('🚫 [OFFLINE_MANAGER] Corridor prefetch disabled');
+      Logger.debug('Corridor prefetch disabled', tag: 'OFFLINE_MANAGER');
       return;
     }
     try {
       // Honor Low Data Mode
       if (AppDrawer.lowDataMode) {
-        debugPrint('⏭️ [OFFLINE_MANAGER] Skip corridor prefetch (Low Data Mode)');
+        Logger.warning('Skip corridor prefetch (Low Data Mode)', tag: 'OFFLINE_MANAGER');
         return;
       }
 
@@ -306,7 +307,7 @@ class OfflineManager {
       final id = regionId ??
           'route_corridor_${minLat.toStringAsFixed(3)}_${minLng.toStringAsFixed(3)}_${maxLat.toStringAsFixed(3)}_${maxLng.toStringAsFixed(3)}_${DateTime.now().millisecondsSinceEpoch}';
 
-      debugPrint('🚚 [OFFLINE_MANAGER] Prefetch route corridor: $id');
+      Logger.debug('Prefetch route corridor: $id', tag: 'OFFLINE_MANAGER');
       await tileStore.loadTileRegion(
         id,
         mapbox.TileRegionLoadOptions(
@@ -321,12 +322,12 @@ class OfflineManager {
           final done = progress.completedResourceCount;
           if (req > 0) {
             final pct = ((done / req) * 100).clamp(0, 100).toInt();
-            debugPrint('⬇️ [TILES corridor] $pct% ($done/$req)');
+            Logger.info('⬇ [TILES corridor] $pct% ($done/$req)');
           }
         },
       );
     } catch (e) {
-      debugPrint('⚠️ [OFFLINE_MANAGER] Corridor prefetch failed: $e');
+      Logger.error('Corridor prefetch failed: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
 
@@ -339,7 +340,7 @@ class OfflineManager {
     int maxZoom = 16,
   }) async {
     if (emergencyPerformanceMode) {
-      debugPrint('🚫 [OFFLINE_MANAGER] Corridor prefetch (points) disabled');
+      Logger.debug('Corridor prefetch (points) disabled', tag: 'OFFLINE_MANAGER');
       return;
     }
     if (points.isEmpty) return;
@@ -367,7 +368,7 @@ class OfflineManager {
         maxZoom: maxZoom,
       );
     } catch (e) {
-      debugPrint('⚠️ [OFFLINE_MANAGER] prefetchRouteCorridorForPoints failed: $e');
+      Logger.error('prefetchRouteCorridorForPoints failed: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -384,10 +385,10 @@ class OfflineManager {
         onUpgrade: _upgradeDatabase,
       );
       
-      debugPrint('✅ [OFFLINE_MANAGER] Local database initialized');
+      Logger.info('Local database initialized', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Database initialization failed: $e');
+      Logger.error('Database initialization failed: $e', tag: 'OFFLINE_MANAGER', error: e);
       rethrow;
     }
   }
@@ -441,7 +442,7 @@ class OfflineManager {
       )
     ''');
     
-    debugPrint('✅ [OFFLINE_MANAGER] Database schema created');
+    Logger.info('Database schema created', tag: 'OFFLINE_MANAGER');
   }
   
   /// 🔄 OFFLINE CAPABILITIES: Upgrade database schema
@@ -461,7 +462,7 @@ class OfflineManager {
       ''');
     }
     
-    debugPrint('✅ [OFFLINE_MANAGER] Database upgraded from $oldVersion to $newVersion');
+    Logger.info('Database upgraded from $oldVersion to $newVersion', tag: 'OFFLINE_MANAGER');
   }
   
   /// 🔄 OFFLINE CAPABILITIES: Setup connectivity monitoring
@@ -477,14 +478,14 @@ class OfflineManager {
           _handleConnectivityChange(results);
         },
         onError: (error) {
-          debugPrint('❌ [OFFLINE_MANAGER] Connectivity monitoring error: $error');
+          Logger.error('Connectivity monitoring error: $error', tag: 'OFFLINE_MANAGER', error: error);
         },
       );
       
-      debugPrint('🌐 [OFFLINE_MANAGER] Connectivity monitoring active: $_isOnline');
+      Logger.debug('Connectivity monitoring active: $_isOnline', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to setup connectivity monitoring: $e');
+      Logger.error('Failed to setup connectivity monitoring: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -493,11 +494,11 @@ class OfflineManager {
     final wasOnline = _isOnline;
     _isOnline = results.isNotEmpty && results.first != ConnectivityResult.none;
     
-    debugPrint('🌐 [OFFLINE_MANAGER] Connectivity changed: $wasOnline -> $_isOnline');
+    Logger.debug('Connectivity changed: $wasOnline -> $_isOnline', tag: 'OFFLINE_MANAGER');
     
     if (!wasOnline && _isOnline) {
       // Came back online - start sync
-      debugPrint('🔄 [OFFLINE_MANAGER] Back online - starting sync...');
+      Logger.debug('Back online - starting sync...', tag: 'OFFLINE_MANAGER');
       _triggerSync();
       _schedulePrefetchIfEligible();
     }
@@ -510,13 +511,13 @@ class OfflineManager {
     if (emergencyPerformanceMode) return;
     if (_mapTilesPrefetched || _prefetchScheduled) return;
     if (AppDrawer.lowDataMode) {
-      debugPrint('⏭️ [OFFLINE_MANAGER] Skip prefetch (Low Data Mode)');
+      Logger.warning('Skip prefetch (Low Data Mode)', tag: 'OFFLINE_MANAGER');
       return;
     }
     final results = await _connectivity.checkConnectivity();
     final onWifi = results.isNotEmpty && results.first == ConnectivityResult.wifi;
     if (!onWifi) {
-      debugPrint('⏳ [OFFLINE_MANAGER] Waiting for Wi‑Fi to prefetch tiles');
+      Logger.debug('Waiting for Wi‑Fi to prefetch tiles', tag: 'OFFLINE_MANAGER');
       return;
     }
     _prefetchScheduled = true;
@@ -541,10 +542,10 @@ class OfflineManager {
           }
         }
       } catch (e) {
-        debugPrint('❌ [OFFLINE_MANAGER] Prefetch schedule error: $e');
+        Logger.error('Prefetch schedule error: $e', tag: 'OFFLINE_MANAGER', error: e);
       }
     });
-    debugPrint('🗓️ [OFFLINE_MANAGER] Prefetch scheduled in 45s (Wi‑Fi)');
+    Logger.debug('Prefetch scheduled in 45s (Wi‑Fi)', tag: 'OFFLINE_MANAGER');
   }
 
   /// 🔄 OFFLINE CAPABILITIES: Start periodic sync
@@ -565,7 +566,7 @@ class OfflineManager {
       _isSyncing = true;
       onSyncStatusChanged?.call(SyncStatus.syncing);
       
-      debugPrint('🔄 [OFFLINE_MANAGER] Starting synchronization...');
+      Logger.debug('Starting synchronization...', tag: 'OFFLINE_MANAGER');
       
       // Sync pending operations
       await _syncPendingOperations();
@@ -577,10 +578,10 @@ class OfflineManager {
       await _cleanupExpiredCache();
       
       onSyncStatusChanged?.call(SyncStatus.completed);
-      debugPrint('✅ [OFFLINE_MANAGER] Synchronization completed');
+      Logger.info('Synchronization completed', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Synchronization failed: $e');
+      Logger.error('Synchronization failed: $e', tag: 'OFFLINE_MANAGER', error: e);
       onSyncStatusChanged?.call(SyncStatus.failed);
       _scheduleRetrySync();
     } finally {
@@ -598,14 +599,14 @@ class OfflineManager {
         _pendingOperations.remove(operation);
         await _removePendingOperationFromDB(operation.id);
         
-        debugPrint('✅ [OFFLINE_MANAGER] Synced operation: ${operation.type}');
+        Logger.info('Synced operation: ${operation.type}', tag: 'OFFLINE_MANAGER');
         
       } catch (e) {
-        debugPrint('❌ [OFFLINE_MANAGER] Failed to sync operation ${operation.id}: $e');
+        Logger.error('Failed to sync operation ${operation.id}: $e', tag: 'OFFLINE_MANAGER', error: e);
         
         operation.retries++;
         if (operation.retries >= _maxRetries) {
-          debugPrint('🚨 [OFFLINE_MANAGER] Max retries exceeded for operation ${operation.id}');
+          Logger.error('Max retries exceeded for operation ${operation.id}', tag: 'OFFLINE_MANAGER');
           _pendingOperations.remove(operation);
           await _removePendingOperationFromDB(operation.id);
         } else {
@@ -640,7 +641,7 @@ class OfflineManager {
         break;
         
       default:
-        debugPrint('⚠️ [OFFLINE_MANAGER] Unknown operation type: ${operation.type}');
+        Logger.warning('Unknown operation type: ${operation.type}', tag: 'OFFLINE_MANAGER');
     }
   }
   
@@ -648,7 +649,7 @@ class OfflineManager {
   Future<void> _syncCachedData() async {
     // This would sync cached rides, preferences, etc.
     // Implementation depends on specific sync requirements
-    debugPrint('🔄 [OFFLINE_MANAGER] Syncing cached data...');
+    Logger.debug('Syncing cached data...', tag: 'OFFLINE_MANAGER');
   }
   
   /// 🔄 OFFLINE CAPABILITIES: Schedule retry sync
@@ -678,7 +679,7 @@ class OfflineManager {
       _pendingOperations.add(operation);
       await _savePendingOperationToDB(operation);
       
-      debugPrint('📝 [OFFLINE_MANAGER] Added pending operation: $type');
+      Logger.debug('Added pending operation: $type', tag: 'OFFLINE_MANAGER');
       
       // Try immediate sync if online
       if (_isOnline && !_isSyncing) {
@@ -686,7 +687,7 @@ class OfflineManager {
       }
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to add pending operation: $e');
+      Logger.error('Failed to add pending operation: $e', tag: 'OFFLINE_MANAGER', error: e);
       rethrow;
     }
   }
@@ -708,10 +709,10 @@ class OfflineManager {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       
-      debugPrint('💾 [OFFLINE_MANAGER] Cached ride: ${ride.id}');
+      Logger.debug('Cached ride: ${ride.id}', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to cache ride: $e');
+      Logger.error('Failed to cache ride: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -741,7 +742,7 @@ class OfflineManager {
       }).toList();
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to get cached rides: $e');
+      Logger.error('Failed to get cached rides: $e', tag: 'OFFLINE_MANAGER', error: e);
       return [];
     }
   }
@@ -773,10 +774,10 @@ class OfflineManager {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       
-      debugPrint('🗺️ [OFFLINE_MANAGER] Cached route: $routeId');
+      Logger.debug('Cached route: $routeId', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to cache route: $e');
+      Logger.error('Failed to cache route: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -811,14 +812,14 @@ class OfflineManager {
       
       if (result.isNotEmpty) {
         final routeData = jsonDecode(result.first['route_data'] as String);
-        debugPrint('🗺️ [OFFLINE_MANAGER] Found cached route');
+        Logger.debug('Found cached route', tag: 'OFFLINE_MANAGER');
         return routeData;
       }
       
       return null;
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to get cached route: $e');
+      Logger.error('Failed to get cached route: $e', tag: 'OFFLINE_MANAGER', error: e);
       return null;
     }
   }
@@ -838,10 +839,10 @@ class OfflineManager {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       
-      debugPrint('💾 [OFFLINE_MANAGER] Saved preference: $key');
+      Logger.debug('Saved preference: $key', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to save preference: $e');
+      Logger.error('Failed to save preference: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -865,7 +866,7 @@ class OfflineManager {
       return null;
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to get preference: $e');
+      Logger.error('Failed to get preference: $e', tag: 'OFFLINE_MANAGER', error: e);
       return null;
     }
   }
@@ -889,19 +890,19 @@ class OfflineManager {
         _pendingOperations.add(operation);
       }
       
-      debugPrint('📝 [OFFLINE_MANAGER] Loaded ${_pendingOperations.length} pending operations');
+      Logger.info('Loaded ${_pendingOperations.length} pending operations', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to load pending operations: $e');
+      Logger.error('Failed to load pending operations: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
   Future<void> _loadCachedData() async {
     try {
       // Load cached data into memory if needed
-      debugPrint('💾 [OFFLINE_MANAGER] Cached data loaded');
+      Logger.info('Cached data loaded', tag: 'OFFLINE_MANAGER');
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to load cached data: $e');
+      Logger.error('Failed to load cached data: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -970,10 +971,10 @@ class OfflineManager {
         );
       }
       
-      debugPrint('🧹 [OFFLINE_MANAGER] Cleaned up expired cache');
+      Logger.debug('Cleaned up expired cache', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to cleanup cache: $e');
+      Logger.error('Failed to cleanup cache: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
 
     // 🧹 Curățare tile regions vechi (TTL 14 zile)
@@ -987,13 +988,13 @@ class OfflineManager {
         if (expires != null) {
           final ageDays = (nowMs - expires) / (1000 * 60 * 60 * 24);
           if (ageDays > ttlDays) {
-            debugPrint('🧹 [OFFLINE_MANAGER] Removing expired tile region: ${region.id}');
+            Logger.debug('Removing expired tile region: ${region.id}', tag: 'OFFLINE_MANAGER');
             await tileStore.removeRegion(region.id);
           }
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [OFFLINE_MANAGER] Failed to cleanup tile regions: $e');
+      Logger.error('Failed to cleanup tile regions: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
 
     // 🧹 Curățare search cache (TTL 20 min)
@@ -1006,11 +1007,11 @@ class OfflineManager {
           whereArgs: [cutoff],
         );
         if (removed > 0) {
-          debugPrint('🧹 [OFFLINE_MANAGER] Removed $removed expired search cache cells');
+          Logger.debug('Removed $removed expired search cache cells', tag: 'OFFLINE_MANAGER');
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [OFFLINE_MANAGER] Failed to cleanup search cache cells: $e');
+      Logger.error('Failed to cleanup search cache cells: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
 
@@ -1033,7 +1034,7 @@ class OfflineManager {
       );
       await _trimSearchCache(maxEntries: maxEntries);
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to save search cache cell: $e');
+      Logger.error('Failed to save search cache cell: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
 
@@ -1053,7 +1054,7 @@ class OfflineManager {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to get search cache cell: $e');
+      Logger.error('Failed to get search cache cell: $e', tag: 'OFFLINE_MANAGER', error: e);
       return null;
     }
   }
@@ -1071,7 +1072,7 @@ class OfflineManager {
         );
       }
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to trim search cache: $e');
+      Logger.error('Failed to trim search cache: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -1115,10 +1116,10 @@ class OfflineManager {
       await _database!.delete('cached_routes');
       await _database!.delete('user_preferences');
       
-      debugPrint('🧹 [OFFLINE_MANAGER] All cache cleared');
+      Logger.debug('All cache cleared', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Failed to clear cache: $e');
+      Logger.error('Failed to clear cache: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
   
@@ -1137,10 +1138,10 @@ class OfflineManager {
       
       _isInitialized = false;
       
-      debugPrint('✅ [OFFLINE_MANAGER] Resources disposed successfully');
+      Logger.info('Resources disposed successfully', tag: 'OFFLINE_MANAGER');
       
     } catch (e) {
-      debugPrint('❌ [OFFLINE_MANAGER] Error disposing resources: $e');
+      Logger.error('Error disposing resources: $e', tag: 'OFFLINE_MANAGER', error: e);
     }
   }
 }

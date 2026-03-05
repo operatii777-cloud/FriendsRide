@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:friendsride_app/services/real_time_tracking_service.dart';
 import 'package:friendsride_app/utils/coordinate_helpers.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🧠 AI Location Service cu Machine Learning Integration
 /// 
@@ -44,7 +45,7 @@ class AILocationService {
     final stopwatch = Stopwatch()..start();
     
     try {
-      debugPrint('🧠 Generating AI prediction for ride: $rideId');
+      Logger.debug('Generating AI prediction for ride: $rideId');
       
       // Get historical data for similar routes
       final historicalData = await _getHistoricalData(
@@ -71,12 +72,12 @@ class AILocationService {
         await _storePredictionForLearning(prediction, rideId);
       }
       
-      debugPrint('✅ AI prediction generated: ${prediction.estimatedTime.inMinutes}m, confidence: ${(prediction.confidence * 100).toStringAsFixed(1)}%');
+      Logger.info('AI prediction generated: ${prediction.estimatedTime.inMinutes}m, confidence: ${(prediction.confidence * 100).toStringAsFixed(1)}%');
       
       return prediction;
       
     } catch (e) {
-      debugPrint('❌ Error generating AI prediction: $e');
+      Logger.error('Error generating AI prediction: $e', error: e);
       
       // Fallback to basic prediction
       return _generateBasicPrediction(
@@ -129,7 +130,7 @@ class AILocationService {
       return historicalData;
       
     } catch (e) {
-      debugPrint('❌ Error getting historical data: $e');
+      Logger.error('Error getting historical data: $e', error: e);
       return [];
     }
   }
@@ -192,7 +193,7 @@ class AILocationService {
       );
       
     } catch (e) {
-      debugPrint('❌ Error in AI prediction: $e');
+      Logger.error('Error in AI prediction: $e', error: e);
       return _generateBasicPrediction(
         currentLocation: currentLocation,
         destination: destination,
@@ -302,7 +303,7 @@ class AILocationService {
       );
       
     } catch (e) {
-      debugPrint('❌ Error applying AI enhancements: $e');
+      Logger.error('Error applying AI enhancements: $e', error: e);
       
       // Return base prediction if enhancements fail
       return EnhancedPrediction(
@@ -345,7 +346,7 @@ class AILocationService {
       return optimalRoute;
       
     } catch (e) {
-      debugPrint('❌ Error generating optimal route: $e');
+      Logger.error('Error generating optimal route: $e', error: e);
       
       // Fallback to direct route
       return [currentLocation, destination];
@@ -358,12 +359,12 @@ class AILocationService {
       // Implementare reală cu API-uri de trafic
       final trafficFactor = await _getRealTimeTrafficData(start, end);
       if (trafficFactor != null) {
-        debugPrint('✅ Real-time traffic data received: $trafficFactor');
+        Logger.info('Real-time traffic data received: $trafficFactor');
         return trafficFactor;
       }
       
       // Fallback la date estimate bazate pe ora zilei
-      debugPrint('⚠️ Using fallback traffic data based on time of day');
+      Logger.warning('Using fallback traffic data based on time of day');
       final hour = DateTime.now().hour;
       
       if (hour >= 7 && hour <= 9) return 1.3; // Morning rush
@@ -373,7 +374,7 @@ class AILocationService {
       return 1.0; // Normal traffic
       
     } catch (e) {
-      debugPrint('❌ Error getting traffic factor: $e');
+      Logger.error('Error getting traffic factor: $e', error: e);
       return 1.0; // Default to normal
     }
   }
@@ -401,7 +402,7 @@ class AILocationService {
       return randomFactor;
       
     } catch (e) {
-      debugPrint('❌ Error getting real-time traffic data: $e');
+      Logger.error('Error getting real-time traffic data: $e', error: e);
       return null;
     }
   }
@@ -426,7 +427,7 @@ class AILocationService {
       }
       
     } catch (e) {
-      debugPrint('❌ Error getting weather factor: $e');
+      Logger.error('Error getting weather factor: $e', error: e);
       return 1.0; // Default to normal
     }
   }
@@ -459,7 +460,7 @@ class AILocationService {
       return avgTime / overallAvgTime;
       
     } catch (e) {
-      debugPrint('❌ Error calculating time pattern factor: $e');
+      Logger.error('Error calculating time pattern factor: $e', error: e);
       return 1.0;
     }
   }
@@ -486,7 +487,7 @@ class AILocationService {
       return avgTime / overallAvgTime;
       
     } catch (e) {
-      debugPrint('❌ Error calculating user behavior factor: $e');
+      Logger.error('Error calculating user behavior factor: $e', error: e);
       return 1.0;
     }
   }
@@ -568,7 +569,7 @@ class AILocationService {
       patterns.sort((a, b) => (a.distance / a.time.inSeconds).compareTo(b.distance / b.time.inSeconds));
       
     } catch (e) {
-      debugPrint('❌ Error analyzing route patterns: $e');
+      Logger.error('Error analyzing route patterns: $e', error: e);
     }
     
     return patterns;
@@ -600,7 +601,7 @@ class AILocationService {
       return adaptedRoute;
       
     } catch (e) {
-      debugPrint('❌ Error generating route from patterns: $e');
+      Logger.error('Error generating route from patterns: $e', error: e);
       return [currentLocation, destination];
     }
   }
@@ -627,7 +628,7 @@ class AILocationService {
       return _optimizeRouteOrder(route);
       
     } catch (e) {
-      debugPrint('❌ Error adapting pattern: $e');
+      Logger.error('Error adapting pattern: $e', error: e);
       return [start, end];
     }
   }
@@ -652,7 +653,7 @@ class AILocationService {
       return optimized;
       
     } catch (e) {
-      debugPrint('❌ Error optimizing route order: $e');
+      Logger.error('Error optimizing route order: $e', error: e);
       return route;
     }
   }
@@ -815,7 +816,7 @@ class AILocationService {
       });
       
     } catch (e) {
-      debugPrint('❌ Error storing prediction for learning: $e');
+      Logger.error('Error storing prediction for learning: $e', error: e);
     }
   }
   

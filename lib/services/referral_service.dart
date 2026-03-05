@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/referral_model.dart';
 import 'package:uuid/uuid.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Serviciu pentru sistemul de referral (invită prieteni) - Uber-like
 class ReferralService {
@@ -23,7 +24,7 @@ class ReferralService {
       }, SetOptions(merge: true));
       return code;
     } catch (e) {
-      debugPrint('⚠️ [REFERRAL] Error creating referral code: $e');
+      Logger.error('Error creating referral code: $e', tag: 'REFERRAL', error: e);
       return null;
     }
   }
@@ -37,7 +38,7 @@ class ReferralService {
       }
       return await createReferralCode(userId);
     } catch (e) {
-      debugPrint('⚠️ [REFERRAL] Error getting referral code: $e');
+      Logger.error('Error getting referral code: $e', tag: 'REFERRAL', error: e);
       return null;
     }
   }
@@ -53,7 +54,7 @@ class ReferralService {
           .get();
 
       if (codeDoc.docs.isEmpty) {
-        debugPrint('⚠️ [REFERRAL] Code not found: $code');
+        Logger.warning('Code not found: $code', tag: 'REFERRAL');
         return false;
       }
 
@@ -61,7 +62,7 @@ class ReferralService {
 
       // Evită auto-referral
       if (referrerId == newUserId) {
-        debugPrint('⚠️ [REFERRAL] Self-referral attempt: $newUserId');
+        Logger.warning('Self-referral attempt: $newUserId', tag: 'REFERRAL');
         return false;
       }
 
@@ -73,8 +74,7 @@ class ReferralService {
           .get();
 
       if (existingReferral.docs.isNotEmpty) {
-        debugPrint(
-            '⚠️ [REFERRAL] User already used a referral code: $newUserId');
+        Logger.warning('User already used a referral code: $newUserId', tag: 'REFERRAL');
         return false;
       }
 
@@ -98,11 +98,10 @@ class ReferralService {
             referral.toMap()..['referredUserId'] = newUserId,
           );
 
-      debugPrint(
-          '✅ [REFERRAL] Referral processed: $referralId (referrer: $referrerId, referred: $newUserId)');
+      Logger.info('Referral processed: $referralId (referrer: $referrerId, referred: $newUserId)', tag: 'REFERRAL');
       return true;
     } catch (e) {
-      debugPrint('⚠️ [REFERRAL] Error processing referral code: $e');
+      Logger.error('Error processing referral code: $e', tag: 'REFERRAL', error: e);
       return false;
     }
   }
@@ -120,7 +119,7 @@ class ReferralService {
           .map((doc) => Referral.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      debugPrint('⚠️ [REFERRAL] Error getting referrals: $e');
+      Logger.error('Error getting referrals: $e', tag: 'REFERRAL', error: e);
       return [];
     }
   }
@@ -150,10 +149,10 @@ class ReferralService {
       }
 
       await _db.collection('referrals').doc(referralId).update(updates);
-      debugPrint('✅ [REFERRAL] Reward claimed: $referralId by $userId');
+      Logger.info('Reward claimed: $referralId by $userId', tag: 'REFERRAL');
       return true;
     } catch (e) {
-      debugPrint('⚠️ [REFERRAL] Error claiming reward: $e');
+      Logger.error('Error claiming reward: $e', tag: 'REFERRAL', error: e);
       return false;
     }
   }
@@ -195,7 +194,7 @@ class ReferralService {
         referralCode: referralCode,
       );
     } catch (e) {
-      debugPrint('⚠️ [REFERRAL] Error getting referral stats: $e');
+      Logger.error('Error getting referral stats: $e', tag: 'REFERRAL', error: e);
       return null;
     }
   }

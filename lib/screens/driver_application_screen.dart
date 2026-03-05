@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:friendsride_app/models/driver_document_model.dart';
 import 'package:friendsride_app/services/driver_application_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class DriverApplicationScreen extends StatefulWidget {
   const DriverApplicationScreen({super.key});
@@ -67,7 +68,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading application: $e');
+      Logger.error('Error loading application: $e', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -169,7 +170,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       }
 
     } catch (e) {
-      debugPrint('Error uploading document: $e');
+      Logger.error('Error uploading document: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

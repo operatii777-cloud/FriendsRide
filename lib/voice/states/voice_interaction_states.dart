@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🚗 Stările pentru flow-ul cursei
 enum RideFlowState {
@@ -253,7 +254,7 @@ class VoiceConversationManager {
   
   /// 🎯 Gestionează timeout-ul pentru confirmare
   void _handleConfirmationTimeout() {
-    debugPrint('⏰ [CONVERSATION] Confirmation timeout - resetting to idle');
+    Logger.warning('Confirmation timeout - resetting to idle', tag: 'CONVERSATION');
     _updateState(VoiceConversationState.idle);
     _onConfirmationReceived?.call(false);
   }
@@ -268,7 +269,7 @@ class VoiceConversationManager {
   /// 🎯 Actualizează starea
   void _updateState(VoiceConversationState newState) {
     _currentState = newState;
-    debugPrint('🔄 [CONVERSATION] State changed to: $newState');
+    Logger.debug('State changed to: $newState', tag: 'CONVERSATION');
     _onStateChange?.call(newState);
   }
   

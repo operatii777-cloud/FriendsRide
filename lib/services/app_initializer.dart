@@ -16,6 +16,7 @@ import 'package:friendsride_app/services/startup_timer.dart';
 import 'package:friendsride_app/delivery/services/restaurant_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
+import 'package:friendsride_app/utils/logger.dart';
 
 enum AppStatus { initializing, ready, error }
 
@@ -43,7 +44,7 @@ class AppInitializer with ChangeNotifier {
           Environment.printConfigurationStatus();
         }
       } catch (e) {
-        debugPrint('❗ ENV validation error (non-fatal): $e');
+        Logger.error('ENV validation error (non-fatal): $e', error: e);
       }
 
       // Ensure Firebase is initialized FIRST
@@ -53,7 +54,7 @@ class AppInitializer with ChangeNotifier {
       }
 
       // Run critical initializations first (fast operations only)
-      await FirebaseService().initialize().then((_) => StartupTimer.instance.mark('firebase.service')).catchError((e) => debugPrint('❌ FirebaseService init: $e'));
+      await FirebaseService().initialize().then((_) => StartupTimer.instance.mark('firebase.service')).catchError((e) => Logger.error('FirebaseService init: $e', error: e));
       
       // Mark as ready early to allow UI to show
       _status = AppStatus.ready;
@@ -64,10 +65,10 @@ class AppInitializer with ChangeNotifier {
 
       StartupTimer.instance.mark('initializer.ready');
       StartupTimer.instance.printSummary();
-      debugPrint('✅ Core services initialized successfully.');
+      Logger.info('Core services initialized successfully.');
     } catch (e) {
       _status = AppStatus.error;
-      debugPrint('🚨 CRITICAL: App initialization failed: $e');
+      Logger.error('CRITICAL: App initialization failed: $e', error: e);
     } finally {
       notifyListeners();
     }
@@ -78,7 +79,7 @@ class AppInitializer with ChangeNotifier {
     // Configurează webhookUrl pentru restaurante (dacă nu e configurat)
     unawaited(_configureRestaurantsWebhook());
     try {
-      debugPrint('🔄 Starting background services initialization...');
+      Logger.debug('Starting background services initialization...');
       
       // ✅ NOU: Pornește timer-ul automat pentru resetare curse blocate (pentru testare)
       // NOTĂ: Nu anulăm automat cursele la pornire - utilizatorul ar putea fi în mașină
@@ -86,24 +87,24 @@ class AppInitializer with ChangeNotifier {
       
       // Run independent initializations in parallel (non-fatal on errors)
       final List<Future<void>> tasks = <Future<void>>[
-        PushNotificationService().initialize().then((_) => StartupTimer.instance.mark('push.ready')).catchError((e) => debugPrint('❌ PushNotificationService init: $e')),
-        OfflineManager().initialize().then((_) => StartupTimer.instance.mark('offline.ready')).catchError((e) => debugPrint('❌ OfflineManager init: $e')),
-        AppMonitor().initialize().then((_) => StartupTimer.instance.mark('appmonitor.ready')).catchError((e) => debugPrint('❌ AppMonitor init: $e')),
-        if (!kIsWeb) MapboxConfig.initialize().then((_) => StartupTimer.instance.mark('mapbox.ready')).catchError((e) => debugPrint('❌ MapboxConfig init: $e')),
-        RideIntentProcessor.initializeIsolate().then((_) => StartupTimer.instance.mark('nlp.ready')).catchError((e) => debugPrint('❌ NLP Isolate init: $e')),
+        PushNotificationService().initialize().then((_) => StartupTimer.instance.mark('push.ready')).catchError((e) => Logger.error('PushNotificationService init: $e', error: e)),
+        OfflineManager().initialize().then((_) => StartupTimer.instance.mark('offline.ready')).catchError((e) => Logger.error('OfflineManager init: $e', error: e)),
+        AppMonitor().initialize().then((_) => StartupTimer.instance.mark('appmonitor.ready')).catchError((e) => Logger.error('AppMonitor init: $e', error: e)),
+        if (!kIsWeb) MapboxConfig.initialize().then((_) => StartupTimer.instance.mark('mapbox.ready')).catchError((e) => Logger.error('MapboxConfig init: $e', error: e)),
+        RideIntentProcessor.initializeIsolate().then((_) => StartupTimer.instance.mark('nlp.ready')).catchError((e) => Logger.error('NLP Isolate init: $e', error: e)),
       ];
 
       await Future.wait(tasks);
-      debugPrint('✅ Background services initialized successfully.');
+      Logger.info('Background services initialized successfully.');
     } catch (e) {
-      debugPrint('⚠️ Background services initialization error (non-fatal): $e');
+      Logger.error('Background services initialization error (non-fatal): $e', error: e);
     }
   }
 
   /// Configurează webhookUrl pentru toate restaurantele care nu au configurat
   Future<void> _configureRestaurantsWebhook() async {
     try {
-      debugPrint('🔧 Configurare webhookUrl pentru restaurante...');
+      Logger.debug('Configurare webhookUrl pentru restaurante...');
       
       final firestore = FirebaseFirestore.instance;
       final restaurantService = RestaurantService();
@@ -112,7 +113,7 @@ class AppInitializer with ChangeNotifier {
       final restaurantsSnapshot = await firestore.collection('restaurants').get();
       
       if (restaurantsSnapshot.docs.isEmpty) {
-        debugPrint('ℹ️ Nu există restaurante în Firestore');
+        Logger.info('Nu există restaurante în Firestore');
         return;
       }
       
@@ -139,19 +140,19 @@ class AppInitializer with ChangeNotifier {
             webhookUrl: webhookUrl,
           );
           configured++;
-          debugPrint('✅ Webhook URL configurat pentru restaurant $restaurantId');
+          Logger.info('Webhook URL configurat pentru restaurant $restaurantId');
         } catch (e) {
-          debugPrint('⚠️ Eroare la configurarea webhookUrl pentru $restaurantId: $e');
+          Logger.warning('Eroare la configurarea webhookUrl pentru $restaurantId: $e');
         }
       }
       
       if (configured > 0) {
-        debugPrint('✅ Webhook URL configurat pentru $configured restaurante (skip: $skipped)');
+        Logger.warning('Webhook URL configurat pentru $configured restaurante (skip: $skipped)');
       } else if (skipped > 0) {
-        debugPrint('ℹ️ Toate restaurantele au deja webhookUrl configurat ($skipped)');
+        Logger.warning('Toate restaurantele au deja webhookUrl configurat ($skipped)');
       }
     } catch (e) {
-      debugPrint('⚠️ Eroare la configurarea webhookUrl pentru restaurante (non-fatal): $e');
+      Logger.error('Eroare la configurarea webhookUrl pentru restaurante (non-fatal): $e', error: e);
     }
   }
 

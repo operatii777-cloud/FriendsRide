@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/ride_model.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Service for managing offline capabilities and data synchronization
 class OfflineService {
@@ -127,7 +128,7 @@ class OfflineService {
         }
       } catch (e) {
         failedOperations.add(operation);
-        debugPrint('Failed to execute offline operation: $e');
+        Logger.error('Failed to execute offline operation: $e', error: e);
       }
     }
 
@@ -186,7 +187,7 @@ class OfflineService {
         _syncOfflineOperations();
       }
       
-      debugPrint('Connectivity changed: ${results.map((r) => r.name).join(', ')} - Online: $_isOnline');
+      Logger.debug('Connectivity changed: ${results.map((r) => r.name).join(', ')} - Online: $_isOnline');
     });
   }
   
@@ -194,7 +195,7 @@ class OfflineService {
   Future<void> _syncOfflineOperations() async {
     if (!_isOnline || _offlineQueue.isEmpty) return;
     
-    debugPrint('Syncing ${_offlineQueue.length} offline operations...');
+    Logger.debug('Syncing ${_offlineQueue.length} offline operations...');
     
     final operationsToRemove = <OfflineOperation>[];
     
@@ -210,7 +211,7 @@ class OfflineService {
           operationsToRemove.add(operation);
         }
       } catch (e) {
-        debugPrint('Failed to sync operation ${operation.id}: $e');
+        Logger.error('Failed to sync operation ${operation.id}: $e', error: e);
         if (operation.retryCount < operation.maxRetries) {
           operation.retryCount++;
         } else {
@@ -227,7 +228,7 @@ class OfflineService {
     await _saveOfflineQueue();
     await _updateLastSync();
     
-    debugPrint('Sync completed. ${operationsToRemove.length} operations processed.');
+    Logger.info('Sync completed. ${operationsToRemove.length} operations processed.');
   }
 
   /// Load offline queue from storage
@@ -241,7 +242,7 @@ class OfflineService {
           _offlineQueue.add(OfflineOperation.fromJson(item));
         }
       } catch (e) {
-        debugPrint('Failed to load offline queue: $e');
+        Logger.error('Failed to load offline queue: $e', error: e);
         _offlineQueue.clear();
       }
     }
@@ -253,7 +254,7 @@ class OfflineService {
       final queueJson = jsonEncode(_offlineQueue.map((op) => op.toJson()).toList());
       await _prefs.setString(_offlineQueueKey, queueJson);
     } catch (e) {
-      debugPrint('Failed to save offline queue: $e');
+      Logger.error('Failed to save offline queue: $e', error: e);
     }
   }
 
@@ -266,7 +267,7 @@ class OfflineService {
         _offlineData.clear();
         _offlineData.addAll(data);
       } catch (e) {
-        debugPrint('Failed to load offline data: $e');
+        Logger.error('Failed to load offline data: $e', error: e);
         _offlineData.clear();
       }
     }
@@ -278,7 +279,7 @@ class OfflineService {
       final dataJson = jsonEncode(_offlineData);
       await _prefs.setString(_offlineDataKey, dataJson);
     } catch (e) {
-      debugPrint('Failed to save offline data: $e');
+      Logger.error('Failed to save offline data: $e', error: e);
     }
   }
 
@@ -297,11 +298,11 @@ class OfflineService {
         case OfflineOperationType.updateUser:
           return await _executeUpdateUser(operation);
         default:
-          debugPrint('Unknown operation type: ${operation.type}');
+          Logger.debug('Unknown operation type: ${operation.type}');
           return false;
       }
     } catch (e) {
-              debugPrint('Failed to execute operation: $e');
+              Logger.error('Failed to execute operation: $e', error: e);
       return false;
     }
   }
@@ -339,7 +340,7 @@ class OfflineService {
       await _saveOfflineData();
       return true;
     } catch (e) {
-      debugPrint('Failed to create ride offline: $e');
+      Logger.error('Failed to create ride offline: $e', error: e);
       return false;
     }
   }
@@ -363,7 +364,7 @@ class OfflineService {
       
       return false;
     } catch (e) {
-      debugPrint('Failed to update ride offline: $e');
+      Logger.error('Failed to update ride offline: $e', error: e);
       return false;
     }
   }
@@ -385,7 +386,7 @@ class OfflineService {
       
       return false;
     } catch (e) {
-      debugPrint('Failed to delete ride offline: $e');
+      Logger.error('Failed to delete ride offline: $e', error: e);
       return false;
     }
   }
@@ -406,7 +407,7 @@ class OfflineService {
       await _saveOfflineData();
       return true;
     } catch (e) {
-      debugPrint('Failed to create user offline: $e');
+      Logger.error('Failed to create user offline: $e', error: e);
       return false;
     }
   }
@@ -430,7 +431,7 @@ class OfflineService {
       
       return false;
     } catch (e) {
-      debugPrint('Failed to update user offline: $e');
+      Logger.error('Failed to update user offline: $e', error: e);
       return false;
     }
   }

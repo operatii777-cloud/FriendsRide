@@ -10,6 +10,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:friendsride_app/screens/active_ride_screen.dart';
 import 'package:friendsride_app/screens/chat_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 /// Ecran premium de preluare cursă pentru șoferi
@@ -131,7 +132,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error loading passenger profile: $e');
+      Logger.error('Error loading passenger profile: $e', error: e);
       setState(() => _isLoading = false);
     }
   }
@@ -175,7 +176,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
         }
       }
     } catch (e) {
-      debugPrint('Error updating location: $e');
+      Logger.error('Error updating location: $e', error: e);
     }
   }
 
@@ -197,7 +198,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error calculating ETA: $e');
+      Logger.error('Error calculating ETA: $e', error: e);
     }
   }
 
@@ -240,7 +241,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
         );
       }
     } catch (e) {
-      debugPrint('Error notifying arrival: $e');
+      Logger.error('Error notifying arrival: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -323,7 +324,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
         );
       }
     } catch (e) {
-      debugPrint('Error starting ride: $e');
+      Logger.error('Error starting ride: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -351,7 +352,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
           );
         }
       } catch (e) {
-        debugPrint('Error cancelling ride: $e');
+        Logger.error('Error cancelling ride: $e', error: e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

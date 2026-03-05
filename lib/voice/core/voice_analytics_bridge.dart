@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'voice_analytics.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class VoiceAnalyticsBridgeSnapshot {
   const VoiceAnalyticsBridgeSnapshot({
@@ -129,7 +130,7 @@ class VoiceAnalyticsBridge {
   }
 
   void _handleStreamError(Object error) {
-    debugPrint('⚠️ [VoiceAnalyticsBridge] Stream error: $error');
+    Logger.error('[VoiceAnalyticsBridge] Stream error: $error', error: error);
   }
 
   Map<String, dynamic> _sanitize(Map<String, dynamic> source) {

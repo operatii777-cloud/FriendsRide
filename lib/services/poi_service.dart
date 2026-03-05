@@ -8,6 +8,7 @@ import 'package:friendsride_app/utils/mapbox_config.dart';
 import 'package:friendsride_app/services/offline_manager.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:friendsride_app/utils/logger.dart';
 
 class PoiService {
   static final PoiService _instance = PoiService._internal();
@@ -21,7 +22,7 @@ class PoiService {
     try {
       return MapboxConfig.getAccessToken();
     } catch (e) {
-      debugPrint('❌ Mapbox configuration error in POI service: $e');
+      Logger.error('Mapbox configuration error in POI service: $e', error: e);
       throw Exception('Mapbox not configured. Call MapboxConfig.initialize() first.');
     }
   }
@@ -214,7 +215,7 @@ class PoiService {
     
     // Verifică cache-ul în memorie (rapid)
     if (_isCacheValid(cacheKey)) {
-      debugPrint('🗄️ Cache hit for ${category.displayName}');
+      Logger.debug('Cache hit for ${category.displayName}');
       return _cache[cacheKey] ?? [];
     }
 
@@ -223,7 +224,7 @@ class PoiService {
     if (_gridCache.containsKey(gridKey) && _gridCacheTimestamps.containsKey(gridKey)) {
       final ts = _gridCacheTimestamps[gridKey]!;
       if (DateTime.now().difference(ts) < _gridTtl) {
-        debugPrint('🗄️ Grid TTL cache hit for ${category.displayName} @ $cellLat,$cellLng');
+        Logger.debug('Grid TTL cache hit for ${category.displayName} @ $cellLat,$cellLng');
         return _gridCache[gridKey] ?? [];
       }
     }
@@ -239,19 +240,19 @@ class PoiService {
             .map(_poiFromDiskJson)
             .toList();
         _saveToGridCache(gridKey, pois);
-        debugPrint('💾 Disk cache hit for ${category.displayName} @ $cellLat,$cellLng');
+        Logger.debug('Disk cache hit for ${category.displayName} @ $cellLat,$cellLng');
         return pois;
       }
     } catch (e) {
-      debugPrint('⚠️ Disk cache read failed: $e');
+      Logger.error('Disk cache read failed: $e', error: e);
     }
 
-    debugPrint('🌍 Fetching ${category.displayName} from Mapbox API...');
+    Logger.debug('Fetching ${category.displayName} from Mapbox API...');
 
     // Dacă există o cerere în desfășurare, coalesce
     final inflight = _inflightFetches[cacheKey];
     if (inflight != null) {
-      debugPrint('⏳ Coalescing in-flight fetch for ${category.displayName}');
+      Logger.debug('⏳ Coalescing in-flight fetch for ${category.displayName}');
       return await inflight;
     }
 
@@ -290,13 +291,13 @@ class PoiService {
             maxEntries: _gridMaxEntries,
           );
         } catch (e) {
-          debugPrint('⚠️ Disk cache write failed: $e');
+          Logger.error('Disk cache write failed: $e', error: e);
         }
         
-        debugPrint('✅ Loaded ${pois.length} ${category.displayName}');
+        Logger.info('Loaded ${pois.length} ${category.displayName}');
         return pois;
       } else {
-        debugPrint('⚠️ Mapbox API error ${response.statusCode}: ${response.body}');
+        Logger.error('Mapbox API error ${response.statusCode}: ${response.body}');
         return <PointOfInterest>[];
       }
     })();
@@ -305,7 +306,7 @@ class PoiService {
     try {
       return await future;
     } catch (e) {
-      debugPrint('⚠️ Error fetching ${category.displayName}: $e');
+      Logger.error('Error fetching ${category.displayName}: $e', error: e);
       return [];
     } finally {
       _inflightFetches.remove(cacheKey);
@@ -463,7 +464,7 @@ class PoiService {
   void _clearCache() {
     _cache.clear();
     _cacheTimestamps.clear();
-    debugPrint('🗑️ POI cache cleared');
+    Logger.debug('POI cache cleared');
   }
 
   /// Cleanup la dispose
@@ -569,9 +570,9 @@ class PoiService {
       }
 
       _geojsonLoaded = true;
-      debugPrint('✅ Loaded local GeoJSON POIs: ${_localPois.length}');
+      Logger.info('Loaded local GeoJSON POIs: ${_localPois.length}');
     } catch (e) {
-      debugPrint('⚠️ Failed to load local GeoJSON ($assetPath): $e');
+      Logger.error('Failed to load local GeoJSON ($assetPath): $e', error: e);
     }
   }
 
@@ -648,9 +649,9 @@ class PoiService {
       }
 
       _gpxLoaded = true;
-      debugPrint('✅ Loaded local GPX POIs: ${_localPois.length}');
+      Logger.info('Loaded local GPX POIs: ${_localPois.length}');
     } catch (e) {
-      debugPrint('⚠️ Failed to load local GPX ($assetPath): $e');
+      Logger.error('Failed to load local GPX ($assetPath): $e', error: e);
     }
   }
 
@@ -748,9 +749,9 @@ class PoiService {
       }
 
       _kmlLoaded = true;
-      debugPrint('✅ Loaded local KML POIs: ${_localPois.length}');
+      Logger.info('Loaded local KML POIs: ${_localPois.length}');
     } catch (e) {
-      debugPrint('⚠️ Failed to load local KML ($assetPath): $e');
+      Logger.error('Failed to load local KML ($assetPath): $e', error: e);
     }
   }
 
@@ -1009,7 +1010,7 @@ Future<List<PointOfInterest>> _fetchSearchWithRetry(Uri uri) async {
         }
         return pois;
       } else {
-        debugPrint('Search API error ${response.statusCode}: ${response.body}');
+        Logger.error('Search API error ${response.statusCode}: ${response.body}');
         throw Exception('Search API error ${response.statusCode}');
       }
     } catch (e) {

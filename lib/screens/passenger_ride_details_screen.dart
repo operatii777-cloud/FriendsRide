@@ -11,6 +11,7 @@ import 'package:friendsride_app/screens/chat_screen.dart';
 import 'package:friendsride_app/screens/ride_receipt_screen.dart';
 import 'package:friendsride_app/screens/search_location_screen.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 /// Ecran premium de detalii cursă pentru pasageri
@@ -132,7 +133,7 @@ class _PassengerRideDetailsScreenState extends State<PassengerRideDetailsScreen>
         });
       }
     } catch (e) {
-      debugPrint('Error loading driver profile: $e');
+      Logger.error('Error loading driver profile: $e', error: e);
       setState(() => _isLoading = false);
     }
   }
@@ -377,7 +378,7 @@ class _PassengerRideDetailsScreenState extends State<PassengerRideDetailsScreen>
           );
         }
       } catch (e) {
-        debugPrint('Error cancelling ride: $e');
+        Logger.error('Error cancelling ride: $e', error: e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
