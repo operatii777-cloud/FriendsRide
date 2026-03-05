@@ -1,0 +1,61 @@
+# Flutter build artifacts
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dart/Flutter cache hex directories (prevents recurrence)
+[0-9a-f][0-9a-f]/
+[0-9a-f][0-9a-f][0-9a-f]/
+[0-9a-f][0-9a-f][0-9a-f][0-9a-f]/
+
+# Test scripts de lucru (nu cele din test/)
+test_*.dart
+*_test_manual.dart
+verify_*.dart
+verificare_*.dart
+continuous_monitoring.py
+monitor_*.ps1
+capture_*.ps1
+run_*.ps1
+run_*.sh
+test_*.ps1
+test_*.sh
+
+# Note de lucru AI (nu documentație)
+ANALIZA_*.md
+AUDIT_*.md
+IMPLEMENTARE_*.md
+REZUMAT_*.md
+RAPORT_*.md
+PLAN_*.md
+FLUX_*.md
+GHID_*.md
+STATUS_*.md
+IMBUNATATIRI_*.md
+FIXURI_*.md
+REMEDIERI_*.md
+REZULTATE_*.md
+PROGRES_*.md
+DIAGNOSTIC_*.md
+
+# Fișiere executabile
+*.exe
+nuget.exe
+
+# JSON de diagnostic
+diagnostic_report.json
+
+# Firebase options duplicate (cel din lib/ rămâne)
+/firebase_options.dart
+/main.dart
+/main_simple.dart
