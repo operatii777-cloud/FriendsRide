@@ -43,6 +43,8 @@ import 'package:friendsride_app/widgets/map/map_driver_waiting.dart';
 import 'package:friendsride_app/widgets/map/map_poi_card.dart';
 import 'package:friendsride_app/widgets/map/map_poi_category_chips.dart';
 import 'package:friendsride_app/widgets/map/map_driver_interface.dart';;
+import 'package:friendsride_app/widgets/map/map_ride_info_panel.dart';
+import 'package:friendsride_app/widgets/map/map_intermediate_stops.dart';
 
 
 
@@ -2537,7 +2539,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               top: 100,
               left: 16,
               right: 16,
-              child: _buildIntermediateStopsList(), // ✅ AICI se folosește funcția!
+              child: MapIntermediateStops(
+                stops: _intermediateStops,
+                onRemoveStop: _removeStop,
+              ),
             ),
           
           // Camera control buttons moved to AppBar
@@ -2684,7 +2689,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               bottom: 200,
               left: 16,
               right: 16,
-              child: _buildRideInfoPanel(), // ✅ AICI se folosește funcția!
+              child: MapRideInfoPanel(
+                pickupLatitude: _pickupLatitude,
+                destinationLatitude: _destinationLatitude,
+                pickupText: _pickupController.text,
+                destinationText: _destinationController.text,
+                stopsCount: _intermediateStops.length,
+                onClearPickup: _clearPickup,
+                onClearDestination: _clearDestination,
+                onStartRide: _startRideRequest,
+              ),
             ),
           
           // 🎤 AI BUTTON - Afișat doar pentru pasageri și șoferi indisponibili
@@ -3401,51 +3415,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
     }
   }
 
-  /// Widget pentru afișarea listei de opriri intermediare
-  Widget _buildIntermediateStopsList() {
-    if (_intermediateStops.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Opriri intermediare (${_intermediateStops.length})',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _intermediateStops.length,
-            itemBuilder: (context, index) {
-              final stop = _intermediateStops[index];
-              return ListTile(
-                leading: Icon(Icons.location_on, color: Colors.orange),
-                title: Text(stop),
-                subtitle: Text(
-                  'Oprire ${index + 1}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _removeStop(stop),
-                  tooltip: 'Șterge oprirea',
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // _buildIntermediateStopsList() extracted to lib/widgets/map/map_intermediate_stops.dart
 
   /// Curăță pickup-ul
   void _clearPickup() {
@@ -3728,33 +3698,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   }
 
   /// Widget pentru butonul de start ride
-  Widget _buildStartRideButton() {
-    final canStartRide = _pickupLatitude != null && _destinationLatitude != null;
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: canStartRide ? _startRideRequest : null, // ✅ AICI se folosește funcția!
-        style: ElevatedButton.styleFrom(
-          backgroundColor: canStartRide ? Colors.green : Colors.grey,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-        ),
-        child: Text(
-          canStartRide ? '🚗 Începe călătoria' : 'Selectează pickup și destinația',
-          style: const TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
+  // _buildStartRideButton() extracted to lib/widgets/map/map_ride_info_panel.dart
   /// Închide card-ul POI
   void _closePoiCard() {
     debugPrint('🔒 Closing POI card safely...');
@@ -4116,90 +4060,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   }
 
   /// Widget pentru afișarea informațiilor despre ride
-  Widget _buildRideInfoPanel() {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Informații călătorie',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12.0),
-            
-            // Pickup info
-            if (_pickupLatitude != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.my_location, color: Colors.blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Plecare: ${_pickupController.text}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.clear, color: Colors.red, size: 20),
-                    onPressed: () {
-                      _clearPickup();
-                      _showSnackBar('Punctul de plecare a fost șters'); // ✅ AICI se folosește funcția!
-                    },
-                    tooltip: 'Șterge pickup',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8.0),
-            ],
-            
-            // Destination info
-            if (_destinationLatitude != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.flag, color: Colors.green, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Destinație: ${_destinationController.text}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.clear, color: Colors.red, size: 20),
-                    onPressed: () {
-                      _clearDestination();
-                      _showSnackBar('Destinația a fost ștearsă'); // ✅ AICI se folosește funcția!
-                    },
-                    tooltip: 'Șterge destinația',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8.0),
-            ],
-            
-            // Intermediate stops info
-            if (_intermediateStops.isNotEmpty) ...[
-              Text(
-                'Opriri: ${_intermediateStops.length}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange,
-                ),
-              ),
-              const SizedBox(height: 8.0),
-            ],
-            
-            // Start ride button
-            _buildStartRideButton(),
-          ],
-        ),
-      ),
-    );
-  }
+  // _buildRideInfoPanel() extracted to lib/widgets/map/map_ride_info_panel.dart
 
   void _showSafeSnackBar(String message, Color backgroundColor, {SnackBarAction? action}) {
     if (!mounted) {
