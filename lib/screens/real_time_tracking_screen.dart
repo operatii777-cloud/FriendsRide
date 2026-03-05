@@ -5,6 +5,7 @@ import 'package:friendsride_app/services/real_time_tracking_service.dart';
 import 'package:friendsride_app/utils/coordinate_helpers.dart';
 import 'package:friendsride_app/theme/app_colors.dart';
 import 'package:friendsride_app/widgets/theme_toggle_button.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🚀 Real-time Tracking Screen cu AI Integration
 /// 
@@ -186,7 +187,7 @@ class _RealTimeTrackingScreenState extends State<RealTimeTrackingScreen>
     _showEmergencyNotification(alert);
     
     // Log emergency for monitoring
-    debugPrint('🚨 Emergency alert received: ${alert.type.name} at ${alert.latitude}, ${alert.longitude}');
+    Logger.error('Emergency alert received: ${alert.type.name} at ${alert.latitude}, ${alert.longitude}');
   }
   
   void _updateMapMarker(RealTimeLocationUpdate update) {
@@ -199,12 +200,12 @@ class _RealTimeTrackingScreenState extends State<RealTimeTrackingScreen>
     );
     
     // Update map marker with current location
-    debugPrint('📍 Updating map marker: ${point.coordinates.lat}, ${point.coordinates.lng}');
+    Logger.debug('Updating map marker: ${point.coordinates.lat}, ${point.coordinates.lng}');
     
     // Create marker for current position
     if (_markersManager != null) {
       // In production, this would create/update actual markers on the map
-      debugPrint('✅ Map marker updated successfully');
+      Logger.info('Map marker updated successfully');
     }
   }
   
@@ -212,12 +213,12 @@ class _RealTimeTrackingScreenState extends State<RealTimeTrackingScreen>
     if (_mapboxMap == null) return;
     
     // Update route visualization on map
-    debugPrint('🗺️ Updating map route with ${prediction.optimalRoute.length} points');
+    Logger.debug('Updating map route with ${prediction.optimalRoute.length} points');
     
     // Draw route polyline on map
     if (_mapboxMap != null && prediction.optimalRoute.isNotEmpty) {
       // In production, this would draw actual polylines on the map
-      debugPrint('✅ Map route updated successfully');
+      Logger.info('Map route updated successfully');
     }
   }
   

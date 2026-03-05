@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
+import 'package:friendsride_app/utils/logger.dart';
 
 // Sugestie adresă cu coordonate și distanță (pentru afișare rapidă și selectare fără geocodificare suplimentară)
 class AddressSuggestion {
@@ -39,7 +40,7 @@ class GeocodingService {
     final cacheKey = query.toLowerCase().trim();
     final cached = _geocodeCache[cacheKey];
     if (cached != null && !cached.isExpired) {
-      debugPrint('🏠 GeocodingService: Cache hit for: $query');
+      Logger.debug('GeocodingService: Cache hit for: $query');
       return cached.suggestions;
     }
 
@@ -68,14 +69,14 @@ class GeocodingService {
         
         return parsed;
       } on TimeoutException catch (e) {
-        debugPrint('❌ OSM geocoding timeout (attempt $attempt/$maxRetries): $e');
+        Logger.error('OSM geocoding timeout (attempt $attempt/$maxRetries): $e', error: e);
         if (attempt == maxRetries) {
           return [];
         }
         // ✅ EXPONENTIAL BACKOFF
         await Future.delayed(Duration(seconds: attempt * 2));
       } catch (e) {
-        debugPrint('❌ OSM geocoding error (attempt $attempt/$maxRetries): $e');
+        Logger.error('OSM geocoding error (attempt $attempt/$maxRetries): $e', error: e);
         if (attempt == maxRetries) {
           return [];
         }
@@ -171,13 +172,13 @@ class GeocodingService {
         }
         await Future.delayed(Duration(seconds: attempt * 2));
       } on TimeoutException catch (e) {
-        debugPrint('❌ Reverse geocoding timeout (attempt $attempt/3): $e');
+        Logger.error('Reverse geocoding timeout (attempt $attempt/3): $e', error: e);
         if (attempt == 3) {
           return null;
         }
         await Future.delayed(Duration(seconds: attempt * 2));
       } catch (e) {
-        debugPrint('❌ Reverse geocoding error (attempt $attempt/3): $e');
+        Logger.error('Reverse geocoding error (attempt $attempt/3): $e', error: e);
         if (attempt == 3) {
           return null;
         }

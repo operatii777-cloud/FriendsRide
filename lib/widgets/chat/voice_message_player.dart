@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:friendsride_app/theme/app_colors.dart';
 import 'package:friendsride_app/theme/app_text_styles.dart';
 import 'dart:async';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Widget pentru redarea voice messages în chat (stil WhatsApp)
 class VoiceMessagePlayer extends StatefulWidget {
@@ -69,7 +70,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
         }
       }
     } catch (e) {
-      debugPrint('❌ Error playing voice message: $e');
+      Logger.error('Error playing voice message: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

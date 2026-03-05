@@ -21,6 +21,7 @@ import '../../services/routing_service.dart';
 import '../../utils/input_validator.dart';
 import '../../services/bucharest_locations_database.dart';
 import '../utils/voice_translations.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// ✅ Helper: Obține limba curentă din SharedPreferences
 Future<String> _getCurrentLanguageCode() async {
@@ -29,7 +30,7 @@ Future<String> _getCurrentLanguageCode() async {
     final code = prefs.getString('locale');
     return code ?? 'ro'; // Default română
   } catch (e) {
-    debugPrint('🚗 [RIDE_FLOW] Error getting language: $e');
+    Logger.error('Error getting language: $e', tag: 'RIDE_FLOW', error: e);
     return 'ro'; // Default română
   }
 }
@@ -127,23 +128,23 @@ class RideFlowManager {
   /// 🚀 Inițializează managerul
   Future<void> initialize() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Initializing...');
-      debugPrint('🚗 [RIDE_FLOW] TTS: ${_tts.toString()}');
-      debugPrint('🚗 [RIDE_FLOW] VoiceOrchestrator: ${_voiceOrchestrator.toString()}');
+      Logger.debug('Initializing...', tag: 'RIDE_FLOW');
+      Logger.debug('TTS: ${_tts.toString()}', tag: 'RIDE_FLOW');
+      Logger.debug('VoiceOrchestrator: ${_voiceOrchestrator.toString()}', tag: 'RIDE_FLOW');
       
       // ✅ FIX: Obțin limba curentă și o setez în TTS la inițializare
       final languageCode = await _getCurrentLanguageCode();
       await _tts.initialize(languageCode: languageCode);
       await _tts.setLanguage(languageCode); // ✅ FIX: Asigur că limba este setată
-      debugPrint('🚗 [RIDE_FLOW] ✅ TTS initialized successfully with language: $languageCode');
+      Logger.info('TTS initialized successfully with language: $languageCode', tag: 'RIDE_FLOW');
       
       // 🔔 Inițializez serviciul de beep-uri
       await _beepService.initialize();
-      debugPrint('🚗 [RIDE_FLOW] ✅ Beep service initialized successfully');
+      Logger.info('Beep service initialized successfully', tag: 'RIDE_FLOW');
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ RideFlowManager initialized successfully');
+      Logger.info('RideFlowManager initialized successfully', tag: 'RIDE_FLOW');
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'RIDE_FLOW', error: e);
       rethrow;
     }
   }
@@ -151,11 +152,11 @@ class RideFlowManager {
   /// 🎤 Procesează input-ul vocal și gestionează flow-ul
   Future<void> processVoiceInput(String userInput) async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Processing: "$userInput"');
+      Logger.debug('Processing: "$userInput"', tag: 'RIDE_FLOW');
       
       // 🧹 CURĂȚ INPUT-UL DE CE SPUNE AI-UL (elimină echo-ul TTS-ului)
       String cleanedInput = _cleanInputFromTTS(userInput);
-      debugPrint('🚗 [RIDE_FLOW] Cleaned input: "$cleanedInput"');
+      Logger.debug('Cleaned input: "$cleanedInput"', tag: 'RIDE_FLOW');
       
       // 📝 Adaug la istoric
       _addToHistory('User: $cleanedInput');
@@ -182,10 +183,10 @@ class RideFlowManager {
       // 🎯 Gestionez răspunsul și actualizez flow-ul
       await _handleGeminiResponse(response);
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ Input processed successfully');
+      Logger.info('Input processed successfully', tag: 'RIDE_FLOW');
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Error: $e');
+      Logger.error('Error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError(e.toString());
     }
   }
@@ -198,7 +199,7 @@ class RideFlowManager {
     // Dacă da, păstrează-l aproape intact (doar elimină frazele AI-ului de la început)
     final locationCheck = BucharestLocationsDatabase.findLocation(input);
     if (locationCheck != null) {
-      debugPrint('🧹 [RIDE_FLOW] ✅ Found location in database, preserving address: ${locationCheck['name']}');
+      Logger.info('Found location in database, preserving address: ${locationCheck['name']}', tag: 'RIDE_FLOW');
       // Dacă e o locație cunoscută, doar elimină frazele AI-ului de la început
       return _removeOnlyAIPhrasesFromStart(input);
     }
@@ -210,7 +211,7 @@ class RideFlowManager {
     if (tempCleaned != input && tempCleaned.length >= 5) {
       final tempLocationCheck = BucharestLocationsDatabase.findLocation(tempCleaned);
       if (tempLocationCheck != null) {
-        debugPrint('🧹 [RIDE_FLOW] ✅ Found location in database after removing AI phrases: ${tempLocationCheck['name']}');
+        Logger.info('Found location in database after removing AI phrases: ${tempLocationCheck['name']}', tag: 'RIDE_FLOW');
         return tempCleaned;
       }
     }
@@ -243,11 +244,11 @@ class RideFlowManager {
         // ✅ FIX: Verifică dacă după eliminarea frazei AI-ului rămâne o adresă validă
         if (afterPhrase.length >= 5) { // Adresă minimă de 5 caractere
           cleaned = afterPhrase;
-          debugPrint('🧹 [RIDE_FLOW] Removed AI phrase from start: "$phrase" → "$cleaned"');
+          Logger.debug('Removed AI phrase from start: "$phrase" → "$cleaned"', tag: 'RIDE_FLOW');
           break; // Oprim după prima potrivire
         } else {
           // Dacă rămâne prea puțin, păstrează originalul
-          debugPrint('🧹 [RIDE_FLOW] ⚠️ Removing "$phrase" would leave too little, keeping original');
+          Logger.warning('Removing "$phrase" would leave too little, keeping original', tag: 'RIDE_FLOW');
           break;
         }
       } else if (lowerCleaned.contains(lowerPhrase)) {
@@ -265,7 +266,7 @@ class RideFlowManager {
         if (hasAddressKeywords || isLongEnoughForAddress) {
           // Input-ul conține cuvinte de adresă SAU e suficient de lung → probabil e o adresă completă
           // NU elimină frazele AI-ului din mijloc (ar putea distruge adresa)
-          debugPrint('🧹 [RIDE_FLOW] ⚠️ Input contains address keywords or is long enough (${cleaned.length} chars), skipping middle phrase removal to preserve address');
+          Logger.warning('Input contains address keywords or is long enough (${cleaned.length} chars), skipping middle phrase removal to preserve address', tag: 'RIDE_FLOW');
         } else {
           // Dacă fraza e în mijloc și NU conține cuvinte de adresă, o elimin
           final index = lowerCleaned.indexOf(lowerPhrase);
@@ -277,9 +278,9 @@ class RideFlowManager {
             
             if (combined.length >= 5) {
               cleaned = combined;
-              debugPrint('🧹 [RIDE_FLOW] Removed AI phrase from middle: "$phrase" → "$cleaned"');
+              Logger.debug('Removed AI phrase from middle: "$phrase" → "$cleaned"', tag: 'RIDE_FLOW');
             } else {
-              debugPrint('🧹 [RIDE_FLOW] ⚠️ Removing "$phrase" from middle would leave too little, keeping original');
+              Logger.warning('Removing "$phrase" from middle would leave too little, keeping original', tag: 'RIDE_FLOW');
             }
           }
         }
@@ -294,7 +295,7 @@ class RideFlowManager {
         final afterPrefix = cleaned.substring(prefix.length).trim();
         if (afterPrefix.length > 5) {
           cleaned = afterPrefix;
-          debugPrint('🧹 [RIDE_FLOW] Removed prefix: "$prefix" → "$cleaned"');
+          Logger.debug('Removed prefix: "$prefix" → "$cleaned"', tag: 'RIDE_FLOW');
           break;
         }
       }
@@ -303,14 +304,14 @@ class RideFlowManager {
     // ✅ Returnez inputul curățat (dacă e valid) sau originalul
     // Dacă curățarea a eliminat prea mult, păstrez originalul
     if (cleaned.length < 5 && userInput.length > 15) {
-      debugPrint('🧹 [RIDE_FLOW] ⚠️ Cleaning removed too much (${cleaned.length} chars), keeping original (${userInput.length} chars)');
+      Logger.warning('Cleaning removed too much (${cleaned.length} chars), keeping original (${userInput.length} chars)', tag: 'RIDE_FLOW');
       return userInput;
     }
     
     // ✅ Verifică dacă adresa curățată este o locație cunoscută
     final cleanedLocationCheck = BucharestLocationsDatabase.findLocation(cleaned);
     if (cleanedLocationCheck != null) {
-      debugPrint('🧹 [RIDE_FLOW] ✅ Cleaned address found in database: ${cleanedLocationCheck['name']}');
+      Logger.info('Cleaned address found in database: ${cleanedLocationCheck['name']}', tag: 'RIDE_FLOW');
       return cleaned;
     }
     
@@ -341,7 +342,7 @@ class RideFlowManager {
   /// 🎯 Gestionează răspunsul de la Gemini și actualizează flow-ul
   Future<void> _handleGeminiResponse(GeminiVoiceResponse response) async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Handling Gemini response: ${response.type}');
+      Logger.debug('Handling Gemini response: ${response.type}', tag: 'RIDE_FLOW');
       
       switch (response.type) {
         case 'destination':
@@ -409,7 +410,7 @@ class RideFlowManager {
       }
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Response handling error: $e');
+      Logger.error('Response handling error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError(e.toString());
     }
   }
@@ -419,7 +420,7 @@ class RideFlowManager {
     if (response.destination != null) {
       // Verifică dacă e o destinație diferită de cea anterioară
       if (_destination != null && _destination != response.destination) {
-        debugPrint('🎯 [RIDE_FLOW] Destination changed from $_destination to ${response.destination}');
+        Logger.info('Destination changed from $_destination to ${response.destination}', tag: 'RIDE_FLOW');
       }
       
       _destination = response.destination;
@@ -437,13 +438,13 @@ class RideFlowManager {
             destLat: _destinationLatitude,
             destLng: _destinationLongitude,
           );
-          debugPrint('🎯 [RIDE_FLOW] ✅ UI updated with destination: $_destination');
+          Logger.info('UI updated with destination: $_destination', tag: 'RIDE_FLOW');
           if (_destinationLatitude != null && _destinationLongitude != null) {
-            debugPrint('🎯 [RIDE_FLOW] ✅ Coordinates also sent: $_destinationLatitude, $_destinationLongitude');
+            Logger.info('Coordinates also sent: $_destinationLatitude, $_destinationLongitude', tag: 'RIDE_FLOW');
           }
         }
       } catch (e) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ UI update callback error: $e');
+        Logger.error('UI update callback error: $e', tag: 'RIDE_FLOW', error: e);
       }
       
       // ✅ CALCULEAZĂ PREȚUL ÎNAINTE DE CONFIRMARE
@@ -465,7 +466,7 @@ class RideFlowManager {
         // Callback pentru afișare preț în UI
         // onShowPricePreview?.call(_estimatedPrice ?? 0.0, _currentRideCategory);
       } catch (e) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Price preview callback not available: $e');
+        Logger.warning('Price preview callback not available: $e', tag: 'RIDE_FLOW');
       }
       
       _currentState = RideFlowState.awaitingConfirmation;
@@ -479,11 +480,11 @@ class RideFlowManager {
   /// 🎯 NOU: Pornește automat ascultarea pentru confirmare
   Future<void> _startListeningForConfirmation() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Preparing to start confirmation listening...');
+      Logger.info('Preparing to start confirmation listening...', tag: 'RIDE_FLOW');
       
       // ⚠️ VERIFICĂ DACĂ DEJA ASCULTĂ
       if (_voiceOrchestrator.isListening) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Already listening - SKIPPING duplicate session');
+        Logger.warning('Already listening - SKIPPING duplicate session', tag: 'RIDE_FLOW');
         return;
       }
       
@@ -497,11 +498,11 @@ class RideFlowManager {
       
       // Verifică DIN NOU
       if (_voiceOrchestrator.isListening) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Listening started elsewhere - SKIPPING');
+        Logger.warning('Listening started elsewhere - SKIPPING', tag: 'RIDE_FLOW');
         return;
       }
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ Starting confirmation listening...');
+      Logger.info('Starting confirmation listening...', tag: 'RIDE_FLOW');
       
       // Pornește automat ascultarea pentru confirmare
       await _voiceOrchestrator.listen(
@@ -510,28 +511,28 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Auto-listen error: $e');
+      Logger.error('Auto-listen error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
   
   /// 🎯 Gestionează răspunsul de confirmare - CORECTAT
   Future<void> _handleConfirmationResponse(GeminiVoiceResponse response) async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Handling confirmation response: "${response.message}"');
-      debugPrint('🚗 [RIDE_FLOW] Response confidence: ${response.confidence}');
-      debugPrint('🚗 [RIDE_FLOW] Current state before processing: $_currentState');
-      debugPrint('🚗 [RIDE_FLOW] Pickup location: $_pickup');
+      Logger.debug('Handling confirmation response: "${response.message}"', tag: 'RIDE_FLOW');
+      Logger.debug('Response confidence: ${response.confidence}', tag: 'RIDE_FLOW');
+      Logger.debug('Current state before processing: $_currentState', tag: 'RIDE_FLOW');
+      Logger.debug('Pickup location: $_pickup', tag: 'RIDE_FLOW');
       
       // Verifică dacă e răspuns pozitiv (da/confirm/etc)
       final isPositive = _isPositiveConfirmation(response.message ?? '');
-      debugPrint('🚗 [RIDE_FLOW] Is positive confirmation: $isPositive');
+      Logger.debug('Is positive confirmation: $isPositive', tag: 'RIDE_FLOW');
       
       if (isPositive) {
         // ✅ RĂSPUNS POZITIV - CONTINUĂ CU FLOW-UL
         
         // 🎯 VERIFICĂ DACĂ SUNTEM ÎN CONFIRMAREA FINALĂ A RIDE-ULUI
         if (_currentState == RideFlowState.awaitingRideConfirmation) {
-          debugPrint('🚗 [RIDE_FLOW] ✅ Final ride confirmation received - CREATING RIDE REQUEST');
+          Logger.info('Final ride confirmation received - CREATING RIDE REQUEST', tag: 'RIDE_FLOW');
           
           // Oprește ascultarea pentru a preveni bucla
           await _voiceOrchestrator.stopListening();
@@ -550,7 +551,7 @@ class RideFlowManager {
         
         // Verifică contextul pentru confirmările anterioare (ÎNAINTE de a schimba starea)
         final isPickupConfirmation = _currentState == RideFlowState.awaitingConfirmation && _pickup != null;
-        debugPrint('🚗 [RIDE_FLOW] Is pickup confirmation: $isPickupConfirmation');
+        Logger.debug('Is pickup confirmation: $isPickupConfirmation', tag: 'RIDE_FLOW');
         
         // Schimbă starea DOAR după ce am verificat contextul
         _currentState = RideFlowState.confirmationReceived;
@@ -562,7 +563,7 @@ class RideFlowManager {
           final confirmMessage = await VoiceTranslations.getPickupConfirmation(_pickup ?? '');
           _lastSpokenMessage = confirmMessage;
           await _tts.speakWithEmotion(confirmMessage, VoiceEmotion.confident);
-          debugPrint('🚗 [RIDE_FLOW] ✅ Pickup confirmed, proceeding to driver search');
+          Logger.info('Pickup confirmed, proceeding to driver search', tag: 'RIDE_FLOW');
           
           // Caută șoferi
           await _searchForDrivers();
@@ -573,7 +574,7 @@ class RideFlowManager {
           final confirmMessage = await VoiceTranslations.getGeneralConfirmation();
           _lastSpokenMessage = confirmMessage;
           await _tts.speakWithEmotion(confirmMessage, VoiceEmotion.confident);
-          debugPrint('🚗 [RIDE_FLOW] ✅ General confirmation received, proceeding to driver search');
+          Logger.info('General confirmation received, proceeding to driver search', tag: 'RIDE_FLOW');
           
           // Caută șoferi
           await _searchForDrivers();
@@ -581,7 +582,7 @@ class RideFlowManager {
         
       } else {
         // ❌ RĂSPUNS NEGATIV SAU AMBIGUU - CERE CLARIFICARE
-        debugPrint('🚗 [RIDE_FLOW] ❌ Negative or ambiguous response, asking for clarification');
+        Logger.error('Negative or ambiguous response, asking for clarification', tag: 'RIDE_FLOW');
         
         _currentState = RideFlowState.awaitingClarification;
         
@@ -597,7 +598,7 @@ class RideFlowManager {
       }
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Confirmation response error: $e');
+      Logger.error('Confirmation response error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError('Eroare la procesarea confirmării: $e');
     }
   }
@@ -646,7 +647,7 @@ class RideFlowManager {
 
       // ✅ CORECTAT: Verifică dacă există șoferi disponibili
       if (etaResult == null) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Nu sunt șoferi disponibili');
+        Logger.error('Nu sunt șoferi disponibili', tag: 'RIDE_FLOW');
         _currentState = RideFlowState.idle;
         await _voiceOrchestrator.stopListening();
         await _handleNoDriverFound();
@@ -664,20 +665,20 @@ class RideFlowManager {
           'Cursa costă aproximativ $priceString lei. Confirmăm rezervarea?';
       _lastSpokenMessage = resultsMessage;
       
-      debugPrint('🚗 [RIDE_FLOW] 🗣️ Saying results message, will wait for TTS to complete...');
+      Logger.debug('Saying results message, will wait for TTS to complete...', tag: 'RIDE_FLOW');
       
       await _voiceOrchestrator.stopListening();
       await _tts.speakWithEmotion(resultsMessage, VoiceEmotion.happy);
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ TTS completed, now setting state to awaitingRideConfirmation');
+      Logger.info('TTS completed, now setting state to awaitingRideConfirmation', tag: 'RIDE_FLOW');
       _currentState = RideFlowState.awaitingRideConfirmation;
 
       await Future.delayed(Duration(milliseconds: 500));
-      debugPrint('🚗 [RIDE_FLOW] Now starting final confirmation listening...');
+      Logger.info('Now starting final confirmation listening...', tag: 'RIDE_FLOW');
       await _startListeningForFinalConfirmation();
 
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver search error: $e');
+      Logger.error('Driver search error: $e', tag: 'RIDE_FLOW', error: e);
       // ✅ FIX: Obțin limba curentă și mesajul tradus
       final languageCode = await _getCurrentLanguageCode();
       await _tts.setLanguage(languageCode); // ✅ FIX: Setează limba înainte de a vorbi
@@ -712,29 +713,29 @@ class RideFlowManager {
     
     final lowerResponse = response.toLowerCase().trim();
     
-    debugPrint('🚗 [RIDE_FLOW] 🔍 Analyzing confirmation: "$lowerResponse"');
+    Logger.debug('Analyzing confirmation: "$lowerResponse"', tag: 'RIDE_FLOW');
     
     // Verifică răspunsuri foarte scurte (probabil confirmări)
     if (lowerResponse.length <= 3) {
       if (positive.any((word) => lowerResponse.contains(word))) {
-        debugPrint('🚗 [RIDE_FLOW] ✅ Short positive response: "$lowerResponse"');
+        Logger.info('Short positive response: "$lowerResponse"', tag: 'RIDE_FLOW');
         return true;
       }
       if (negative.any((word) => lowerResponse.contains(word))) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Short negative response: "$lowerResponse"');
+        Logger.error('Short negative response: "$lowerResponse"', tag: 'RIDE_FLOW');
         return false;
       }
     }
     
     // Verifică răspunsuri cu "da" la început (foarte probabil confirmare)
     if (lowerResponse.startsWith('da') || lowerResponse.startsWith('yes')) {
-      debugPrint('🚗 [RIDE_FLOW] ✅ Starts with confirmation: "$lowerResponse"');
+      Logger.info('Starts with confirmation: "$lowerResponse"', tag: 'RIDE_FLOW');
       return true;
     }
     
     // Verifică răspunsuri cu "nu" la început (foarte probabil refuz)
     if (lowerResponse.startsWith('nu') || lowerResponse.startsWith('no')) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Starts with refusal: "$lowerResponse"');
+      Logger.error('Starts with refusal: "$lowerResponse"', tag: 'RIDE_FLOW');
       return false;
     }
     
@@ -743,7 +744,7 @@ class RideFlowManager {
     for (String neg in negative) {
       if (lowerResponse.contains(neg)) {
         negativeScore++;
-        debugPrint('🚗 [RIDE_FLOW] ❌ Negative keyword: "$neg" in "$lowerResponse"');
+        Logger.error('Negative keyword: "$neg" in "$lowerResponse"', tag: 'RIDE_FLOW');
       }
     }
     
@@ -752,21 +753,21 @@ class RideFlowManager {
     for (String pos in positive) {
       if (lowerResponse.contains(pos)) {
         positiveScore++;
-        debugPrint('🚗 [RIDE_FLOW] ✅ Positive keyword: "$pos" in "$lowerResponse"');
+        Logger.info('Positive keyword: "$pos" in "$lowerResponse"', tag: 'RIDE_FLOW');
       }
     }
     
     // Decizie bazată pe scoring
     if (positiveScore > negativeScore) {
-      debugPrint('🚗 [RIDE_FLOW] ✅ Positive score wins: $positiveScore vs $negativeScore');
+      Logger.info('Positive score wins: $positiveScore vs $negativeScore', tag: 'RIDE_FLOW');
       return true;
     } else if (negativeScore > positiveScore) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Negative score wins: $negativeScore vs $positiveScore');
+      Logger.error('Negative score wins: $negativeScore vs $positiveScore', tag: 'RIDE_FLOW');
       return false;
     }
     
     // Răspuns ambiguu
-    debugPrint('🚗 [RIDE_FLOW] ❓ Ambiguous response: "$lowerResponse" (scores: pos=$positiveScore, neg=$negativeScore)');
+    Logger.debug('Ambiguous response: "$lowerResponse" (scores: pos=$positiveScore, neg=$negativeScore)', tag: 'RIDE_FLOW');
     return false;
   }
   
@@ -834,7 +835,7 @@ class RideFlowManager {
   
   /// 🎯 Gestionează răspunsuri necunoscute
   Future<void> _handleUnknownResponse(GeminiVoiceResponse response) async {
-    debugPrint('🚗 [RIDE_FLOW] ⚠️ Unknown response type: ${response.type}');
+    Logger.warning('Unknown response type: ${response.type}', tag: 'RIDE_FLOW');
     
     // ✅ FIX: Obțin limba curentă și mesajul tradus
     final languageCode = await _getCurrentLanguageCode();
@@ -857,7 +858,7 @@ class RideFlowManager {
   
   /// 🎯 Gestionează salutări
   Future<void> _handleGreetingResponse(GeminiVoiceResponse response) async {
-    debugPrint('🚗 [RIDE_FLOW] Handling greeting response');
+    Logger.debug('Handling greeting response', tag: 'RIDE_FLOW');
     
     // ✅ FIX: Obțin limba curentă și mesajul tradus
     final languageCode = await _getCurrentLanguageCode();
@@ -881,7 +882,7 @@ class RideFlowManager {
   
   /// 🎯 Gestionează răspunsul de respingere (când utilizatorul refuză sau cere clarificare)
   Future<void> _handleRejectionResponse(GeminiVoiceResponse response) async {
-    debugPrint('🚗 [RIDE_FLOW] Handling rejection response: ${response.message}');
+    Logger.debug('Handling rejection response: ${response.message}', tag: 'RIDE_FLOW');
     
     // Dacă există o întrebare de clarificare, o folosim
     if (response.clarificationQuestion != null) {
@@ -912,7 +913,7 @@ class RideFlowManager {
   
   /// 🎯 ÎMBUNĂTĂȚIT: Gestionează erorile cu feedback UI și TTS
   Future<void> _handleError(String error) async {
-    debugPrint('🚗 [RIDE_FLOW] ❌ Error: $error');
+    Logger.error('Error: $error', tag: 'RIDE_FLOW', error: error);
     
     // ✅ FIX: Setează limba înainte de a vorbi
     final languageCode = await _getCurrentLanguageCode();
@@ -936,7 +937,7 @@ class RideFlowManager {
       // Callback pentru afișare eroare în UI (dacă este implementat)
       // onShowError?.call(errorMessage);
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Error callback not available: $e');
+      Logger.error('Error callback not available: $e', tag: 'RIDE_FLOW', error: e);
     }
     
     _currentState = RideFlowState.error;
@@ -995,7 +996,7 @@ class RideFlowManager {
       // Așteaptă puțin să se termine TTS-ul complet
       await Future.delayed(Duration(milliseconds: 1500));
       
-      debugPrint('🚗 [RIDE_FLOW] Auto-starting clarification listening...');
+      Logger.info('Auto-starting clarification listening...', tag: 'RIDE_FLOW');
       
       // Pornește automat ascultarea pentru clarificare
       await _voiceOrchestrator.listen(
@@ -1004,7 +1005,7 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Auto-listen for clarification error: $e');
+      Logger.error('Auto-listen for clarification error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1031,14 +1032,14 @@ class RideFlowManager {
   Future<void> _fillAddressAndNavigateToConfirmation() async {
     // ✅ NAVIGATION GUARD: Verifică dacă deja navigăm
     if (_isNavigating) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Navigation already in progress, skipping duplicate call');
+      Logger.warning('Navigation already in progress, skipping duplicate call', tag: 'RIDE_FLOW');
       return;
     }
     
     _isNavigating = true;
     
     try {
-      debugPrint('🚗 [RIDE_FLOW] Filling address and navigating DIRECTLY to SearchingForDriverScreen...');
+      Logger.debug('Filling address and navigating DIRECTLY to SearchingForDriverScreen...', tag: 'RIDE_FLOW');
       
       // 🗣️ Anunță că completează adresele și trimite solicitarea
       // ✅ NOU: Folosește traducere
@@ -1048,7 +1049,7 @@ class RideFlowManager {
       // ✅ 1. Salvează starea internă
       final currentLocation = await _getCurrentUserLocation();
       _pickup = _pickup ?? currentLocation;
-      debugPrint('🚗 [RIDE_FLOW] Current user location: $currentLocation');
+      Logger.debug('Current user location: $currentLocation', tag: 'RIDE_FLOW');
       
       // ✅ 2. Validează adresele (ca fluxul manual)
       // ✅ SECURITY: Validate addresses before processing
@@ -1099,7 +1100,7 @@ class RideFlowManager {
           },
         );
       } catch (e) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Price calculation timeout or error: $e');
+        Logger.error('Price calculation timeout or error: $e', tag: 'RIDE_FLOW', error: e);
         // Continuă cu preț default dacă calcularea eșuează
         _estimatedPrice = _estimatedPrice ?? 15.0;
       }
@@ -1117,13 +1118,13 @@ class RideFlowManager {
           },
         );
       } catch (e) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Error creating ride request: $e');
+        Logger.error('Error creating ride request: $e', tag: 'RIDE_FLOW', error: e);
         await _handleError('Nu am putut crea cursa: ${e.toString()}');
         return; // Oprește execuția dacă crearea cursei eșuează
       }
       
       if (rideId == null || rideId.isEmpty) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Ride ID is null or empty');
+        Logger.error('Ride ID is null or empty', tag: 'RIDE_FLOW');
         await _handleError('Nu am putut crea cursa. ID-ul cursei este invalid.');
         return;
       }
@@ -1135,14 +1136,14 @@ class RideFlowManager {
       try {
         final searchingScreen = SearchingForDriverScreen(rideId: rideId);
         onNavigateToScreen(searchingScreen);
-        debugPrint('🚗 [RIDE_FLOW] ✅ Ride request sent directly to Firebase, navigating to SearchingForDriverScreen');
+        Logger.info('Ride request sent directly to Firebase, navigating to SearchingForDriverScreen', tag: 'RIDE_FLOW');
       } catch (e) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Navigation error: $e');
+        Logger.error('Navigation error: $e', tag: 'RIDE_FLOW', error: e);
         await _handleError('Nu am putut naviga la ecranul de căutare șoferi: ${e.toString()}');
       }
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Fill address error: $e');
+      Logger.error('Fill address error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError('Eroare la completarea adreselor: ${e.toString()}');
     }
   }
@@ -1198,10 +1199,10 @@ class RideFlowManager {
         return false;
       }
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ Addresses validated: pickup=$_pickup, destination=$_destination, distance=${distanceKm.toStringAsFixed(2)}km');
+      Logger.info('Addresses validated: pickup=$_pickup, destination=$_destination, distance=${distanceKm.toStringAsFixed(2)}km', tag: 'RIDE_FLOW');
       return true;
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Address validation error: $e');
+      Logger.error('Address validation error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError('Eroare la validarea adreselor: $e');
       return false;
     }
@@ -1222,7 +1223,7 @@ class RideFlowManager {
       }
 
       if (_destinationLatitude == null || _destinationLongitude == null) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Destination coordinates missing, falling back to distance estimation');
+        Logger.warning('Destination coordinates missing, falling back to distance estimation', tag: 'RIDE_FLOW');
       }
       
       // ✅ FEEDBACK PROGRESS - Calculare rută
@@ -1258,7 +1259,7 @@ class RideFlowManager {
             }
           }
         } catch (e) {
-          debugPrint('🚗 [RIDE_FLOW] ⚠️ Routing service error: $e');
+          Logger.error('Routing service error: $e', tag: 'RIDE_FLOW', error: e);
         }
       }
 
@@ -1273,12 +1274,9 @@ class RideFlowManager {
 
       _estimatedPrice = _fareBreakdown?['totalCost'];
 
-      debugPrint(
-        '🚗 [RIDE_FLOW] ✅ Price calculated: ${_estimatedPrice?.toStringAsFixed(2)} lei '
-        '(distance: ${distanceKm.toStringAsFixed(2)} km, duration: ${durationMinutes.toStringAsFixed(1)} min, category: $_currentRideCategory)',
-      );
+      Logger.info('Price calculated: ${_estimatedPrice?.toStringAsFixed(2)} lei', tag: 'RIDE_FLOW');
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Price calculation error: $e');
+      Logger.error('Price calculation error: $e', tag: 'RIDE_FLOW', error: e);
       _fareBreakdown = null;
       _estimatedPrice = 15.0; // Preț default
       _calculatedDistanceKm = null;
@@ -1291,12 +1289,12 @@ class RideFlowManager {
     try {
       // Verifică dacă avem coordonate pentru pickup și destinație
       if (_pickupLatitude == null || _pickupLongitude == null) {
-        debugPrint('🌍 [DISTANCE] ⚠️ Missing pickup coordinates - using default 5km');
+        Logger.warning('Missing pickup coordinates - using default 5km', tag: 'DISTANCE');
         return 5.0;
       }
       
       if (_destinationLatitude == null || _destinationLongitude == null) {
-        debugPrint('🌍 [DISTANCE] ⚠️ Missing destination coordinates - using default 5km');
+        Logger.warning('Missing destination coordinates - using default 5km', tag: 'DISTANCE');
         return 5.0;
       }
       
@@ -1308,14 +1306,14 @@ class RideFlowManager {
         _destinationLongitude!,
       );
       
-      debugPrint('🌍 [DISTANCE] ✅ Calculated REAL distance: ${distance.toStringAsFixed(2)} km');
-      debugPrint('   From: ($_pickupLatitude, $_pickupLongitude)');
-      debugPrint('   To: ($_destinationLatitude, $_destinationLongitude)');
+      Logger.info('Calculated REAL distance: ${distance.toStringAsFixed(2)} km', tag: 'DISTANCE');
+      Logger.debug('From: ($_pickupLatitude, $_pickupLongitude)');
+      Logger.debug('To: ($_destinationLatitude, $_destinationLongitude)');
       
       return distance;
       
     } catch (e) {
-      debugPrint('🌍 [DISTANCE] ❌ Calculation error: $e');
+      Logger.error('Calculation error: $e', tag: 'DISTANCE', error: e);
       return 5.0; // Fallback la 5 km
     }
   }
@@ -1349,24 +1347,24 @@ class RideFlowManager {
   /// Sau null dacă Gemini AI nu poate ajuta
   Future<Map<String, dynamic>?> _askGeminiForClarifiedAddress(String originalAddress) async {
     try {
-      debugPrint('🧠 [GEMINI_GEOCODE] Asking Gemini AI for clarified address and coordinates: $originalAddress');
+      Logger.debug('Asking Gemini AI for clarified address and coordinates: $originalAddress', tag: 'GEMINI_GEOCODE');
       
       // ✅ FIX: Folosește metoda directă de clarificare a adresei și obținere coordonate (fără logica de conversație)
       final result = await _geminiEngine.clarifyAddressForGeocoding(originalAddress);
       
       if (result != null && result['address'] != null) {
-        debugPrint('🧠 [GEMINI_GEOCODE] ✅ Gemini AI clarified address: ${result['address']}');
+        Logger.info('Gemini AI clarified address: ${result['address']}', tag: 'GEMINI_GEOCODE');
         if (result['latitude'] != null && result['longitude'] != null) {
-          debugPrint('🧠 [GEMINI_GEOCODE] ✅ Gemini AI also provided coordinates: ${result['latitude']}, ${result['longitude']}');
+          Logger.info('Gemini AI also provided coordinates: ${result['latitude']}, ${result['longitude']}', tag: 'GEMINI_GEOCODE');
         }
         return result;
       } else {
-        debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Gemini AI could not clarify address');
+        Logger.warning('Gemini AI could not clarify address', tag: 'GEMINI_GEOCODE');
         return null;
       }
       
     } catch (e) {
-      debugPrint('🧠 [GEMINI_GEOCODE] ❌ Error asking Gemini AI: $e');
+      Logger.error('Error asking Gemini AI: $e', tag: 'GEMINI_GEOCODE', error: e);
       return null;
     }
   }
@@ -1378,7 +1376,7 @@ class RideFlowManager {
     try {
       final location = BucharestLocationsDatabase.findLocation(destination);
       if (location != null) {
-        debugPrint('🌍 [GPS] ✅ Found location in database: ${location['name']} (${location['category']})');
+        Logger.info('Found location in database: ${location['name']} (${location['category']})', tag: 'GPS');
         return {
           'latitude': location['latitude'],
           'longitude': location['longitude'],
@@ -1386,7 +1384,7 @@ class RideFlowManager {
         };
       }
     } catch (e) {
-      debugPrint('🌍 [GPS] ⚠️ Error searching location database: $e');
+      Logger.error('Error searching location database: $e', tag: 'GPS', error: e);
     }
 
     // ✅ Fallback: Lista de destinații cunoscute cu coordonatele exacte (pentru compatibilitate)
@@ -1428,7 +1426,7 @@ class RideFlowManager {
       final key = entry.key.toLowerCase();
       // Verifică dacă destinația conține cheia sau cheia conține destinația
       if (normalizedDestination.contains(key) || key.contains(normalizedDestination)) {
-        debugPrint('🌍 [GPS] ✅ Found predefined destination: ${entry.key} -> ${entry.value['name']}');
+        Logger.info('Found predefined destination: ${entry.key} -> ${entry.value['name']}', tag: 'GPS');
         return entry.value;
       }
     }
@@ -1437,7 +1435,7 @@ class RideFlowManager {
     if (normalizedDestination.contains('aeroport') || normalizedDestination.contains('otopeni')) {
       if (normalizedDestination.contains('plecări') || normalizedDestination.contains('plecari') ||
           normalizedDestination.contains('sosiri') || normalizedDestination.contains('sosiri')) {
-        debugPrint('🌍 [GPS] ✅ Found predefined destination: Aeroportul Henri Coandă (with terminal info)');
+        Logger.info('Found predefined destination: Aeroportul Henri Coandă (with terminal info)', tag: 'GPS');
         return {'latitude': 44.5721, 'longitude': 26.0691, 'name': 'Aeroportul Henri Coandă, Otopeni'};
       }
     }
@@ -1498,10 +1496,10 @@ class RideFlowManager {
         'scheduledPickupTime': null,
       };
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ Complete ride request created for user: $userId');
+      Logger.info('Complete ride request created for user: $userId', tag: 'RIDE_FLOW');
       return rideRequest;
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Ride request creation error: $e');
+      Logger.error('Ride request creation error: $e', tag: 'RIDE_FLOW', error: e);
       rethrow;
     }
   }
@@ -1509,7 +1507,7 @@ class RideFlowManager {
   /// 🎯 NOUĂ METODĂ: Gestionează confirmarea adreselor din UI
   Future<void> handleAddressConfirmation() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Address confirmed from UI, showing ride options...');
+      Logger.debug('Address confirmed from UI, showing ride options...', tag: 'RIDE_FLOW');
       
       _currentState = RideFlowState.showingRideOptions;
       
@@ -1528,7 +1526,7 @@ class RideFlowManager {
       await _startListeningForRideOption();
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Address confirmation error: $e');
+      Logger.error('Address confirmation error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1536,7 +1534,7 @@ class RideFlowManager {
   Future<void> _startListeningForRideOption() async {
     try {
       await Future.delayed(Duration(milliseconds: 1000));
-      debugPrint('🚗 [RIDE_FLOW] Listening for ride option selection...');
+      Logger.info('Listening for ride option selection...', tag: 'RIDE_FLOW');
       
       _currentState = RideFlowState.awaitingRideOptionSelection;
       
@@ -1546,7 +1544,7 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Ride option listening error: $e');
+      Logger.error('Ride option listening error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1578,7 +1576,7 @@ class RideFlowManager {
       }
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Ride option selection error: $e');
+      Logger.error('Ride option selection error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1606,7 +1604,7 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Final confirmation listening error: $e');
+      Logger.error('Final confirmation listening error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1653,7 +1651,7 @@ class RideFlowManager {
   Future<void> _startListeningForNewDestination() async {
     try {
       await Future.delayed(Duration(milliseconds: 1000));
-      debugPrint('🚗 [RIDE_FLOW] Listening for new destination...');
+      Logger.info('Listening for new destination...', tag: 'RIDE_FLOW');
       
       await _voiceOrchestrator.listen(
         timeoutSeconds: 30,
@@ -1661,7 +1659,7 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ New destination listening error: $e');
+      Logger.error('New destination listening error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1674,7 +1672,7 @@ class RideFlowManager {
       
       // 🔥 INTEGRARE: Construiește notele pasagerului din conversația AI
       final passengerNotes = _buildPassengerNotes();
-      debugPrint('🚗 [RIDE_FLOW] Passenger notes: $passengerNotes');
+      Logger.debug('Passenger notes: $passengerNotes', tag: 'RIDE_FLOW');
       
       // 🔥 CREEAZĂ SOLICITAREA REALĂ ÎN FIREBASE
       final rideRequest = {
@@ -1688,11 +1686,11 @@ class RideFlowManager {
         'rideType': 'standard', // Se va obține din selecția user-ului
       };
       
-      debugPrint('🚗 [RIDE_FLOW] 🔥 Creating real Firebase ride request: $rideRequest');
+      Logger.debug('Creating real Firebase ride request: $rideRequest', tag: 'RIDE_FLOW');
       
       // ✅ Emite comanda abstractă pentru crearea solicitării
       final rideId = await onCreateRideRequest(rideRequest);
-      debugPrint('🚗 [RIDE_FLOW] ✅ Ride request created with ID: $rideId');
+      Logger.info('Ride request created with ID: $rideId', tag: 'RIDE_FLOW');
       
       // ✅ NOU: Salvează rideId pentru confirmarea ulterioară a șoferului
       _currentRideId = rideId;
@@ -1706,7 +1704,7 @@ class RideFlowManager {
       await _monitorRideAcceptance(rideId);
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Firebase sending error: $e');
+      Logger.error('Firebase sending error: $e', tag: 'RIDE_FLOW', error: e);
       // ✅ FIX: Obțin limba curentă și mesajul tradus
       final languageCode = await _getCurrentLanguageCode();
       await _tts.setLanguage(languageCode); // ✅ FIX: Setează limba înainte de a vorbi
@@ -1743,19 +1741,19 @@ class RideFlowManager {
       await _tts.speakWithEmotion(message, VoiceEmotion.happy);
       await _startListeningForDriverAcceptance();
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver accepted error: $e');
+      Logger.error('Driver accepted error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
   Future<void> _handleDriverDeclined(Ride ride) async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Driver declined ride ${ride.id}');
+      Logger.debug('Driver declined ride ${ride.id}', tag: 'RIDE_FLOW');
       final message = 'Șoferul a refuzat cursa. Caut un alt șofer disponibil...';
       await _tts.speakWithEmotion(message, VoiceEmotion.calm);
       _currentState = RideFlowState.waitingForDriverResponse;
       onDriverResponse(ride.driverId ?? '', false);
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver declined handling error: $e');
+      Logger.error('Driver declined handling error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1765,7 +1763,7 @@ class RideFlowManager {
       final message = 'Șoferul este în drum către dumneavoastră și va ajunge în câteva minute.';
       await _tts.speakWithEmotion(message, VoiceEmotion.confident);
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver en route error: $e');
+      Logger.error('Driver en route error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1775,7 +1773,7 @@ class RideFlowManager {
       final message = 'Șoferul a ajuns la locația dumneavoastră! Vă rog să ieșiți pentru preluare.';
       await _tts.speakWithEmotion(message, VoiceEmotion.happy);
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver arrived error: $e');
+      Logger.error('Driver arrived error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1787,7 +1785,7 @@ class RideFlowManager {
       await Future.delayed(const Duration(seconds: 2));
       await _handleCloseAI();
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Ride completed error: $e');
+      Logger.error('Ride completed error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1800,7 +1798,7 @@ class RideFlowManager {
         pauseForSeconds: 5,
       );
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver acceptance listening error: $e');
+      Logger.error('Driver acceptance listening error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1815,9 +1813,9 @@ class RideFlowManager {
       if (_currentRideId != null && _currentRideId!.isNotEmpty) {
         try {
           await _firestoreService.passengerConfirmDriver(_currentRideId!);
-          debugPrint('🚗 [RIDE_FLOW] ✅ Passenger confirmed driver in Firestore for ride: $_currentRideId');
+          Logger.info('Passenger confirmed driver in Firestore for ride: $_currentRideId', tag: 'RIDE_FLOW');
         } catch (e) {
-          debugPrint('🚗 [RIDE_FLOW] ⚠️ Error confirming driver in Firestore: $e');
+          Logger.error('Error confirming driver in Firestore: $e', tag: 'RIDE_FLOW', error: e);
           // Continuă chiar dacă confirmarea în Firestore eșuează
         }
       }
@@ -1836,7 +1834,7 @@ class RideFlowManager {
 
   Future<void> _handleCloseAI() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] 🚪 Closing AI...');
+      Logger.debug('Closing AI...', tag: 'RIDE_FLOW');
 
       _rideStatusSubscription?.cancel();
       _rideStatusSubscription = null;
@@ -1854,9 +1852,9 @@ class RideFlowManager {
 
       onCloseAI();
 
-      debugPrint('🚗 [RIDE_FLOW] ✅ AI closed successfully');
+      Logger.info('AI closed successfully', tag: 'RIDE_FLOW');
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Close AI error: $e');
+      Logger.error('Close AI error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
@@ -1889,13 +1887,13 @@ class RideFlowManager {
   /// 🚫 NU SE APEAZĂ AUTOMAT - DOAR CÂND SE MONITORIZEAZĂ CURSA
   Future<void> _monitorRideAcceptance(String rideId) async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Monitoring ride acceptance for: $rideId');
+      Logger.debug('Monitoring ride acceptance for: $rideId', tag: 'RIDE_FLOW');
       
       _rideStatusSubscription?.cancel();
       _rideStatusSubscription = _rideStreamOverride(rideId).listen((ride) {
         unawaited(_handleRideStatusUpdate(ride));
       }, onError: (error) {
-        debugPrint('🚗 [RIDE_FLOW] ❌ Ride stream error: $error');
+        Logger.error('Ride stream error: $error', tag: 'RIDE_FLOW', error: error);
       });
 
       _driverResponseTimeout?.cancel();
@@ -1907,13 +1905,13 @@ class RideFlowManager {
       });
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Monitoring error: $e');
+      Logger.error('Monitoring error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
   /// 🚗 Gestionează actualizările de status ale cursei
   Future<void> _handleRideStatusUpdate(Ride ride) async {
-    debugPrint('🚗 [RIDE_FLOW] Ride status update: ${ride.status}');
+    Logger.debug('Ride status update: ${ride.status}', tag: 'RIDE_FLOW');
     
     switch (ride.status) {
       case 'driver_found':
@@ -1972,7 +1970,7 @@ class RideFlowManager {
     await _tts.speakWithEmotion(message, VoiceEmotion.calm);
     _currentState = RideFlowState.idle;
     
-    debugPrint('🚗 [RIDE_FLOW] ❌ Mesaj "nu sunt șoferi" trimis utilizatorului');
+    Logger.error('Mesaj "nu sunt șoferi" trimis utilizatorului', tag: 'RIDE_FLOW');
   }
 
   /// ⏰ Calculează ETA-ul
@@ -2009,7 +2007,7 @@ class RideFlowManager {
       _pickupLatitude = position.latitude;
       _pickupLongitude = position.longitude;
       
-      debugPrint('🌍 [GPS] Pickup coordinates: $_pickupLatitude, $_pickupLongitude');
+      Logger.debug('Pickup coordinates: $_pickupLatitude, $_pickupLongitude', tag: 'GPS');
       
       // Convertește coordonatele în adresă
       final address = await geocoding_svc.GeocodingService().getAddressFromCoordinates(
@@ -2020,7 +2018,7 @@ class RideFlowManager {
       return address ?? 'Locația curentă (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
       
     } catch (e) {
-      debugPrint('🌍 [GPS] ❌ Error getting location: $e');
+      Logger.error('Error getting location: $e', tag: 'GPS', error: e);
       // Fallback la București centru
       _pickupLatitude = 44.4268;
       _pickupLongitude = 26.1025;
@@ -2054,17 +2052,17 @@ class RideFlowManager {
   /// 🎯 NOU: Pornește automat ascultarea pentru confirmarea finală
   Future<void> _startListeningForFinalConfirmation() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Preparing to start final confirmation listening...');
+      Logger.info('Preparing to start final confirmation listening...', tag: 'RIDE_FLOW');
       
       // ⚠️ VERIFICĂ DACĂ DEJA ASCULTĂ - NU PORNI DIN NOU!
       if (_voiceOrchestrator.isListening) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Already listening - SKIPPING duplicate listen session');
+        Logger.warning('Already listening - SKIPPING duplicate listen session', tag: 'RIDE_FLOW');
         return; // OPREȘTE AICI!
       }
       
       // 🎯 Oprește orice sesiune de speaking înainte
       if (_voiceOrchestrator.isSpeaking) {
-        debugPrint('🚗 [RIDE_FLOW] Stopping speaking before listening...');
+        Logger.info('Stopping speaking before listening...', tag: 'RIDE_FLOW');
         await _voiceOrchestrator.stopSpeaking();
         // Așteaptă puțin după ce oprești speaking
         await Future.delayed(Duration(milliseconds: 500));
@@ -2075,15 +2073,15 @@ class RideFlowManager {
       
       // ⚠️ VERIFICĂ DIN NOU - poate altcineva a pornit listening între timp
       if (_voiceOrchestrator.isListening) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Someone else started listening - SKIPPING');
+        Logger.warning('Someone else started listening - SKIPPING', tag: 'RIDE_FLOW');
         return;
       }
       
-      debugPrint('🚗 [RIDE_FLOW] ✅ Starting final confirmation listening NOW (state: $_currentState)');
+      Logger.info('Starting final confirmation listening NOW (state: $_currentState)', tag: 'RIDE_FLOW');
       
       // ⚠️ VERIFICĂ STAREA ÎNAINTE DE A PORNI LISTENING
       if (_currentState != RideFlowState.awaitingRideConfirmation) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ Wrong state ($_currentState) - NOT starting listening');
+        Logger.warning('Wrong state ($_currentState) - NOT starting listening', tag: 'RIDE_FLOW');
         return;
       }
       
@@ -2094,14 +2092,14 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Auto-listen for final confirmation error: $e');
+      Logger.error('Auto-listen for final confirmation error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
   /// 🎯 AUTONOM: Gestionează confirmarea destinației și procesează totul automat
   Future<void> _handleDestinationConfirmedResponse(GeminiVoiceResponse response) async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Handling destination confirmation: ${response.message}');
+      Logger.debug('AUTONOM: Handling destination confirmation: ${response.message}', tag: 'RIDE_FLOW');
       
       // Salvează destinația confirmată
       _destination = response.destination ?? 'Destinație necunoscută';
@@ -2119,13 +2117,13 @@ class RideFlowManager {
             destLat: _destinationLatitude,
             destLng: _destinationLongitude,
           );
-          debugPrint('🎯 [RIDE_FLOW] ✅ UI updated with destination: $_destination');
+          Logger.info('UI updated with destination: $_destination', tag: 'RIDE_FLOW');
           if (_destinationLatitude != null && _destinationLongitude != null) {
-            debugPrint('🎯 [RIDE_FLOW] ✅ Coordinates also sent: $_destinationLatitude, $_destinationLongitude');
+            Logger.info('Coordinates also sent: $_destinationLatitude, $_destinationLongitude', tag: 'RIDE_FLOW');
           }
         }
       } catch (e) {
-        debugPrint('🚗 [RIDE_FLOW] ⚠️ UI update callback error: $e');
+        Logger.error('UI update callback error: $e', tag: 'RIDE_FLOW', error: e);
       }
       
       // 🗣️ Anunță că procesează totul automat
@@ -2138,7 +2136,7 @@ class RideFlowManager {
       await _processRideRequestAutonomously();
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Destination confirmation error: $e');
+      Logger.error('Destination confirmation error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError('Eroare la confirmarea destinației: $e');
     }
   }
@@ -2146,7 +2144,7 @@ class RideFlowManager {
   /// 🎯 AUTONOM: Procesează complet cererea de cursă automat
   Future<void> _processRideRequestAutonomously() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Starting autonomous ride processing...');
+      Logger.debug('AUTONOM: Starting autonomous ride processing...', tag: 'RIDE_FLOW');
       
       // Pasul 1: Detectează locația curentă automat
       await _detectCurrentLocationAutonomously();
@@ -2163,10 +2161,10 @@ class RideFlowManager {
       // Pasul 5: Confirmă automat și trimite cererea
       await _confirmAndSendRequestAutonomously();
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Ride processing completed successfully');
+      Logger.info('AUTONOM: Ride processing completed successfully', tag: 'RIDE_FLOW');
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Autonomous processing error: $e');
+      Logger.error('Autonomous processing error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError('Eroare la procesarea automată a cursei: $e');
     }
   }
@@ -2174,7 +2172,7 @@ class RideFlowManager {
   /// 🎯 AUTONOM: Detectează locația curentă automat
   Future<void> _detectCurrentLocationAutonomously() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Detecting current location...');
+      Logger.debug('AUTONOM: Detecting current location...', tag: 'RIDE_FLOW');
       
       // ✅ FIX: Anunță utilizatorul că detectează locația (înainte de a face lucrul în background)
       final languageCode = await _getCurrentLanguageCode();
@@ -2186,11 +2184,11 @@ class RideFlowManager {
       final currentLocation = await _getCurrentUserLocation();
       _pickup = currentLocation;
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Current location detected: $_pickup');
+      Logger.debug('AUTONOM: Current location detected: $_pickup', tag: 'RIDE_FLOW');
       
       // ✅ Obține coordonatele destinației prin geocoding ÎMBUNĂTĂȚIT
       if (_destination != null && _destination!.isNotEmpty) {
-        debugPrint('🚗 [RIDE_FLOW] AUTONOM: Geocoding destination: $_destination');
+        Logger.debug('AUTONOM: Geocoding destination: $_destination', tag: 'RIDE_FLOW');
         
       // ✅ FIX: Anunță utilizatorul că verifică adresa destinației (înainte de a face lucrul în background)
       final langCode = await _getCurrentLanguageCode();
@@ -2203,8 +2201,8 @@ class RideFlowManager {
         if (predefinedCoords != null) {
           _destinationLatitude = predefinedCoords['latitude'];
           _destinationLongitude = predefinedCoords['longitude'];
-          debugPrint('🌍 [GPS] ✅ Destination found in predefined list: $_destinationLatitude, $_destinationLongitude');
-          debugPrint('🌍 [GPS] Address: ${predefinedCoords['name']}');
+          Logger.info('Destination found in predefined list: $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
+          Logger.debug('Address: ${predefinedCoords['name']}', tag: 'GPS');
           
           // Calculează distanța pentru feedback
           if (_pickupLatitude != null && _pickupLongitude != null) {
@@ -2214,7 +2212,7 @@ class RideFlowManager {
               _destinationLatitude!,
               _destinationLongitude!,
             );
-            debugPrint('🌍 [GPS] Distance to destination: ${distanceKm.toStringAsFixed(2)} km');
+            Logger.debug('Distance to destination: ${distanceKm.toStringAsFixed(2)} km', tag: 'GPS');
           }
         } else {
           // ✅ FIX: Folosește același serviciu ca AddressInputView (GeocodingService cu OSM Nominatim)
@@ -2237,7 +2235,7 @@ class RideFlowManager {
           List<geocoding_svc.AddressSuggestion> suggestions = [];
           
           // Încercare 1: Query original cu GeocodingService
-          debugPrint('🌍 [GPS] ✅ Using GeocodingService (OSM Nominatim) - same as AddressInputView');
+          Logger.info('Using GeocodingService (OSM Nominatim) - same as AddressInputView', tag: 'GPS');
           suggestions = await geocoding_svc.GeocodingService().fetchSuggestions(
             _destination!,
             currentPos,
@@ -2245,7 +2243,7 @@ class RideFlowManager {
           
           // Încercare 2: Dacă nu găsește, adaugă explicit "România"
           if (suggestions.isEmpty) {
-            debugPrint('🌍 [GPS] Retry 1: Adding "România" to query');
+            Logger.warning('Retry 1: Adding "România" to query', tag: 'GPS');
             suggestions = await geocoding_svc.GeocodingService().fetchSuggestions(
               '$_destination, România',
               currentPos,
@@ -2261,7 +2259,7 @@ class RideFlowManager {
               26.1025,
             );
             if (distanceToBucharest < 50) { // < 50km de București
-              debugPrint('🌍 [GPS] Retry 2: Adding "București" to query');
+              Logger.warning('Retry 2: Adding "București" to query', tag: 'GPS');
               suggestions = await geocoding_svc.GeocodingService().fetchSuggestions(
                 '$_destination, București, România',
                 currentPos,
@@ -2278,7 +2276,7 @@ class RideFlowManager {
               25.9661,
             );
             if (distanceToBragadiru < 20) { // < 20km de Bragadiru
-              debugPrint('🌍 [GPS] Retry 3: Adding "Ilfov" to query');
+              Logger.warning('Retry 3: Adding "Ilfov" to query', tag: 'GPS');
               suggestions = await geocoding_svc.GeocodingService().fetchSuggestions(
                 '$_destination, Ilfov, România',
                 currentPos,
@@ -2299,18 +2297,18 @@ class RideFlowManager {
             _destinationLongitude = closest.longitude;
             
             final distanceKm = (closest.distanceMeters ?? 0) / 1000;
-            debugPrint('🌍 [GPS] ✅ Destination found via GeocodingService (OSM Nominatim): $_destinationLatitude, $_destinationLongitude');
-            debugPrint('🌍 [GPS] Distance to destination: ${distanceKm.toStringAsFixed(2)} km');
-            debugPrint('🌍 [GPS] Address: ${closest.description}');
+            Logger.info('Destination found via GeocodingService (OSM Nominatim): $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
+            Logger.debug('Distance to destination: ${distanceKm.toStringAsFixed(2)} km', tag: 'GPS');
+            Logger.debug('Address: ${closest.description}', tag: 'GPS');
           } else {
             // ✅ PRIORITATE 2: Dacă GeocodingService eșuează, încearcă locationFromAddress (serviciul nativ)
-            debugPrint('🌍 [GPS] ⚠️ GeocodingService failed, trying locationFromAddress (native service)...');
+            Logger.error('GeocodingService failed, trying locationFromAddress (native service)...', tag: 'GPS');
             try {
               List<geocoding.Location> locations = await geocoding.locationFromAddress(_destination!);
               if (locations.isNotEmpty) {
                 _destinationLatitude = locations.first.latitude;
                 _destinationLongitude = locations.first.longitude;
-                debugPrint('🌍 [GPS] ✅ Destination found via locationFromAddress: $_destinationLatitude, $_destinationLongitude');
+                Logger.info('Destination found via locationFromAddress: $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
                 
                 // Calculează distanța pentru feedback
                 if (_pickupLatitude != null && _pickupLongitude != null) {
@@ -2320,19 +2318,19 @@ class RideFlowManager {
                     _destinationLatitude!,
                     _destinationLongitude!,
                   );
-                  debugPrint('🌍 [GPS] Distance to destination: ${distanceKm.toStringAsFixed(2)} km');
+                  Logger.debug('Distance to destination: ${distanceKm.toStringAsFixed(2)} km', tag: 'GPS');
                 }
               } else {
                 // ✅ PRIORITATE 3: Dacă locationFromAddress eșuează, încearcă cu "România" adăugat
-                debugPrint('🌍 [GPS] ⚠️ locationFromAddress failed, retrying with "România"...');
+                Logger.error('locationFromAddress failed, retrying with "România"...', tag: 'GPS');
                 locations = await geocoding.locationFromAddress('$_destination, România');
                 if (locations.isNotEmpty) {
                   _destinationLatitude = locations.first.latitude;
                   _destinationLongitude = locations.first.longitude;
-                  debugPrint('🌍 [GPS] ✅ Destination found via locationFromAddress (with România): $_destinationLatitude, $_destinationLongitude');
+                  Logger.info('Destination found via locationFromAddress (with România): $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
                 } else {
                   // ✅ PRIORITATE 4: Dacă tot eșuează, încearcă Gemini AI
-                  debugPrint('🌍 [GPS] ⚠️ locationFromAddress failed, trying Gemini AI for address clarification and coordinates...');
+                  Logger.error('locationFromAddress failed, trying Gemini AI for address clarification and coordinates...', tag: 'GPS');
                   
                   try {
                     final geminiResult = await _askGeminiForClarifiedAddress(_destination!);
@@ -2342,7 +2340,7 @@ class RideFlowManager {
                       final geminiLatitude = geminiResult['latitude'] as double?;
                       final geminiLongitude = geminiResult['longitude'] as double?;
                       
-                      debugPrint('🌍 [GPS] ✅ Gemini AI suggested clearer address: $clarifiedAddress');
+                      Logger.info('Gemini AI suggested clearer address: $clarifiedAddress', tag: 'GPS');
                       
                       // ✅ PRIORITATE 1: Dacă Gemini AI a oferit coordonate directe, folosește-le!
                       if (geminiLatitude != null && geminiLongitude != null) {
@@ -2358,16 +2356,16 @@ class RideFlowManager {
                             _destinationLatitude!,
                             _destinationLongitude!,
                           );
-                          debugPrint('🌍 [GPS] ✅ Destination found with Gemini AI coordinates: $_destinationLatitude, $_destinationLongitude');
-                          debugPrint('🌍 [GPS] Distance to destination: ${distanceKm.toStringAsFixed(2)} km');
-                          debugPrint('🌍 [GPS] Address: $clarifiedAddress');
+                          Logger.info('Destination found with Gemini AI coordinates: $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
+                          Logger.debug('Distance to destination: ${distanceKm.toStringAsFixed(2)} km', tag: 'GPS');
+                          Logger.debug('Address: $clarifiedAddress', tag: 'GPS');
                         } else {
-                          debugPrint('🌍 [GPS] ✅ Destination coordinates from Gemini AI: $_destinationLatitude, $_destinationLongitude');
-                          debugPrint('🌍 [GPS] Address: $clarifiedAddress');
+                          Logger.info('Destination coordinates from Gemini AI: $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
+                          Logger.debug('Address: $clarifiedAddress', tag: 'GPS');
                         }
                       } else {
                         // ✅ PRIORITATE 2: Dacă Gemini AI nu a oferit coordonate, reîncearcă geocoding-ul cu adresa clarificată
-                        debugPrint('🌍 [GPS] ⚠️ Gemini AI did not provide coordinates, retrying geocoding with clarified address...');
+                        Logger.warning('Gemini AI did not provide coordinates, retrying geocoding with clarified address...', tag: 'GPS');
                         
                         // Reîncearcă geocoding-ul cu adresa clarificată de Gemini
                         suggestions = await geocoding_svc.GeocodingService().fetchSuggestions(
@@ -2415,12 +2413,12 @@ class RideFlowManager {
                           _destination = closest.description;
                           
                           final distanceKm = (closest.distanceMeters ?? 0) / 1000;
-                          debugPrint('🌍 [GPS] ✅ Destination found with Gemini AI help (geocoding): $_destinationLatitude, $_destinationLongitude');
-                          debugPrint('🌍 [GPS] Distance to destination: ${distanceKm.toStringAsFixed(2)} km');
-                          debugPrint('🌍 [GPS] Address: ${closest.description}');
+                          Logger.info('Destination found with Gemini AI help (geocoding): $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
+                          Logger.debug('Distance to destination: ${distanceKm.toStringAsFixed(2)} km', tag: 'GPS');
+                          Logger.debug('Address: ${closest.description}', tag: 'GPS');
                         } else {
                           // Dacă nici cu Gemini AI nu găsește, anunță eroare
-                          debugPrint('🌍 [GPS] ❌ ERROR: Could not geocode destination even with Gemini AI help!');
+                          Logger.error('ERROR: Could not geocode destination even with Gemini AI help!', tag: 'GPS');
                           // ✅ NOU: Folosește traducere
                           final errorMsg = await VoiceTranslations.getAddressNotFound(_destination ?? '');
                           await _tts.speakWithEmotion(errorMsg, VoiceEmotion.calm);
@@ -2429,7 +2427,7 @@ class RideFlowManager {
                       }
                     } else {
                       // Dacă Gemini AI nu poate ajuta, anunță eroare
-                      debugPrint('🌍 [GPS] ❌ ERROR: Could not geocode destination after all retries!');
+                      Logger.error('ERROR: Could not geocode destination after all retries!', tag: 'GPS');
                       // ✅ FIX: Obțin limba curentă și mesajul tradus
                       final languageCode = await _getCurrentLanguageCode();
                       await _tts.setLanguage(languageCode);
@@ -2438,7 +2436,7 @@ class RideFlowManager {
                       return; // Oprește procesul
                     }
                   } catch (geminiError) {
-                    debugPrint('🌍 [GPS] ❌ Error asking Gemini AI for clarification: $geminiError');
+                    Logger.error('Error asking Gemini AI for clarification: $geminiError', tag: 'GPS');
                     // Dacă Gemini AI eșuează, anunță eroare
                     final errorMsg = 'Îmi pare rău, nu am putut găsi adresa "$_destination". Vă rog să specificați o adresă mai clară sau un loc cunoscut.';
                     await _tts.speakWithEmotion(errorMsg, VoiceEmotion.calm);
@@ -2447,9 +2445,9 @@ class RideFlowManager {
                 }
               }
             } catch (e) {
-              debugPrint('🌍 [GPS] ❌ Error in locationFromAddress: $e');
+              Logger.error('Error in locationFromAddress: $e', tag: 'GPS', error: e);
               // Dacă locationFromAddress eșuează, încearcă Gemini AI
-              debugPrint('🌍 [GPS] ⚠️ locationFromAddress error, trying Gemini AI...');
+              Logger.error('locationFromAddress error, trying Gemini AI...', tag: 'GPS');
               try {
                 final geminiResult = await _askGeminiForClarifiedAddress(_destination!);
                 if (geminiResult != null && geminiResult['address'] != null) {
@@ -2461,9 +2459,9 @@ class RideFlowManager {
                     _destinationLatitude = geminiLatitude;
                     _destinationLongitude = geminiLongitude;
                     _destination = clarifiedAddress;
-                    debugPrint('🌍 [GPS] ✅ Destination found with Gemini AI coordinates: $_destinationLatitude, $_destinationLongitude');
+                    Logger.info('Destination found with Gemini AI coordinates: $_destinationLatitude, $_destinationLongitude', tag: 'GPS');
                   } else {
-                    debugPrint('🌍 [GPS] ❌ ERROR: Could not geocode destination after all retries!');
+                    Logger.error('ERROR: Could not geocode destination after all retries!', tag: 'GPS');
                     // ✅ FIX: Obțin limba curentă și mesajul tradus
                     final languageCode = await _getCurrentLanguageCode();
                     await _tts.setLanguage(languageCode);
@@ -2472,7 +2470,7 @@ class RideFlowManager {
                     return;
                   }
                 } else {
-                  debugPrint('🌍 [GPS] ❌ ERROR: Could not geocode destination after all retries!');
+                  Logger.error('ERROR: Could not geocode destination after all retries!', tag: 'GPS');
                   // ✅ FIX: Obțin limba curentă și mesajul tradus
                   final languageCode = await _getCurrentLanguageCode();
                   await _tts.setLanguage(languageCode);
@@ -2481,7 +2479,7 @@ class RideFlowManager {
                   return;
                 }
               } catch (geminiError) {
-                debugPrint('🌍 [GPS] ❌ Error asking Gemini AI: $geminiError');
+                Logger.error('Error asking Gemini AI: $geminiError', tag: 'GPS');
                 // ✅ FIX: Obțin limba curentă și mesajul tradus
                 final languageCode = await _getCurrentLanguageCode();
                 await _tts.setLanguage(languageCode);
@@ -2498,7 +2496,7 @@ class RideFlowManager {
       // Anunțurile sunt simplificate mai jos
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Location detection error: $e');
+      Logger.error('Location detection error: $e', tag: 'RIDE_FLOW', error: e);
       // Folosește o locație default
       _pickup = 'Locația curentă detectată automat';
       _pickupLatitude = 44.4268;
@@ -2509,7 +2507,7 @@ class RideFlowManager {
   /// 🎯 AUTONOM: Calculează prețul automat
   Future<void> _calculatePriceAutonomously() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Calculating price...');
+      Logger.debug('AUTONOM: Calculating price...', tag: 'RIDE_FLOW');
       
       // ✅ FIX: Anunță utilizatorul că calculează prețul (înainte de a face lucrul în background)
       final languageCode = await _getCurrentLanguageCode();
@@ -2520,7 +2518,7 @@ class RideFlowManager {
       // Calculează prețul real
       await _calculateRealPrice();
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Price calculated: $_estimatedPrice lei');
+      Logger.debug('AUTONOM: Price calculated: $_estimatedPrice lei', tag: 'RIDE_FLOW');
       
       // ✅ FIX: Obțin limba curentă și mesajul tradus
       final langCode = await _getCurrentLanguageCode();
@@ -2531,7 +2529,7 @@ class RideFlowManager {
       await _tts.speakWithEmotion(message, VoiceEmotion.confident);
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Price calculation error: $e');
+      Logger.error('Price calculation error: $e', tag: 'RIDE_FLOW', error: e);
       _estimatedPrice = 15.0; // Preț default
     }
   }
@@ -2539,7 +2537,7 @@ class RideFlowManager {
   /// 🎯 AUTONOM: Caută șoferi automat
   Future<void> _searchDriversAutonomously() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Searching for drivers...');
+      Logger.debug('AUTONOM: Searching for drivers...', tag: 'RIDE_FLOW');
       
       // Anunță că caută șoferi
       // ✅ NOU: Folosește traducere
@@ -2568,7 +2566,7 @@ class RideFlowManager {
 
       // ✅ FIX: Verifică dacă există șoferi disponibili
       if (etaResult == null) {
-        debugPrint('🚗 [RIDE_FLOW] AUTONOM: ❌ Nu sunt șoferi disponibili');
+        Logger.error('AUTONOM:  Nu sunt șoferi disponibili', tag: 'RIDE_FLOW');
         _availableDrivers = [];
         await _handleNoDriverFound();
         return;
@@ -2580,7 +2578,7 @@ class RideFlowManager {
       ];
       _pendingDriverId = etaResult.driverId;
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: ✅ Found driver: ${etaResult.driverId} (ETA: ${etaResult.durationInMinutes} min, Distance: ${etaResult.distanceInKm.toStringAsFixed(1)} km)');
+      Logger.info('AUTONOM:  Found driver: ${etaResult.driverId} (ETA: ${etaResult.durationInMinutes} min, Distance: ${etaResult.distanceInKm.toStringAsFixed(1)} km)', tag: 'RIDE_FLOW');
       
       // Anunță rezultatul
       // ✅ NOU: Folosește traducere
@@ -2589,7 +2587,7 @@ class RideFlowManager {
       await _tts.speakWithEmotion(foundMessage, VoiceEmotion.confident);
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: ❌ Driver search error: $e');
+      Logger.error('AUTONOM:  Driver search error: $e', tag: 'RIDE_FLOW', error: e);
       _availableDrivers = [];
       await _handleNoDriverFound();
     }
@@ -2598,7 +2596,7 @@ class RideFlowManager {
   /// 🎯 AUTONOM: Selectează cel mai bun șofer automat
   Future<void> _selectBestDriverAutonomously() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Selecting best driver...');
+      Logger.debug('AUTONOM: Selecting best driver...', tag: 'RIDE_FLOW');
       
       if (_availableDrivers.isEmpty) {
         await _handleNoDriverFound();
@@ -2608,7 +2606,7 @@ class RideFlowManager {
       // Selectează primul șofer (în aplicația reală ar folosi algoritmi de matching)
       final selectedDriver = _availableDrivers.first;
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Selected driver: $selectedDriver');
+      Logger.debug('AUTONOM: Selected driver: $selectedDriver', tag: 'RIDE_FLOW');
       
       // Anunță utilizatorul
       final message = 'Am selectat cel mai bun șofer pentru dumneavoastră.';
@@ -2616,7 +2614,7 @@ class RideFlowManager {
       await _tts.speakWithEmotion(message, VoiceEmotion.confident);
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Driver selection error: $e');
+      Logger.error('Driver selection error: $e', tag: 'RIDE_FLOW', error: e);
       rethrow;
     }
   }
@@ -2624,7 +2622,7 @@ class RideFlowManager {
   /// 🎯 AUTONOM: Confirmă și trimite cererea automat
   Future<void> _confirmAndSendRequestAutonomously() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Confirming and sending request...');
+      Logger.debug('AUTONOM: Confirming and sending request...', tag: 'RIDE_FLOW');
       
       // Anunță că trimite cererea
       final message = 'Trimit cererea către șofer...';
@@ -2648,10 +2646,10 @@ class RideFlowManager {
       final searchingScreen = SearchingForDriverScreen(rideId: rideId);
       onNavigateToScreen(searchingScreen);
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Request sent successfully, ride ID: $rideId');
+      Logger.debug('AUTONOM: Request sent successfully, ride ID: $rideId', tag: 'RIDE_FLOW');
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Request confirmation error: $e');
+      Logger.error('Request confirmation error: $e', tag: 'RIDE_FLOW', error: e);
       rethrow;
     }
   }
@@ -2661,7 +2659,7 @@ class RideFlowManager {
     try {
       // ✅ CORECTAT: Nu anunță rezultatul dacă nu există șoferi disponibili
       if (_availableDrivers.isEmpty) {
-        debugPrint('🚗 [RIDE_FLOW] AUTONOM: Nu sunt șoferi disponibili, omițând anunțul final');
+        Logger.debug('AUTONOM: Nu sunt șoferi disponibili, omițând anunțul final', tag: 'RIDE_FLOW');
         await _handleNoDriverFound();
         return;
       }
@@ -2680,10 +2678,10 @@ class RideFlowManager {
       _lastSpokenMessage = finalMessage;
       await _tts.speakWithEmotion(finalMessage, VoiceEmotion.confident);
       
-      debugPrint('🚗 [RIDE_FLOW] AUTONOM: Final result announced - Driver: $driverName, ETA: $etaMinutes min, Price: $priceRounded lei');
+      Logger.debug('AUTONOM: Final result announced - Driver: $driverName, ETA: $etaMinutes min, Price: $priceRounded lei', tag: 'RIDE_FLOW');
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Final announcement error: $e');
+      Logger.error('Final announcement error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
   
@@ -2692,7 +2690,7 @@ class RideFlowManager {
   // ignore: unused_element
   Future<void> _getCurrentLocationAndConfirm() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Getting current GPS location...');
+      Logger.debug('Getting current GPS location...', tag: 'RIDE_FLOW');
       
       // Simulează obținerea locației GPS (în aplicația reală ar folosi Geolocator)
       // Pentru demo, folosim o locație fixă
@@ -2714,7 +2712,7 @@ class RideFlowManager {
       await _startListeningForPickupConfirmation();
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ GPS location error: $e');
+      Logger.error('GPS location error: $e', tag: 'RIDE_FLOW', error: e);
       await _handleError('Eroare la detectarea locației: $e');
     }
   }
@@ -2725,7 +2723,7 @@ class RideFlowManager {
       // Așteaptă puțin să se termine TTS-ul complet
       await Future.delayed(Duration(milliseconds: 1500));
       
-      debugPrint('🚗 [RIDE_FLOW] Auto-starting pickup confirmation listening...');
+      Logger.info('Auto-starting pickup confirmation listening...', tag: 'RIDE_FLOW');
       
       // Pornește automat ascultarea pentru confirmarea pickup-ului
       await _voiceOrchestrator.listen(
@@ -2734,19 +2732,19 @@ class RideFlowManager {
       );
       
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ⚠️ Auto-listen for pickup confirmation error: $e');
+      Logger.error('Auto-listen for pickup confirmation error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
 
   /// 🛑 Oprește procesarea
   Future<void> stop() async {
     try {
-      debugPrint('🚗 [RIDE_FLOW] Stopping...');
+      Logger.debug('Stopping...', tag: 'RIDE_FLOW');
       await _tts.stop();
       _currentState = RideFlowState.idle;
-      debugPrint('🚗 [RIDE_FLOW] ✅ Stopped successfully');
+      Logger.info('Stopped successfully', tag: 'RIDE_FLOW');
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] ❌ Stop error: $e');
+      Logger.error('Stop error: $e', tag: 'RIDE_FLOW', error: e);
     }
   }
   
@@ -2764,21 +2762,21 @@ class RideFlowManager {
     try {
       _voiceOrchestrator.stop();
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] Error stopping voice orchestrator: $e');
+      Logger.error('Error stopping voice orchestrator: $e', tag: 'RIDE_FLOW', error: e);
     }
     
     // ✅ Dispose TTS
     try {
       _tts.dispose();
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] Error disposing TTS: $e');
+      Logger.error('Error disposing TTS: $e', tag: 'RIDE_FLOW', error: e);
     }
     
     // ✅ Dispose beep service
     try {
       _beepService.dispose();
     } catch (e) {
-      debugPrint('🚗 [RIDE_FLOW] Error disposing beep service: $e');
+      Logger.error('Error disposing beep service: $e', tag: 'RIDE_FLOW', error: e);
     }
     
     // ✅ Clear conversation history to free memory
@@ -2800,6 +2798,6 @@ class RideFlowManager {
     _destinationLatitude = null;
     _destinationLongitude = null;
     
-    debugPrint('🚗 [RIDE_FLOW] ✅ Dispose completed - all resources cleaned up');
+    Logger.info('Dispose completed - all resources cleaned up', tag: 'RIDE_FLOW');
   }
 }

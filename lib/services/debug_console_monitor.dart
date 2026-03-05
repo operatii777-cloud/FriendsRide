@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Tipuri de mesaje de debug
 enum DebugMessageType {
@@ -82,12 +83,12 @@ class DebugConsoleMonitor {
   /// Initializează monitorul
   void initialize() {
     if (kDebugMode) {
-      debugPrint('🔍 [DEBUG_MONITOR] Initializing debug console monitor...');
+      Logger.debug('Initializing debug console monitor...', tag: 'DEBUG_MONITOR');
       
       // Interceptăm debugPrint prin override (nu putem face asta direct în Dart)
       // Dar putem monitoriza prin pattern matching
       
-      debugPrint('✅ [DEBUG_MONITOR] Debug console monitor initialized');
+      Logger.info('Debug console monitor initialized', tag: 'DEBUG_MONITOR');
     }
   }
   

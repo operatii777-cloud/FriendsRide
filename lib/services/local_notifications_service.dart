@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class LocalNotificationsService {
   static final LocalNotificationsService _instance =
@@ -31,7 +32,7 @@ class LocalNotificationsService {
     await _plugin.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        debugPrint('LocalNotification tapped: ${response.payload}');
+        Logger.debug('LocalNotification tapped: ${response.payload}');
       },
     );
 

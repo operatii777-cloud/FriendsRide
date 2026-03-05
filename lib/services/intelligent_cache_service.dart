@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🧠 Intelligent Cache Service - Sistem de cache inteligent pentru operațiuni frecvente
 /// 
@@ -41,9 +42,9 @@ class IntelligentCacheService {
       await _loadPersistentCache();
       
       _isInitialized = true;
-      debugPrint('🧠 [INTELLIGENT_CACHE] Service initialized');
+      Logger.info('Service initialized', tag: 'INTELLIGENT_CACHE');
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Initialization failed: $e');
+      Logger.error('Initialization failed: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -56,7 +57,7 @@ class IntelligentCacheService {
       final memoryEntry = _memoryCache[key];
       if (memoryEntry != null && !_isExpired(memoryEntry, maxAge)) {
         _lastAccessTimes[key] = DateTime.now();
-        debugPrint('🧠 [INTELLIGENT_CACHE] Memory hit for key: $key');
+        Logger.debug('Memory hit for key: $key', tag: 'INTELLIGENT_CACHE');
         return memoryEntry.data as T?;
       }
       
@@ -66,14 +67,14 @@ class IntelligentCacheService {
         // Move to memory cache for faster access
         await set(key, persistentData, source: 'persistent');
         _lastAccessTimes[key] = DateTime.now();
-        debugPrint('🧠 [INTELLIGENT_CACHE] Persistent hit for key: $key');
+        Logger.debug('Persistent hit for key: $key', tag: 'INTELLIGENT_CACHE');
         return persistentData as T?;
       }
       
-      debugPrint('🧠 [INTELLIGENT_CACHE] Cache miss for key: $key');
+      Logger.debug('Cache miss for key: $key', tag: 'INTELLIGENT_CACHE');
       return null;
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Get failed for key $key: $e');
+      Logger.error('Get failed for key $key: $e', tag: 'INTELLIGENT_CACHE', error: e);
       return null;
     }
   }
@@ -98,14 +99,14 @@ class IntelligentCacheService {
         await _setPersistentCache(key, value, ttl);
       }
       
-      debugPrint('🧠 [INTELLIGENT_CACHE] Cached $source data for key: $key (priority: $priority)');
+      Logger.debug('Cached $source data for key: $key (priority: $priority)', tag: 'INTELLIGENT_CACHE');
       
       // Trigger cleanup if needed
       if (_memoryCache.length > _maxMemoryEntries) {
         _performMemoryCleanup();
       }
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Set failed for key $key: $e');
+      Logger.error('Set failed for key $key: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -121,7 +122,7 @@ class IntelligentCacheService {
     for (final entry in data.entries) {
       await setIntelligent(entry.key, entry.value);
     }
-    debugPrint('🧠 [INTELLIGENT_CACHE] Cache warmed with ${data.length} entries');
+    Logger.debug('Cache warmed with ${data.length} entries', tag: 'INTELLIGENT_CACHE');
   }
   
   /// Invalidate cache entry
@@ -129,7 +130,7 @@ class IntelligentCacheService {
     _memoryCache.remove(key);
     _lastAccessTimes.remove(key);
     await _removePersistentCache(key);
-    debugPrint('🧠 [INTELLIGENT_CACHE] Invalidated cache for key: $key');
+    Logger.debug('Invalidated cache for key: $key', tag: 'INTELLIGENT_CACHE');
   }
   
   /// Invalidate cache pattern
@@ -146,7 +147,7 @@ class IntelligentCacheService {
       await invalidate(key);
     }
     
-    debugPrint('🧠 [INTELLIGENT_CACHE] Invalidated ${keysToRemove.length} entries matching pattern: $pattern');
+    Logger.debug('Invalidated ${keysToRemove.length} entries matching pattern: $pattern', tag: 'INTELLIGENT_CACHE');
   }
   
   /// Get cache statistics
@@ -174,7 +175,7 @@ class IntelligentCacheService {
     _memoryCache.clear();
     _lastAccessTimes.clear();
     await _clearPersistentCache();
-    debugPrint('🧠 [INTELLIGENT_CACHE] All cache cleared');
+    Logger.debug('All cache cleared', tag: 'INTELLIGENT_CACHE');
   }
   
   /// Dispose service
@@ -234,10 +235,10 @@ class IntelligentCacheService {
       await _cleanupPersistentCache();
       
       if (expiredKeys.isNotEmpty) {
-        debugPrint('🧠 [INTELLIGENT_CACHE] Cleaned up ${expiredKeys.length} expired entries');
+        Logger.debug('Cleaned up ${expiredKeys.length} expired entries', tag: 'INTELLIGENT_CACHE');
       }
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Cleanup failed: $e');
+      Logger.error('Cleanup failed: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -264,7 +265,7 @@ class IntelligentCacheService {
       _lastAccessTimes.remove(entry.key);
     }
     
-    debugPrint('🧠 [INTELLIGENT_CACHE] Memory cleanup removed ${entriesToRemove.length} entries');
+    Logger.debug('Memory cleanup removed ${entriesToRemove.length} entries', tag: 'INTELLIGENT_CACHE');
   }
   
   double _calculateHitRate() {
@@ -303,10 +304,10 @@ class IntelligentCacheService {
       }
       
       if (loadedCount > 0) {
-        debugPrint('🧠 [INTELLIGENT_CACHE] Loaded $loadedCount entries from persistent cache');
+        Logger.info('Loaded $loadedCount entries from persistent cache', tag: 'INTELLIGENT_CACHE');
       }
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Failed to load persistent cache: $e');
+      Logger.error('Failed to load persistent cache: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -322,7 +323,7 @@ class IntelligentCacheService {
       
       await prefs.setString(cacheKey, data);
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Failed to set persistent cache for $key: $e');
+      Logger.error('Failed to set persistent cache for $key: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -346,7 +347,7 @@ class IntelligentCacheService {
         }
       }
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Failed to get persistent cache for $key: $e');
+      Logger.error('Failed to get persistent cache for $key: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
     
     return null;
@@ -357,7 +358,7 @@ class IntelligentCacheService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('cache_$key');
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Failed to remove persistent cache for $key: $e');
+      Logger.error('Failed to remove persistent cache for $key: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -389,10 +390,10 @@ class IntelligentCacheService {
       }
       
       if (removedCount > 0) {
-        debugPrint('🧠 [INTELLIGENT_CACHE] Cleaned up $removedCount expired persistent entries');
+        Logger.debug('Cleaned up $removedCount expired persistent entries', tag: 'INTELLIGENT_CACHE');
       }
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Failed to cleanup persistent cache: $e');
+      Logger.error('Failed to cleanup persistent cache: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
   
@@ -405,9 +406,9 @@ class IntelligentCacheService {
         await prefs.remove(key);
       }
       
-      debugPrint('🧠 [INTELLIGENT_CACHE] Cleared ${keys.length} persistent cache entries');
+      Logger.debug('Cleared ${keys.length} persistent cache entries', tag: 'INTELLIGENT_CACHE');
     } catch (e) {
-      debugPrint('❌ [INTELLIGENT_CACHE] Failed to clear persistent cache: $e');
+      Logger.error('Failed to clear persistent cache: $e', tag: 'INTELLIGENT_CACHE', error: e);
     }
   }
 }

@@ -20,6 +20,7 @@ import 'package:friendsride_app/models/voice_models.dart';
 import 'package:friendsride_app/services/pricing_service.dart';
 import 'package:friendsride_app/services/push_notification_service.dart';
 import 'package:friendsride_app/services/routing_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 enum DateFilter { all, today, lastWeek, lastMonth, last3Months, thisYear }
 
@@ -643,7 +644,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     Logger.info('Starting optimized driver search for ride $rideId', tag: 'FIRESTORE');
   
     if (ride.startLatitude == null || ride.startLongitude == null) {
-      debugPrint('❌ Ride $rideId missing coordinates');
+      Logger.error('Ride $rideId missing coordinates');
       return;
     }
   
@@ -895,13 +896,13 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
   }
 
   Future<void> acceptRide(String rideId) async {
-    debugPrint('🚗 [DRIVER] Accepting ride: $rideId');
-    debugPrint('🚗 [DRIVER] Current user ID: $_uid');
-    debugPrint('🚗 [DRIVER] Auth state: ${_auth.currentUser?.uid}');
-    debugPrint('🚗 [DRIVER] Is user logged in: ${_auth.currentUser != null}');
+    Logger.debug('Accepting ride: $rideId', tag: 'DRIVER');
+    Logger.debug('Current user ID: $_uid', tag: 'DRIVER');
+    Logger.debug('Auth state: ${_auth.currentUser?.uid}', tag: 'DRIVER');
+    Logger.debug('Is user logged in: ${_auth.currentUser != null}', tag: 'DRIVER');
     
     if (_uid == null) {
-      debugPrint('❌ [DRIVER] Driver not authenticated - _uid is null');
+      Logger.error('Driver not authenticated - _uid is null', tag: 'DRIVER');
       throw Exception("Driver not authenticated. Please log in again.");
     }
     
@@ -909,27 +910,27 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       // Verifică dacă documentul există înainte de update
       final rideDoc = await _db.collection('ride_requests').doc(rideId).get();
       if (!rideDoc.exists) {
-        debugPrint('❌ [DRIVER] Ride document does not exist: $rideId');
+        Logger.error('Ride document does not exist: $rideId', tag: 'DRIVER');
         throw Exception("Ride not found: $rideId");
       }
       
       final rideData = rideDoc.data()!;
-      debugPrint('🚗 [DRIVER] Current ride status: ${rideData['status']}');
-      debugPrint('🚗 [DRIVER] Current ride passenger: ${rideData['passengerId']}');
-      debugPrint('🚗 [DRIVER] Current ride data: $rideData');
+      Logger.debug('Current ride status: ${rideData['status']}', tag: 'DRIVER');
+      Logger.debug('Current ride passenger: ${rideData['passengerId']}', tag: 'DRIVER');
+      Logger.debug('Current ride data: $rideData', tag: 'DRIVER');
       
       // Verifică dacă utilizatorul curent este șofer și are permisiuni
       if (rideData['driverId'] != null && rideData['driverId'] != _uid) {
-        debugPrint('❌ [DRIVER] Ride already assigned to another driver: ${rideData['driverId']}');
+        Logger.error('Ride already assigned to another driver: ${rideData['driverId']}', tag: 'DRIVER');
         throw Exception("Ride already assigned to another driver");
       }
       
       // Verifică dacă utilizatorul curent este șofer
       final userRole = await getUserRole();
-      debugPrint('🚗 [DRIVER] Current user role: $userRole');
+      Logger.debug('Current user role: $userRole', tag: 'DRIVER');
       
       if (userRole != UserRole.driver) {
-        debugPrint('❌ [DRIVER] User is not a driver: $userRole');
+        Logger.error('User is not a driver: $userRole', tag: 'DRIVER');
         throw Exception("User is not a driver. Cannot accept rides.");
       }
       
@@ -942,17 +943,17 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'driverAcceptanceUpdatedAt': FieldValue.serverTimestamp(),
       };
       
-      debugPrint('🚗 [DRIVER] Updating ride with data: $updateData');
+      Logger.debug('Updating ride with data: $updateData', tag: 'DRIVER');
       
       await _db.collection('ride_requests').doc(rideId).update(updateData);
       
-      debugPrint('✅ [DRIVER] Ride $rideId status updated to driver_found');
+      Logger.info('Ride $rideId status updated to driver_found', tag: 'DRIVER');
     } catch (e) {
-      debugPrint('❌ [DRIVER] Error accepting ride: $e');
-      debugPrint('❌ [DRIVER] Error type: ${e.runtimeType}');
+      Logger.error('Error accepting ride: $e', tag: 'DRIVER', error: e);
+      Logger.error('Error type: ${e.runtimeType}', tag: 'DRIVER');
       if (e is FirebaseException) {
-        debugPrint('❌ [DRIVER] Firebase error code: ${e.code}');
-        debugPrint('❌ [DRIVER] Firebase error message: ${e.message}');
+        Logger.error('Firebase error code: ${e.code}', tag: 'DRIVER');
+        Logger.error('Firebase error message: ${e.message}', tag: 'DRIVER');
       }
       rethrow;
     }
@@ -1066,7 +1067,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
           'declinedBy': FieldValue.arrayUnion([_uid]),
           'declinedAt': FieldValue.serverTimestamp(),
         });
-        debugPrint('🚗 Driver declined assigned ride, returned to pending');
+        Logger.debug('Driver declined assigned ride, returned to pending');
       } else {
         // Decline normal
         _addToBatch('ride_requests', rideId, {
@@ -1074,7 +1075,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         });
       }
     } catch (e) {
-      debugPrint('❌ Error in declineRide: $e');
+      Logger.error('Error in declineRide: $e', error: e);
     }
   }
 
@@ -1120,7 +1121,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       await _db.collection('users').doc(_uid).update({'photoURL': downloadUrl});
       return downloadUrl;
     } catch (e) {
-      debugPrint("Profile image upload error: $e");
+      Logger.error("Profile image upload error: $e", error: e);
       rethrow;
     }
   }
@@ -1228,11 +1229,11 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     }
 
     try {
-      debugPrint('Attempting to activate driver code: $code for user: $_uid');
+      Logger.debug('Attempting to activate driver code: $code for user: $_uid');
       final userDoc = await _db.collection('users').doc(_uid).get();
       
       if (!userDoc.exists) {
-        debugPrint('User document does not exist for user: $_uid');
+        Logger.debug('User document does not exist for user: $_uid');
         return false;
       }
 
@@ -1241,12 +1242,12 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       final isCodeActive = userData['isCodeActive'] as bool?;
 
       if (storedCode == null || storedCode != code) {
-        debugPrint('Invalid activation code. Expected: $storedCode, Got: $code');
+        Logger.debug('Invalid activation code. Expected: $storedCode, Got: $code');
         return false;
       }
 
       if (isCodeActive != true) {
-        debugPrint('Activation code is not active or was already used');
+        Logger.debug('Activation code is not active or was already used');
         return false;
       }
 
@@ -1257,11 +1258,11 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'activationCodeUsedAt': FieldValue.serverTimestamp(),
       });
 
-      debugPrint('Driver activation successful for user: $_uid with code: $code');
+      Logger.debug('Driver activation successful for user: $_uid with code: $code');
       return true;
 
     } catch (e) {
-      debugPrint('Error activating driver code: $e');
+      Logger.error('Error activating driver code: $e', error: e);
       throw Exception('Code validation error: $e');
     }
   }
@@ -1293,18 +1294,18 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       };
 
     } catch (e) {
-      debugPrint('Error checking activation code status: $e');
+      Logger.error('Error checking activation code status: $e', error: e);
       return {'hasCode': false, 'isActive': false, 'message': 'Verification error'};
     }
   }
   
   Stream<Ride?> getActiveDriverRideStream() {
     if (_uid == null) {
-      debugPrint('🔍 getActiveDriverRideStream: UID is null, returning empty stream');
+      Logger.debug('getActiveDriverRideStream: UID is null, returning empty stream');
       return Stream.value(null);
     }
     
-    debugPrint('🔍 getActiveDriverRideStream: Querying for UID: $_uid');
+    Logger.debug('getActiveDriverRideStream: Querying for UID: $_uid');
     
     return _db.collection('ride_requests')
         .where('driverId', isEqualTo: _uid)
@@ -1312,26 +1313,26 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         .limit(1)
         .snapshots()
         .map((snapshot) {
-          debugPrint('🔍 getActiveDriverRideStream: Found ${snapshot.docs.length} driver rides');
+          Logger.debug('getActiveDriverRideStream: Found ${snapshot.docs.length} driver rides');
           
           if (snapshot.docs.isNotEmpty) {
             final doc = snapshot.docs.first;
             final data = doc.data();
-            debugPrint('🔍 Driver ride data:');
-            debugPrint('🔍 - ID: ${doc.id}');
-            debugPrint('🔍 - Status: ${data['status']}');
-            debugPrint('🔍 - DriverId: ${data['driverId']}');
-            debugPrint('🔍 - PassengerId: ${data['passengerId']}');
+            Logger.debug('Driver ride data:');
+            Logger.debug('- ID: ${doc.id}');
+            Logger.debug('- Status: ${data['status']}');
+            Logger.debug('- DriverId: ${data['driverId']}');
+            Logger.debug('- PassengerId: ${data['passengerId']}');
             
             final ride = Ride.fromFirestore(snapshot.docs.first);
             return ride;
           } else {
-            debugPrint('🔍 getActiveDriverRideStream: No driver rides found');
+            Logger.debug('getActiveDriverRideStream: No driver rides found');
           }
           return null;
         })
         .handleError((error) {
-          debugPrint('❌ [FIRESTORE] Error in getActiveDriverRideStream: $error');
+          Logger.error('Error in getActiveDriverRideStream: $error', tag: 'FIRESTORE', error: error);
           return null; // Return null on error instead of crashing
         });
   }
@@ -1519,7 +1520,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         final snapshot = await transaction.get(passengerProfileRef);
 
         if (!snapshot.exists) {
-          debugPrint("Error: Passenger profile with ID $passengerId not found. Transaction cancelled.");
+          Logger.error("Error: Passenger profile with ID $passengerId not found. Transaction cancelled.");
           return; 
         }
 
@@ -1605,10 +1606,10 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
   }
 
   Stream<Ride> getRideStream(String rideId) {
-    debugPrint('📡 [STREAM] Creating ride stream for ride: $rideId');
+    Logger.debug('Creating ride stream for ride: $rideId', tag: 'STREAM');
     return _db.collection('ride_requests').doc(rideId).snapshots().map((doc) {
       final ride = Ride.fromFirestore(doc);
-      debugPrint('📡 [STREAM] Ride $rideId status: ${ride.status}');
+      Logger.debug('Ride $rideId status: ${ride.status}', tag: 'STREAM');
       return ride;
     });
   }
@@ -1869,7 +1870,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
 
   // ✅ NOU: Metoda pentru căutarea automată de șoferi pentru RideRequest
   Future<void> _startAutomaticDriverSearchForRideRequest(String rideId, RideRequest rideRequest) async {
-    debugPrint('🚗 [AUTO SEARCH] Starting automatic driver search for ride request: $rideId');
+    Logger.debug('Starting automatic driver search for ride request: $rideId', tag: 'AUTO SEARCH');
     
     try {
       // Simulează căutarea automată de șoferi
@@ -1881,9 +1882,9 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'searchStartTime': FieldValue.serverTimestamp(),
       });
       
-      debugPrint('✅ [AUTO SEARCH] Driver search started for ride request: $rideId');
+      Logger.info('Driver search started for ride request: $rideId', tag: 'AUTO SEARCH');
     } catch (e) {
-      debugPrint('❌ [AUTO SEARCH] Error starting driver search: $e');
+      Logger.error('Error starting driver search: $e', tag: 'AUTO SEARCH', error: e);
     }
   }
 
@@ -1891,7 +1892,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     final driverId = driverInfo['driverId'] as String;
     final distance = driverInfo['distance'] as double;
     
-    debugPrint('Auto-assigning ride $rideId to driver $driverId (${distance.toStringAsFixed(1)}km away)');
+    Logger.debug('Auto-assigning ride $rideId to driver $driverId (${distance.toStringAsFixed(1)}km away)');
     
     try {
       await SafeFirestoreOperations.safeFirestoreOperation(
@@ -1920,12 +1921,12 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         final data = rideDoc.data()!;
         if (data['status'] == 'driver_found' &&
             data['driverAcceptanceStatus'] == 'awaiting_acceptance') {
-          debugPrint('Driver $driverId did not respond for ride $rideId, resuming search.');
+          Logger.debug('Driver $driverId did not respond for ride $rideId, resuming search.');
           await _handleDriverNoResponse(rideId, driverId);
         }
       });
     } catch (e) {
-      debugPrint('Error assigning ride to driver: $e');
+      Logger.error('Error assigning ride to driver: $e', error: e);
     }
   }
 
@@ -1983,7 +1984,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         },
       );
     } catch (e) {
-      debugPrint('Error handling driver no response: $e');
+      Logger.error('Error handling driver no response: $e', error: e);
     }
   }
 
@@ -2053,9 +2054,9 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     final rideDoc = await _db.collection('ride_requests').doc(rideId).get();
     if (rideDoc.exists && rideDoc.data()?['passengerId'] == _uid) {  // ✅ MODIFICAT: userId → passengerId
       await _db.collection('ride_requests').doc(rideId).delete();
-      debugPrint('Ride $rideId deleted by user $_uid');
+      Logger.debug('Ride $rideId deleted by user $_uid');
     } else {
-      debugPrint('User $_uid attempted to delete ride $rideId without permission.');
+      Logger.debug('User $_uid attempted to delete ride $rideId without permission.');
       throw Exception("You don't have permission to delete this ride.");
     }
   }
@@ -2160,10 +2161,10 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       
       // Note: Push notification will be sent via Cloud Function in future update
       // For now, only log
-      debugPrint('📱 [PUSH] Chat notification: $senderName: ${messageText.substring(0, messageText.length > 50 ? 50 : messageText.length)}...');
+      Logger.info('Chat notification: $senderName: ${messageText.substring(0, messageText.length > 50 ? 50 : messageText.length)}...', tag: 'PUSH');
       
     } catch (e) {
-      debugPrint('⚠️ Error sending chat push notification: $e');
+      Logger.error('Error sending chat push notification: $e', error: e);
     }
   }
 
@@ -2182,7 +2183,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'status': MessageStatus.read.name,
       });
     } catch (e) {
-      debugPrint('⚠️ Error marking message as read: $e');
+      Logger.error('Error marking message as read: $e', error: e);
     }
   }
 
@@ -2209,7 +2210,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       
       await batch.commit();
     } catch (e) {
-      debugPrint('⚠️ Error marking all messages as read: $e');
+      Logger.error('Error marking all messages as read: $e', error: e);
     }
   }
 
@@ -2230,7 +2231,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         },
       });
     } catch (e) {
-      debugPrint('⚠️ Error setting typing indicator: $e');
+      Logger.error('Error setting typing indicator: $e', error: e);
     }
   }
 
@@ -2275,9 +2276,9 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'isEdited': true,
       });
       
-      debugPrint('✅ Chat message edited successfully');
+      Logger.info('Chat message edited successfully');
     } catch (e) {
-      debugPrint('⚠️ Error editing chat message: $e');
+      Logger.error('Error editing chat message: $e', error: e);
       rethrow;
     }
   }
@@ -2298,14 +2299,14 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     final rideDoc = await rideRef.get();
     
     if (!rideDoc.exists) {
-      debugPrint("Ride $rideId not found for cancellation.");
+      Logger.debug("Ride $rideId not found for cancellation.");
       return;
     }
     
     final ride = Ride.fromFirestore(rideDoc);
     
     if (ride.status == 'completed' || ride.status == 'cancelled') {
-      debugPrint("Ride $rideId is already completed or cancelled.");
+      Logger.info("Ride $rideId is already completed or cancelled.");
       return;
     }
     
@@ -2395,7 +2396,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
   }
 
   Future<void> passengerDeclineDriver(String rideId) async {
-    debugPrint('Passenger declining driver for ride $rideId');
+    Logger.debug('Passenger declining driver for ride $rideId');
     final rideDoc = await _db.collection('ride_requests').doc(rideId).get();
     if (!rideDoc.exists || rideDoc.data()?['driverId'] == null) return;
     
@@ -2482,9 +2483,9 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'permissions': permissions,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ User permissions updated');
+      Logger.info('User permissions updated');
     } catch (e) {
-      debugPrint('⚠️ Error updating user permissions: $e');
+      Logger.error('Error updating user permissions: $e', error: e);
       rethrow;
     }
   }
@@ -2498,9 +2499,9 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         'fcmToken': token,
         'fcmTokenUpdated': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ FCM token updated');
+      Logger.info('FCM token updated');
     } catch (e) {
-      debugPrint('⚠️ Error updating FCM token: $e');
+      Logger.error('Error updating FCM token: $e', error: e);
     }
   }
 
@@ -2516,7 +2517,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       }
       return false;
     } catch (e) {
-      debugPrint('⚠️ Error checking onboarding status: $e');
+      Logger.error('Error checking onboarding status: $e', error: e);
       return false;
     }
   }
@@ -2767,7 +2768,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       return users;
       
     } catch (e) {
-      debugPrint('❌ Error in searchUsersOptimized: $e');
+      Logger.error('Error in searchUsersOptimized: $e', error: e);
       return [];
     }
   }
@@ -2810,7 +2811,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       return nearbyDrivers;
       
     } catch (e) {
-      debugPrint('❌ Error in findOnlineDriversOptimized: $e');
+      Logger.error('Error in findOnlineDriversOptimized: $e', error: e);
       return [];
     }
   }
@@ -2826,11 +2827,11 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       }
       
       await batch.commit();
-      debugPrint('✅ Batch update completed: ${updates.length} documents');
+      Logger.info('Batch update completed: ${updates.length} documents');
       return true;
       
     } catch (e) {
-      debugPrint('❌ Error in batchUpdateOptimized: $e');
+      Logger.error('Error in batchUpdateOptimized: $e', error: e);
       return false;
     }
   }
@@ -2875,7 +2876,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       return rides;
       
     } catch (e) {
-      debugPrint('❌ Error in getRideHistoryOptimized: $e');
+      Logger.error('Error in getRideHistoryOptimized: $e', error: e);
       return [];
     }
   }
@@ -2988,7 +2989,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       return analytics;
 
     } catch (e) {
-      debugPrint('❌ [ANALYTICS] Failed to get analytics: $e');
+      Logger.error('Failed to get analytics: $e', tag: 'ANALYTICS', error: e);
       return <String, dynamic>{
         'totalRides': 0,
         'totalRevenue': 0.0,
@@ -3002,7 +3003,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
   /// Cleanup expired data from cache and database
   Future<void> cleanupExpiredData({Duration maxAge = const Duration(days: 7)}) async {
     try {
-      debugPrint('🧹 [CLEANUP] Starting expired data cleanup...');
+      Logger.debug('Starting expired data cleanup...', tag: 'CLEANUP');
 
       final cutoffDate = DateTime.now().subtract(maxAge);
 
@@ -3041,10 +3042,10 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         return timestamp != null && timestamp.isBefore(cutoffDate);
       });
 
-      debugPrint('✅ [CLEANUP] Expired data cleanup completed. Removed ${expiredCacheKeys.length} cache entries, ${expiredLocationKeys.length} location updates');
+      Logger.info('Expired data cleanup completed. Removed ${expiredCacheKeys.length} cache entries, ${expiredLocationKeys.length} location updates', tag: 'CLEANUP');
 
     } catch (e) {
-      debugPrint('❌ [CLEANUP] Failed to cleanup expired data: $e');
+      Logger.error('Failed to cleanup expired data: $e', tag: 'CLEANUP', error: e);
     }
   }
   
@@ -3188,7 +3189,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     if (_uid == null) return;
     
     try {
-      debugPrint('🧹 Force cleanup all active rides for user: $_uid');
+      Logger.debug('Force cleanup all active rides for user: $_uid');
       
       // Găsește TOATE cursele active unde utilizatorul apare
       final allActiveRides = await _db.collection('ride_requests')
@@ -3205,7 +3206,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         
         // Dacă utilizatorul apare ca pasager SAU ca șofer în curse active
         if (passengerId == _uid || driverId == _uid) {
-          debugPrint('🧹 Cleaning ride: ${doc.id} (passenger: $passengerId, driver: $driverId)');
+          Logger.debug('Cleaning ride: ${doc.id} (passenger: $passengerId, driver: $driverId)');
           
           batch.update(doc.reference, {
             'status': 'force_expired',
@@ -3218,13 +3219,13 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       
       if (cleanedCount > 0) {
         await batch.commit();
-        debugPrint('🧹 Force cleaned $cleanedCount rides');
+        Logger.debug('Force cleaned $cleanedCount rides');
       } else {
-        debugPrint('🧹 No rides to clean');
+        Logger.debug('No rides to clean');
       }
       
     } catch (e) {
-      debugPrint('❌ Error in force cleanup: $e');
+      Logger.error('Error in force cleanup: $e', error: e);
     }
   }
 
@@ -3247,7 +3248,7 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         if (masked != null && masked.isNotEmpty) return masked;
       }
     } catch (e) {
-      debugPrint('⚠️ getMaskedPhoneForRide error: $e');
+      Logger.error('getMaskedPhoneForRide error: $e', error: e);
     }
     return null;
   }
@@ -3400,17 +3401,17 @@ class SafeFirestoreOperations {
       } catch (e) {
         Logger.error('Unexpected error for $operation', error: e, tag: 'FIRESTORE');
         if (attempt == maxRetries - 1) {
-          debugPrint('Max retries exceeded for $operation due to unexpected errors');
+          Logger.debug('Max retries exceeded for $operation due to unexpected errors');
           return null;
         }
         
         final delay = Duration(seconds: 1);
-        debugPrint('Retrying $operation after unexpected error in ${delay.inSeconds} second...');
+        Logger.error('Retrying $operation after unexpected error in ${delay.inSeconds} second...');
         await Future.delayed(delay);
       }
     }
     
-    debugPrint('All retry attempts failed for $operation');
+    Logger.error('All retry attempts failed for $operation');
     return null;
   }
   
@@ -3425,14 +3426,14 @@ class SafeFirestoreOperations {
     if (useCache) {
       final cached = getCachedQuery(queryKey);
       if (cached != null) {
-        debugPrint('🚀 [DB_OPTIMIZATION] Using cached query result: $queryKey');
+        Logger.info('Using cached query result: $queryKey', tag: 'DB_OPTIMIZATION');
         return cached.result as QuerySnapshot?;
       }
     }
     
     // Check rate limiting
     if (!canExecuteQuery(queryKey)) {
-      debugPrint('⚠️ [DB_OPTIMIZATION] Query rate limited: $queryKey');
+      Logger.warning('Query rate limited: $queryKey', tag: 'DB_OPTIMIZATION');
       return null;
     }
     

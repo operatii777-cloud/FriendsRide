@@ -19,6 +19,7 @@ import 'package:friendsride_app/voice/integration/friendsride_voice_integration.
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class AddressInputView extends StatefulWidget {
   final ScrollController scrollController;
@@ -152,10 +153,10 @@ class _AddressInputViewState extends State<AddressInputView> {
       } catch (_) { voice = null; }
       if (voice != null) {
         voice.addListener(_onVoiceChange);
-        debugPrint('✅ [ADDRESS_INPUT] Voice listener setup complete');
+        Logger.info('Voice listener setup complete', tag: 'ADDRESS_INPUT');
       }
     } catch (e) {
-      debugPrint('⚠️ [ADDRESS_INPUT] Voice listener setup failed: $e');
+      Logger.error('Voice listener setup failed: $e', tag: 'ADDRESS_INPUT', error: e);
     }
   }
 
@@ -172,7 +173,7 @@ class _AddressInputViewState extends State<AddressInputView> {
       // pentru a evita conflictul cu focus-ul câmpului de start
       if (v.hasNewVoiceDestination && v.voiceDestination != null) {
         final dest = v.voiceDestination!;
-        debugPrint('🎯 [ADDRESS_INPUT] Voice destination detected: $dest');
+        Logger.info('Voice destination detected: $dest', tag: 'ADDRESS_INPUT');
         _destinationAddressController.text = dest;
         // ✅ FIX: Setăm destinația direct, ignorând focus-ul câmpurilor
         await _setVoiceDestination(dest);
@@ -182,7 +183,7 @@ class _AddressInputViewState extends State<AddressInputView> {
       // Pickup from voice
       if (v.hasNewVoicePickup && v.voicePickup != null) {
         final pick = v.voicePickup!;
-        debugPrint('🎯 [ADDRESS_INPUT] Voice pickup detected: $pick');
+        Logger.info('Voice pickup detected: $pick', tag: 'ADDRESS_INPUT');
         _startAddressController.text = pick;
         await _selectStartAddress(pick);
         v.updateBookingProgress('Punctul de plecare completat.');
@@ -199,7 +200,7 @@ class _AddressInputViewState extends State<AddressInputView> {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ [ADDRESS_INPUT] Voice change handler error: $e');
+      Logger.error('Voice change handler error: $e', tag: 'ADDRESS_INPUT', error: e);
     }
   }
 
@@ -363,10 +364,10 @@ class _AddressInputViewState extends State<AddressInputView> {
         setState(() {
           _startPoint = Point(coordinates: Position(location.longitude, location.latitude));
         });
-        debugPrint('Start point updated from voice input: ${location.latitude}, ${location.longitude}');
+        Logger.debug('Start point updated from voice input: ${location.latitude}, ${location.longitude}');
       }
     } catch (e) {
-      debugPrint('Error geocoding voice input: $e');
+      Logger.error('Error geocoding voice input: $e', error: e);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -474,7 +475,7 @@ class _AddressInputViewState extends State<AddressInputView> {
   }
 
   Future<void> _selectAddress(String address, {Point? point}) async {
-    debugPrint('Selecting address: $address, isStop: $_activeStopIndex');
+    Logger.debug('Selecting address: $address, isStop: $_activeStopIndex');
     
     if (_activeStopIndex != null) {
       await _selectStopAddress(_activeStopIndex!, address, point: point);
@@ -488,16 +489,16 @@ class _AddressInputViewState extends State<AddressInputView> {
       try {
         if (point != null) {
           _endPoint = point;
-          debugPrint('End point set from parameter');
+          Logger.debug('End point set from parameter');
         } else {
           List<Location> locations = await locationFromAddress(address);
           if (locations.isEmpty) throw Exception("Adresa nu a putut fi găsită pe hartă.");
           _endPoint = Point(coordinates: Position(locations.first.longitude, locations.first.latitude));
-          debugPrint('End point geocoded');
+          Logger.debug('End point geocoded');
         }
         
       } catch (e) {
-        debugPrint('Error setting destination: $e');
+        Logger.error('Error setting destination: $e', error: e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
         }
@@ -512,15 +513,15 @@ class _AddressInputViewState extends State<AddressInputView> {
     try {
       if (point != null) {
         _startPoint = point;
-        debugPrint('Start point set from parameter');
+        Logger.debug('Start point set from parameter');
       } else {
         List<Location> locations = await locationFromAddress(address);
         if (locations.isEmpty) throw Exception("Adresa nu a putut fi găsită pe hartă.");
         _startPoint = Point(coordinates: Position(locations.first.longitude, locations.first.latitude));
-        debugPrint('Start point geocoded');
+        Logger.debug('Start point geocoded');
       }
     } catch (e) {
-      debugPrint('Error setting start: $e');
+      Logger.error('Error setting start: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
       }
@@ -529,7 +530,7 @@ class _AddressInputViewState extends State<AddressInputView> {
 
   /// ✅ NOU: Setează destinația din comandă vocală (ignoră focus-ul câmpurilor)
   Future<void> _setVoiceDestination(String address) async {
-    debugPrint('🎯 [ADDRESS_INPUT] Setting voice destination: $address');
+    Logger.info('Setting voice destination: $address', tag: 'ADDRESS_INPUT');
     
     // Unfocus both fields to avoid confusion
     _startFocusNode.unfocus();
@@ -545,7 +546,7 @@ class _AddressInputViewState extends State<AddressInputView> {
       final location = locations.first;
       _endPoint = Point(coordinates: Position(location.longitude, location.latitude));
       
-      debugPrint('🎯 [ADDRESS_INPUT] ✅ Voice destination set: ${location.latitude}, ${location.longitude}');
+      Logger.info('Voice destination set: ${location.latitude}, ${location.longitude}', tag: 'ADDRESS_INPUT');
       
       // Notify parent widget about the change
       if (mounted) {
@@ -553,7 +554,7 @@ class _AddressInputViewState extends State<AddressInputView> {
       }
       
     } catch (e) {
-      debugPrint('🎯 [ADDRESS_INPUT] ❌ Error setting voice destination: $e');
+      Logger.error('Error setting voice destination: $e', tag: 'ADDRESS_INPUT', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -638,9 +639,9 @@ class _AddressInputViewState extends State<AddressInputView> {
   }
 
   void _confirmAddresses() async {
-    debugPrint('Confirming manually entered addresses');
-    debugPrint('Start: ${_startAddressController.text} - Point: $_startPoint');
-    debugPrint('Destination: ${_destinationAddressController.text} - Point: $_endPoint');
+    Logger.debug('Confirming manually entered addresses');
+    Logger.debug('Start: ${_startAddressController.text} - Point: $_startPoint');
+    Logger.debug('Destination: ${_destinationAddressController.text} - Point: $_endPoint');
     
     if (!_canConfirmAddresses()) {
       if (_endPoint == null && _destinationAddressController.text.isNotEmpty) {
@@ -648,10 +649,10 @@ class _AddressInputViewState extends State<AddressInputView> {
           List<Location> locations = await locationFromAddress(_destinationAddressController.text);
           if (locations.isNotEmpty) {
             _endPoint = Point(coordinates: Position(locations.first.longitude, locations.first.latitude));
-            debugPrint('Destination geocoded on confirm: $_endPoint');
+            Logger.debug('Destination geocoded on confirm: $_endPoint');
           }
         } catch (e) {
-          debugPrint('Failed to geocode destination on confirm: $e');
+          Logger.error('Failed to geocode destination on confirm: $e', error: e);
           if (mounted) {
             final l10n = AppLocalizations.of(context)!;
             ScaffoldMessenger.of(context).showSnackBar(
@@ -664,7 +665,7 @@ class _AddressInputViewState extends State<AddressInputView> {
           return;
         }
       } else {
-        debugPrint('Cannot confirm - missing data');
+        Logger.debug('Cannot confirm - missing data');
         if (mounted) {
           final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -680,14 +681,14 @@ class _AddressInputViewState extends State<AddressInputView> {
     
     if (_startPoint != null && _endPoint != null) {
       HapticFeedback.lightImpact();
-      debugPrint('Calling onDestinationSelected with confirmed addresses');
+      Logger.debug('Calling onDestinationSelected with confirmed addresses');
       widget.onDestinationSelected(
         _startPoint!, 
         _endPoint!, 
         _startAddressController.text, 
         _destinationAddressController.text
       );
-      debugPrint('Manual confirmation completed - should trigger ride options');
+      Logger.info('Manual confirmation completed - should trigger ride options');
     }
   }
 

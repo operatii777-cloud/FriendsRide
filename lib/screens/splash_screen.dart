@@ -10,6 +10,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:friendsride_app/services/startup_timer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -63,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _initializeApp() async {
-    debugPrint('🚀 [SPLASH] initializeApp start');
+    Logger.info('initializeApp start', tag: 'SPLASH');
     StartupTimer.instance.mark('splash.init');
     // 🚀 PERFORMANȚĂ: Pornim animația vizuală imediat
     _controller.forward();

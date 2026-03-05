@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/loyalty_program_model.dart';
 import 'package:friendsride_app/models/ride_model.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Serviciu pentru programul de loialitate (Uber-like)
 class LoyaltyProgramService {
@@ -17,7 +18,7 @@ class LoyaltyProgramService {
       }
       return LoyaltyProgram.fromMap(doc.data()!);
     } catch (e) {
-      debugPrint('⚠️ [LOYALTY] Error getting loyalty program: $e');
+      Logger.error('Error getting loyalty program: $e', tag: 'LOYALTY', error: e);
       return null;
     }
   }
@@ -60,10 +61,10 @@ class LoyaltyProgramService {
       });
 
       if (tierUpgraded) {
-        debugPrint('🎉 [LOYALTY] User upgraded to ${newTier.name} tier!');
+        Logger.info('User upgraded to ${newTier.name} tier!', tag: 'LOYALTY');
       }
     } catch (e) {
-      debugPrint('⚠️ [LOYALTY] Error updating loyalty after ride: $e');
+      Logger.error('Error updating loyalty after ride: $e', tag: 'LOYALTY', error: e);
     }
   }
 

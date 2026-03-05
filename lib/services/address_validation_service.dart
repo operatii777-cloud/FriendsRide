@@ -4,6 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🏠 AddressValidationService - Serviciu complet pentru validarea și geocodarea adreselor
 /// 
@@ -61,7 +62,7 @@ class AddressValidationService {
     // Verifică cache-ul pentru rezultate rapide
     final cacheKey = address.toLowerCase().trim();
     if (_validationCache.containsKey(cacheKey)) {
-      debugPrint('🏠 AddressValidationService: Cache hit for: $address');
+      Logger.debug('AddressValidationService: Cache hit for: $address');
       return _validationCache[cacheKey]!;
     }
 
@@ -107,7 +108,7 @@ class AddressValidationService {
       return invalidResult;
 
     } catch (e) {
-      debugPrint('🏠 AddressValidationService: Validation error: $e');
+      Logger.error('AddressValidationService: Validation error: $e', error: e);
       
       final errorResult = AddressValidationResult.invalid(
         message: 'Eroare la validarea adresei: $e',
@@ -139,7 +140,7 @@ class AddressValidationService {
         );
       }
     } catch (e) {
-      debugPrint('🏠 AddressValidationService: Local geocoding failed: $e');
+      Logger.error('AddressValidationService: Local geocoding failed: $e', error: e);
     }
     return null;
   }
@@ -185,7 +186,7 @@ class AddressValidationService {
         }
       }
     } catch (e) {
-      debugPrint('🏠 AddressValidationService: OSM geocoding failed: $e');
+      Logger.error('AddressValidationService: OSM geocoding failed: $e', error: e);
     }
     return null;
   }
@@ -220,7 +221,7 @@ class AddressValidationService {
         );
       }
     } catch (e) {
-      debugPrint('🏠 AddressValidationService: Suggestion validation failed: $e');
+      Logger.error('AddressValidationService: Suggestion validation failed: $e', error: e);
     }
     return null;
   }
@@ -286,7 +287,7 @@ class AddressValidationService {
         return suggestions;
       }
     } catch (e) {
-      debugPrint('🏠 AddressValidationService: Suggestions failed: $e');
+      Logger.error('AddressValidationService: Suggestions failed: $e', error: e);
     }
     
     return [];
@@ -329,7 +330,7 @@ class AddressValidationService {
   void clearCache() {
     _validationCache.clear();
     _suggestionsCache.clear();
-    debugPrint('🏠 AddressValidationService: Cache cleared');
+    Logger.debug('AddressValidationService: Cache cleared');
   }
 
   /// 💾 Cache un rezultat de validare
@@ -347,7 +348,7 @@ class AddressValidationService {
   void _updateState(AddressValidationState state, String? message) {
     _currentState = state;
     _currentValidationMessage = message;
-    debugPrint('🏠 AddressValidationService: State updated to $state: $message');
+    Logger.debug('AddressValidationService: State updated to $state: $message');
   }
 
   /// 🧹 Cleanup

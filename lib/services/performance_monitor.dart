@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Comprehensive performance monitoring service with memory leak prevention
 class PerformanceMonitor {
@@ -39,9 +40,9 @@ class PerformanceMonitor {
     try {
       _startPeriodicCleanup();
       _isInitialized = true;
-      debugPrint('PerformanceMonitor initialized successfully');
+      Logger.info('PerformanceMonitor initialized successfully');
     } catch (e) {
-      debugPrint('Failed to initialize PerformanceMonitor: $e');
+      Logger.error('Failed to initialize PerformanceMonitor: $e', error: e);
     }
   }
   

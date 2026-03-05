@@ -7,6 +7,7 @@ import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class RideDetailsScreen extends StatefulWidget {
   final Ride ride;
@@ -106,7 +107,7 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
         }
       }
     } catch (e) {
-      debugPrint("Eroare la geocodare în RideDetailsScreen: $e");
+      Logger.debug("Eroare la geocodare în RideDetailsScreen: $e");
     }
   }
 

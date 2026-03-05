@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 // Model pentru apel VoIP
 class VoipCall {
@@ -78,7 +79,7 @@ class VoipService {
 
       return true;
     } catch (e) {
-      debugPrint('VoIP Error: $e');
+      Logger.error('VoIP Error: $e', error: e);
       return false;
     }
   }
@@ -167,12 +168,12 @@ class _VoipCallDialogState extends State<_VoipCallDialog> {
             setState(() {});
           }
         } catch (e) {
-          debugPrint('❌ Error in duration timer callback: $e');
+          Logger.error('Error in duration timer callback: $e', error: e);
           timer.cancel();
         }
       });
     } catch (e) {
-      debugPrint('❌ Error starting duration timer: $e');
+      Logger.error('Error starting duration timer: $e', error: e);
     }
   }
 

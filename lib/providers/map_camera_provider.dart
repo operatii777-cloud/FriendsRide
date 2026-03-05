@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../utils/mapbox_utils.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Provider pentru gestionarea controlului camerei hărții
 /// Extrage logica de cameră din map_screen.dart
@@ -31,7 +32,7 @@ class MapCameraProvider extends ChangeNotifier {
   /// Setează instanța MapboxMap
   void setMapInstance(MapboxMap mapboxMap) {
     _mapboxMap = mapboxMap;
-    debugPrint('📍 MapboxMap instance set in MapCameraProvider');
+    Logger.debug('MapboxMap instance set in MapCameraProvider');
     notifyListeners();
   }
 
@@ -74,18 +75,18 @@ class MapCameraProvider extends ChangeNotifier {
         MapAnimationOptions(duration: 1000),
       );
     } catch (e) {
-      debugPrint('⚠️ Error updating camera: $e');
+      Logger.error('Error updating camera: $e', error: e);
     }
   }
 
   /// Centrează camera pe poziția curentă
   Future<void> centerOnCurrentPosition({bool animated = true}) async {
     if (_currentPosition == null || _mapboxMap == null) {
-      debugPrint('⚠️ Cannot center camera - missing position or map instance');
+      Logger.warning('Cannot center camera - missing position or map instance');
       return;
     }
 
-    debugPrint('🎯 Centering camera on current position');
+    Logger.info('Centering camera on current position');
 
     try {
       final cameraOptions = CameraOptions(
@@ -109,7 +110,7 @@ class MapCameraProvider extends ChangeNotifier {
       _currentZoom = 15.0;
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error centering camera: $e');
+      Logger.error('Error centering camera: $e', error: e);
     }
   }
 
@@ -133,7 +134,7 @@ class MapCameraProvider extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error setting zoom: $e');
+      Logger.error('Error setting zoom: $e', error: e);
     }
   }
 
@@ -157,7 +158,7 @@ class MapCameraProvider extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error setting bearing: $e');
+      Logger.error('Error setting bearing: $e', error: e);
     }
   }
 
@@ -181,21 +182,21 @@ class MapCameraProvider extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error setting pitch: $e');
+      Logger.error('Error setting pitch: $e', error: e);
     }
   }
 
   /// Oprește urmărirea automată a utilizatorului
   void stopFollowingUser() {
     _isFollowingUser = false;
-    debugPrint('📍 Stopped following user');
+    Logger.debug('Stopped following user');
     notifyListeners();
   }
 
   /// Pornește urmărirea automată a utilizatorului
   void startFollowingUser() {
     _isFollowingUser = true;
-    debugPrint('📍 Started following user');
+    Logger.info('Started following user');
     
     if (_currentPosition != null) {
       _scheduleCameraUpdate();
@@ -213,7 +214,7 @@ class MapCameraProvider extends ChangeNotifier {
   }) async {
     if (_mapboxMap == null) return;
 
-    debugPrint('🗺️ Navigating to: $latitude, $longitude');
+    Logger.debug('Navigating to: $latitude, $longitude');
 
     try {
       final cameraOptions = CameraOptions(
@@ -234,7 +235,7 @@ class MapCameraProvider extends ChangeNotifier {
       if (zoom != null) _currentZoom = zoom;
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error navigating to location: $e');
+      Logger.error('Error navigating to location: $e', error: e);
     }
   }
 
@@ -285,7 +286,7 @@ class MapCameraProvider extends ChangeNotifier {
       _isFollowingUser = false;
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error fitting points: $e');
+      Logger.error('Error fitting points: $e', error: e);
     }
   }
 
@@ -306,7 +307,7 @@ class MapCameraProvider extends ChangeNotifier {
   /// Cleanup la dispose
   @override
   void dispose() {
-    debugPrint('🧹 Disposing MapCameraProvider');
+    Logger.debug('Disposing MapCameraProvider');
     _cameraUpdateTimer?.cancel();
     super.dispose();
   }

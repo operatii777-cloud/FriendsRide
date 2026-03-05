@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:friendsride_app/utils/mapbox_config.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 // IMPLEMENTARE ISOLATE PENTRU ROUTING CALCULATIONS - PERFORMANCE OPTIMIZATION
 class RoutingIsolateManager {
@@ -26,7 +27,7 @@ class RoutingIsolateManager {
     
     _sendPort = await _receivePort!.first as SendPort;
     
-    debugPrint('✅ Routing Isolate initialized successfully');
+    Logger.info('Routing Isolate initialized successfully');
   }
   
   static void _isolateEntryPoint(SendPort sendPort) {
@@ -161,7 +162,7 @@ class RoutingIsolateManager {
     _receivePort?.close();
     _receivePort = null;
     _sendPort = null;
-    debugPrint('🔄 Routing Isolate disposed');
+    Logger.debug('Routing Isolate disposed');
   }
 }
 
@@ -181,7 +182,7 @@ class RoutingService {
     try {
       return MapboxConfig.getAccessToken();
     } catch (e) {
-      debugPrint('❌ Mapbox configuration error in routing service: $e');
+      Logger.error('Mapbox configuration error in routing service: $e', error: e);
       throw Exception('Mapbox not configured. Call MapboxConfig.initialize() first.');
     }
   }
@@ -199,7 +200,7 @@ class RoutingService {
   /// Returnează durata reală cu trafic și distanța optimizată.
   Future<Map<String, dynamic>?> getRoute(List<Point> waypoints) async {
     if (waypoints.length < 2) {
-      debugPrint('Eroare: Ruta necesită cel puțin 2 puncte.');
+      Logger.debug('Eroare: Ruta necesită cel puțin 2 puncte.');
       return null;
     }
 
@@ -207,7 +208,7 @@ class RoutingService {
     final cacheKey = _generateRouteCacheKey(waypoints);
     final cached = _routeCache[cacheKey];
     if (cached != null && !cached.isExpired) {
-      debugPrint('🗺️ RoutingService: Cache hit for route');
+      Logger.debug('RoutingService: Cache hit for route');
       return cached.routeData;
     }
     
@@ -253,11 +254,11 @@ class RoutingService {
           );
           
           if (result != null) {
-            debugPrint('✅ Route calculated via isolate successfully');
+            Logger.info('Route calculated via isolate successfully');
             return result;
           }
         } catch (e) {
-          debugPrint('⚠️ Isolate routing failed, falling back to HTTP: $e');
+          Logger.error('Isolate routing failed, falling back to HTTP: $e', error: e);
         }
 
         // Fallback to HTTP request
@@ -266,14 +267,14 @@ class RoutingService {
           return result;
         }
       } on TimeoutException catch (e) {
-        debugPrint('❌ Routing timeout (attempt $attempt/$maxRetries): $e');
+        Logger.error('Routing timeout (attempt $attempt/$maxRetries): $e', error: e);
         if (attempt == maxRetries) {
           return null;
         }
         // ✅ EXPONENTIAL BACKOFF
         await Future.delayed(Duration(seconds: attempt * 2));
       } catch (e) {
-        debugPrint('❌ Routing error (attempt $attempt/$maxRetries): $e');
+        Logger.error('Routing error (attempt $attempt/$maxRetries): $e', error: e);
         if (attempt == maxRetries) {
           return null;
         }
@@ -309,7 +310,7 @@ class RoutingService {
     
     final uri = url.replace(queryParameters: queryParams);
     
-    debugPrint('Routing request with traffic: ${uri.toString()}');
+    Logger.debug('Routing request with traffic: ${uri.toString()}');
 
     // ✅ PERFORMANCE: TIMEOUT REDUS pentru rute simple (10s) vs complexe (15s)
     final timeout = waypoints.length == 2 
@@ -325,19 +326,19 @@ class RoutingService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      debugPrint('Routing response with traffic: Success');
+      Logger.info('Routing response with traffic: Success');
       
       // Log pentru debugging - durata cu trafic vs. durata fără trafic
       if (data['routes'] != null && data['routes'].isNotEmpty) {
         final route = data['routes'][0];
         final durationWithTraffic = route['duration'] ?? 0;
         final distance = route['distance'] ?? 0;
-        debugPrint('Route duration with traffic: ${(durationWithTraffic / 60).toStringAsFixed(1)} min, Distance: ${(distance / 1000).toStringAsFixed(1)} km');
+        Logger.debug('Route duration with traffic: ${(durationWithTraffic / 60).toStringAsFixed(1)} min, Distance: ${(distance / 1000).toStringAsFixed(1)} km');
       }
       
       return data;
     } else {
-      debugPrint('Routing error: ${response.statusCode} - ${response.body}');
+      Logger.error('Routing error: ${response.statusCode} - ${response.body}');
       return null;
     }
   }
@@ -416,11 +417,11 @@ class RoutingService {
       );
       
       if (result.isNotEmpty) {
-        debugPrint('✅ Place search via isolate successful');
+        Logger.info('Place search via isolate successful');
         return result;
       }
     } catch (e) {
-      debugPrint('⚠️ Isolate place search failed, falling back to HTTP: $e');
+      Logger.error('Isolate place search failed, falling back to HTTP: $e', error: e);
     }
 
     // Fallback to HTTP request
@@ -449,7 +450,7 @@ class RoutingService {
         }).toList();
       }
     } catch (e) {
-      debugPrint('Error in searchPlace: $e');
+      Logger.error('Error in searchPlace: $e', error: e);
     }
     return [];
   }
@@ -474,7 +475,7 @@ class RoutingService {
         }
       }
     } catch (e) {
-      debugPrint('Error in getReverseGeocoding: $e');
+      Logger.error('Error in getReverseGeocoding: $e', error: e);
     }
     return {};
   }
@@ -521,7 +522,7 @@ class RoutingService {
       
       return points;
     } catch (e) {
-      debugPrint('❌ Error extracting route coordinates: $e');
+      Logger.error('Error extracting route coordinates: $e', error: e);
       return [];
     }
   }
@@ -575,7 +576,7 @@ class RoutingService {
       
       return null;
     } catch (e) {
-      debugPrint('Error in calculateRoute: $e');
+      Logger.error('Error in calculateRoute: $e', error: e);
       return null;
     }
   }
@@ -600,7 +601,7 @@ extension RoutingServiceAlternatives on RoutingService {
   /// Obține rute alternative folosind Mapbox Directions (HTTP direct)
   Future<Map<String, dynamic>?> getAlternativeRoutes(List<Point> waypoints) async {
     if (waypoints.length < 2) {
-      debugPrint('Eroare: Ruta necesită cel puțin 2 puncte.');
+      Logger.debug('Eroare: Ruta necesită cel puțin 2 puncte.');
       return null;
     }
 
@@ -624,10 +625,10 @@ extension RoutingServiceAlternatives on RoutingService {
         final data = json.decode(response.body) as Map<String, dynamic>;
         return data;
       } else {
-        debugPrint('Routing alternatives error: ${response.statusCode} - ${response.body}');
+        Logger.error('Routing alternatives error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      debugPrint('Routing alternatives exception: $e');
+      Logger.error('Routing alternatives exception: $e', error: e);
     }
     return null;
   }

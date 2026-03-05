@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../states/voice_interaction_states.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🗣️ Natural Voice Synthesizer - Funcționează EXACT ca Gemini Voice TTS
 /// 
@@ -37,17 +38,17 @@ class NaturalVoiceSynthesizer {
       if (_currentLanguage != ttsLanguage) {
         _currentLanguage = ttsLanguage;
         await _flutterTts.setLanguage(ttsLanguage);
-        debugPrint('🗣️ [NATURAL_TTS] Language changed to: $ttsLanguage');
+        Logger.debug('Language changed to: $ttsLanguage', tag: 'NATURAL_TTS');
       }
     } catch (e) {
-      debugPrint('🗣️ [NATURAL_TTS] ❌ Error setting language: $e');
+      Logger.error('Error setting language: $e', tag: 'NATURAL_TTS', error: e);
     }
   }
   
   /// 🚀 Inițializează TTS-ul
   Future<void> initialize({String? languageCode}) async {
     try {
-      debugPrint('🗣️ [NATURAL_TTS] Initializing...');
+      Logger.debug('Initializing...', tag: 'NATURAL_TTS');
       
       // ✅ NOU: Setez limba dacă este specificată, altfel folosesc default
       if (languageCode != null) {
@@ -65,25 +66,25 @@ class NaturalVoiceSynthesizer {
       
       // 🎯 Setez callback-urile
       _flutterTts.setStartHandler(() {
-        debugPrint('🗣️ [NATURAL_TTS] Started speaking');
+        Logger.info('Started speaking', tag: 'NATURAL_TTS');
         _isSpeaking = true;
       });
       
       _flutterTts.setCompletionHandler(() {
-        debugPrint('🗣️ [NATURAL_TTS] Finished speaking');
+        Logger.debug('Finished speaking', tag: 'NATURAL_TTS');
         _isSpeaking = false;
       });
       
       _flutterTts.setErrorHandler((msg) {
-        debugPrint('🗣️ [NATURAL_TTS] ❌ Error: $msg');
+        Logger.error('Error: $msg', tag: 'NATURAL_TTS');
         _isSpeaking = false;
       });
       
       _isInitialized = true;
-      debugPrint('🗣️ [NATURAL_TTS] ✅ Initialized successfully');
+      Logger.info('Initialized successfully', tag: 'NATURAL_TTS');
       
     } catch (e) {
-      debugPrint('🗣️ [NATURAL_TTS] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'NATURAL_TTS', error: e);
       _isInitialized = false;
     }
   }
@@ -91,17 +92,17 @@ class NaturalVoiceSynthesizer {
   /// 🗣️ Vorbește textul EXACT ca Gemini Voice
   Future<void> speak(String text) async {
     if (!_isInitialized) {
-      debugPrint('🗣️ [NATURAL_TTS] ⚠️ Not initialized, initializing now...');
+      Logger.warning('Not initialized, initializing now...', tag: 'NATURAL_TTS');
       await initialize();
     }
     
     if (_isSpeaking) {
-      debugPrint('🗣️ [NATURAL_TTS] ⚠️ Already speaking, stopping current speech...');
+      Logger.warning('Already speaking, stopping current speech...', tag: 'NATURAL_TTS');
       await stop();
     }
     
     try {
-      debugPrint('🗣️ [NATURAL_TTS] Speaking: "$text"');
+      Logger.debug('Speaking: "$text"', tag: 'NATURAL_TTS');
       
       // 🚀 Trimit textul la TTS
       // ✅ FIX: Set _isSpeaking=true BEFORE calling speak so the wait loop
@@ -114,10 +115,10 @@ class NaturalVoiceSynthesizer {
         await Future.delayed(Duration(milliseconds: 100));
       }
       
-      debugPrint('🗣️ [NATURAL_TTS] ✅ Speech completed');
+      Logger.info('Speech completed', tag: 'NATURAL_TTS');
       
     } catch (e) {
-      debugPrint('🗣️ [NATURAL_TTS] ❌ Speech error: $e');
+      Logger.error('Speech error: $e', tag: 'NATURAL_TTS', error: e);
       _isSpeaking = false;
     }
   }
@@ -208,9 +209,9 @@ class NaturalVoiceSynthesizer {
     try {
       await _flutterTts.stop();
       _isSpeaking = false;
-      debugPrint('🗣️ [NATURAL_TTS] Speech stopped');
+      Logger.debug('Speech stopped', tag: 'NATURAL_TTS');
     } catch (e) {
-      debugPrint('🗣️ [NATURAL_TTS] ❌ Stop error: $e');
+      Logger.error('Stop error: $e', tag: 'NATURAL_TTS', error: e);
     }
   }
   

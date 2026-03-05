@@ -4,6 +4,7 @@ import 'package:friendsride_app/screens/report_form_screen.dart';
 import 'package:friendsride_app/screens/career_screen.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class HelpScreen extends StatefulWidget {
   final bool isPassengerMode;
@@ -1233,7 +1234,7 @@ class _HelpScreenState extends State<HelpScreen> {
                       );
                     }
                   } catch (e) {
-                    debugPrint('Error sending password reset email from HelpScreen: $e');
+                    Logger.error('Error sending password reset email from HelpScreen: $e', error: e);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

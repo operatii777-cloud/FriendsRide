@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../main_voice_integration.dart';
 import '../widgets/voice_interaction_widget.dart';
 import '../states/voice_interaction_states.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🎯 App Integration - Integrarea sistemului vocal în FriendsRide
 /// 
@@ -80,7 +81,7 @@ class AppVoiceIntegration {
     
     // 🎤 Verifică dacă e inițializat
     if (!voiceIntegration.isInitialized) {
-      debugPrint('🎯 [APP_INTEGRATION] Voice system not initialized, initializing...');
+      Logger.info('Voice system not initialized, initializing...', tag: 'APP_INTEGRATION');
       // voiceIntegration._initializeComponents(); // Metoda este privată
     }
   }
@@ -91,7 +92,7 @@ class AppVoiceIntegration {
       final voiceIntegration = Provider.of<MainVoiceIntegration>(context, listen: false);
       return voiceIntegration.isInitialized;
     } catch (e) {
-      debugPrint('🎯 [APP_INTEGRATION] Voice system not available: $e');
+      Logger.info('Voice system not available: $e', tag: 'APP_INTEGRATION');
       return false;
     }
   }
@@ -101,7 +102,7 @@ class AppVoiceIntegration {
     try {
       return Provider.of<MainVoiceIntegration>(context, listen: false);
     } catch (e) {
-      debugPrint('🎯 [APP_INTEGRATION] Could not get voice integration: $e');
+      Logger.info('Could not get voice integration: $e', tag: 'APP_INTEGRATION');
       return null;
     }
   }
@@ -187,7 +188,7 @@ class AppVoiceIntegration {
             icon: Icon(Icons.mic),
             onPressed: () {
               // Basic voice interaction - Note: quick booking will be implemented in future update
-              debugPrint('Voice button pressed');
+              Logger.debug('Voice button pressed');
             },
           ),
         ],
@@ -200,7 +201,7 @@ class AppVoiceIntegration {
             icon: Icon(Icons.mic),
             onPressed: () {
               // Basic voice interaction - Note: quick booking will be implemented in future update
-              debugPrint('Voice button pressed');
+              Logger.debug('Voice button pressed');
             },
           ),
         ],

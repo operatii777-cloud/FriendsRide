@@ -18,17 +18,13 @@ import 'package:friendsride_app/services/tts_service.dart';
 import 'package:friendsride_app/services/voip_service.dart';
 import 'package:friendsride_app/services/audio_service.dart';
 import 'package:friendsride_app/services/performance_monitor.dart';
-// import 'package:friendsride_app/services/offline_manager.dart' as app_offline; // disabled for performance
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:friendsride_app/screens/driver_ride_details_screen.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:friendsride_app/theme/app_colors.dart';
 import 'package:friendsride_app/widgets/theme_toggle_button.dart';
-// import 'package:friendsride_app/widgets/draggable_ai_button.dart'; // AI button ascuns temporar
 
-// import 'package:friendsride_app/services/eta_service.dart'; // Eliminat
 import 'package:url_launcher/url_launcher.dart';
-// import 'package:provider/provider.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 
 import '../utils/mapbox_utils.dart';
@@ -39,10 +35,6 @@ import 'package:friendsride_app/screens/safety_screen.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/models/stop_location.dart';
 import 'package:friendsride_app/screens/search_location_screen.dart';
-// import 'package:friendsride_app/voice/integration/friendsride_voice_integration.dart';
-// import 'package:friendsride_app/providers/driver_state_provider.dart';
-
-// Removed fake AppLocalizations; using generated one
 
 import 'package:intl/intl.dart';
 import 'package:friendsride_app/widgets/chat/whatsapp_message_bubble.dart';
@@ -57,6 +49,7 @@ import 'package:friendsride_app/services/driver_incentives_service.dart';
 import 'package:friendsride_app/widgets/cancellation_policy_widget.dart';
 import 'package:friendsride_app/widgets/real_time_eta_widget.dart';
 import 'package:friendsride_app/widgets/turn_by_turn_navigation_widget.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class ActiveRideScreen extends StatefulWidget {
   final String rideId;
@@ -232,7 +225,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         if (!mounted) return;
         await _initializeRoutingAutomatic(ride); // redraw with traffic coloring
       } catch (e) {
-        debugPrint('⚠️ Traffic refresh failed: $e');
+        Logger.error('Traffic refresh failed: $e', error: e);
       }
     });
     // Keep screen on during active ride (especially for driver)
@@ -255,7 +248,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
               final demoPosition = Point(coordinates: Position(26.0997, 44.4267)); // Bucharest
               _activateWazeLikeExperience(demoPosition, 45.0, ride);
             } catch (e) {
-              debugPrint('Demo activation failed: $e');
+              Logger.error('Demo activation failed: $e', error: e);
             }
           }
         });
@@ -290,7 +283,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
 
   Future<void> _onAppResumed() async {
     try {
-      debugPrint('🔄 ActiveRideScreen resumed: restoring state');
+      Logger.debug('ActiveRideScreen resumed: restoring state');
       // Re-enable screen-on in case the OS disabled it
       WakelockPlus.enable();
       // Restart GPS watchdog
@@ -313,45 +306,45 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
           if (!mounted) return;
           await _initializeRoutingAutomatic(r);
         } catch (e) {
-          debugPrint('⚠️ Traffic refresh (resume) failed: $e');
+          Logger.error('Traffic refresh (resume) failed: $e', error: e);
         }
       });
       setState(() {});
     } catch (e) {
-      debugPrint('⚠️ Failed to restore state on resume: $e');
+      Logger.error('Failed to restore state on resume: $e', error: e);
     }
   }
 
   // ✅ FIX: Robust routing initialization
   Future<void> _initializeRoutingRobust() async {
-    debugPrint('🗺️ [ROUTING] Starting robust routing initialization...');
+    Logger.debug('Starting robust routing initialization...', tag: 'ROUTING');
     
     // Wait for widget to be fully built
     await Future.delayed(const Duration(milliseconds: 100));
     
     if (!mounted) {
-      debugPrint('🗺️ [ROUTING] Widget unmounted during delay, aborting');
+      Logger.debug('Widget unmounted during delay, aborting', tag: 'ROUTING');
       return;
     }
     
     // Try multiple times if needed
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
-        debugPrint('🗺️ [ROUTING] Attempt $attempt to initialize routing...');
+        Logger.debug('Attempt $attempt to initialize routing...', tag: 'ROUTING');
         
         await _initializeRoutingSafe();
-        debugPrint('✅ [ROUTING] Routing initialized successfully on attempt $attempt');
+        Logger.info('Routing initialized successfully on attempt $attempt', tag: 'ROUTING');
         return; // Success, exit loop
         
       } catch (e) {
-        debugPrint('❌ [ROUTING] Attempt $attempt failed: $e');
+        Logger.error('Attempt $attempt failed: $e', tag: 'ROUTING', error: e);
         
         if (attempt < 3) {
           // Wait before retry
           await Future.delayed(Duration(milliseconds: 500 * attempt));
           if (!mounted) return;
         } else {
-          debugPrint('🚨 [ROUTING] All attempts failed, showing fallback');
+          Logger.error('All attempts failed, showing fallback', tag: 'ROUTING');
           _showRoutingError();
         }
       }
@@ -377,9 +370,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       throw Exception('Missing pickup or destination coordinates');
     }
     
-    debugPrint('🗺️ [ROUTING] Building route with coordinates...');
-    debugPrint('🗺️ [ROUTING] Pickup: ${ride.startLatitude}, ${ride.startLongitude}');
-    debugPrint('🗺️ [ROUTING] Destination: ${ride.destinationLatitude}, ${ride.destinationLongitude}');
+    Logger.debug('Building route with coordinates...', tag: 'ROUTING');
+    Logger.debug('Pickup: ${ride.startLatitude}, ${ride.startLongitude}', tag: 'ROUTING');
+    Logger.debug('Destination: ${ride.destinationLatitude}, ${ride.destinationLongitude}', tag: 'ROUTING');
     
     // Build waypoints
     final waypoints = <Point>[];
@@ -397,7 +390,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
           coordinates: Position(stop.longitude, stop.latitude)
         ));
       }
-      debugPrint('🗺️ [ROUTING] Added ${ride.stops.length} intermediate stops');
+      Logger.debug('Added ${ride.stops.length} intermediate stops', tag: 'ROUTING');
     }
     
     // Add destination
@@ -405,7 +398,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       coordinates: Position(ride.destinationLongitude!, ride.destinationLatitude!)
     ));
     
-    debugPrint('🗺️ [ROUTING] Calculating route with ${waypoints.length} waypoints...');
+    Logger.debug('Calculating route with ${waypoints.length} waypoints...', tag: 'ROUTING');
     
     // Calculate route
     final route = await _routingService.getRoute(waypoints);
@@ -415,7 +408,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     }
     
     if (route != null) {
-      debugPrint('🗺️ [ROUTING] Route calculated successfully, drawing on map...');
+      Logger.debug('Route calculated successfully, drawing on map...', tag: 'ROUTING');
       
       // Store route for later use
       _routeGeoJSON = route;
@@ -427,7 +420,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       await _fitCameraSimple(route);
       
       if (mounted) {
-        debugPrint('✅ [ROUTING] Route drawn and camera fitted successfully');
+        Logger.info('Route drawn and camera fitted successfully', tag: 'ROUTING');
       }
     } else {
       throw Exception('Route calculation returned null');
@@ -447,7 +440,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
           label: 'RETRY',
           textColor: Colors.white,
           onPressed: () {
-            debugPrint('🔄 [ROUTING] Manual retry requested');
+            Logger.warning('Manual retry requested', tag: 'ROUTING');
             _initializeRoutingRobust();
           },
         ),
@@ -512,7 +505,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       _cameraAnimationController!.removeListener(animationListener);
       
     } catch (e) {
-      debugPrint('❌ Smooth camera transition error: $e');
+      Logger.error('Smooth camera transition error: $e', error: e);
     } finally {
       _isCameraTransitioning = false;
     }
@@ -568,7 +561,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
 
   // ✅ FIX: Legacy routing method delegates to robust version
   Future<void> _initializeRouting() async {
-    debugPrint('🗺️ [ROUTING] Legacy _initializeRouting called, delegating to robust version');
+    Logger.debug('Legacy _initializeRouting called, delegating to robust version', tag: 'ROUTING');
     await _initializeRoutingRobust();
   }
 
@@ -577,7 +570,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     if (!mounted || _mapboxMap == null) return;
     
     try {
-      debugPrint('🗺️ [ROUTING] Drawing route on map...');
+      Logger.debug('Drawing route on map...', tag: 'ROUTING');
       
       // Remove existing route layer if it exists
       try {
@@ -585,7 +578,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         await _mapboxMap!.style.removeStyleSource('route-source');
       } catch (e) {
         // Layer doesn't exist, that's fine
-        debugPrint('🗺️ [ROUTING] No existing route layer to remove');
+        Logger.debug('No existing route layer to remove', tag: 'ROUTING');
       }
       
       // Add route source
@@ -614,10 +607,10 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       
       await _mapboxMap!.style.addStyleLayer(json.encode(routeLayer), null);
       
-      debugPrint('✅ [ROUTING] Route drawn successfully on map');
+      Logger.info('Route drawn successfully on map', tag: 'ROUTING');
       
     } catch (e) {
-      debugPrint('❌ [ROUTING] Failed to draw route on map: $e');
+      Logger.error('Failed to draw route on map: $e', tag: 'ROUTING', error: e);
       throw Exception('Failed to draw route: $e');
     }
   }
@@ -627,13 +620,13 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     if (!mounted || _mapboxMap == null) return;
     
     try {
-      debugPrint('🗺️ [ROUTING] Fitting camera to route...');
+      Logger.debug('Fitting camera to route...', tag: 'ROUTING');
       
       // Extract coordinates from route
       final coordinates = route['geometry']['coordinates'] as List;
       
       if (coordinates.isEmpty) {
-        debugPrint('❌ [ROUTING] No coordinates found in route');
+        Logger.error('No coordinates found in route', tag: 'ROUTING');
         return;
       }
       
@@ -692,10 +685,10 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       
       await _mapboxMap!.flyTo(cameraOptions, MapAnimationOptions(duration: 2000));
       
-      debugPrint('✅ [ROUTING] Camera fitted to route successfully');
+      Logger.info('Camera fitted to route successfully', tag: 'ROUTING');
       
     } catch (e) {
-      debugPrint('❌ [ROUTING] Failed to fit camera to route: $e');
+      Logger.error('Failed to fit camera to route: $e', tag: 'ROUTING', error: e);
       // Don't throw here, camera fitting is not critical
     }
   }
@@ -748,7 +741,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       if (timeDiff > 0) {
         _currentSpeed = distance / timeDiff; // meters per second
         
-        debugPrint('🚗 Speed: ${(_currentSpeed * 3.6).toStringAsFixed(1)} km/h');
+        Logger.debug('Speed: ${(_currentSpeed * 3.6).toStringAsFixed(1)} km/h');
       }
     }
     
@@ -774,7 +767,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       _smoothCameraTransition(position, bearing, isDriver: false);
     }
     
-    debugPrint('🎯 Waze-like experience activated for ${isDriver ? "driver" : "passenger"}');
+    Logger.info('Waze-like experience activated for ${isDriver ? "driver" : "passenger"}');
     
     // Trigger UI rebuild to show the new overlays
     if (mounted) {
@@ -877,7 +870,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     }
     
     // Show driver marker status for debugging
-    debugPrint('🎯 Should show driver marker: $_shouldShowDriverMarker');
+    Logger.info('Should show driver marker: $_shouldShowDriverMarker');
     
     final speedKmh = _currentSpeed * 3.6;
     
@@ -1026,7 +1019,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
   void _applyRoleBasedCameraView(Point driverPosition, Ride ride) {
     final isDriver = _currentUserId == ride.driverId;
     
-    debugPrint('🎯 Applying camera for: ${isDriver ? "DRIVER" : "PASSENGER"}');
+    Logger.info('Applying camera for: ${isDriver ? "DRIVER" : "PASSENGER"}');
     
     if (isDriver) {
       // Șofer: perspectivă 3D pentru navigație
@@ -1041,7 +1034,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
   void _setDriverNavigationCamera(Point driverPosition) {
     if (_mapboxMap == null) return;
     
-    debugPrint('🚗 Setting DRIVER navigation camera');
+    Logger.debug('Setting DRIVER navigation camera');
     
     // ✅ FIX: Calculează bearing-ul dinamic sau folosește 0 ca default
     final bearing = _lastDriverPosition != null 
@@ -1064,14 +1057,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       MapAnimationOptions(duration: 800)
     );
     
-    debugPrint('✅ Driver navigation camera applied: bearing=${bearing.toStringAsFixed(1)}°, pitch=60°');
+    Logger.info('Driver navigation camera applied: bearing=${bearing.toStringAsFixed(1)}°, pitch=60°');
   }
 
   // ✅ Camera pentru pasager - vedere de sus pentru tracking
   void _setPassengerTrackingCamera(Point driverPosition, Ride ride) {
     if (_mapboxMap == null) return;
     
-    debugPrint('👥 Setting PASSENGER tracking camera');
+    Logger.debug('Setting PASSENGER tracking camera');
     
     Point? destination;
     if (ride.status == 'accepted' || ride.status == 'arrived') {
@@ -1123,7 +1116,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       );
     }
     
-    debugPrint('✅ Passenger tracking camera applied: pitch=0°, bearing=0°');
+    Logger.info('Passenger tracking camera applied: pitch=0°, bearing=0°');
   }
 
   @override
@@ -1164,7 +1157,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     _ttsTimer?.cancel();
     _gpsWatchdogTimer?.cancel();
     
-    debugPrint('🧹 ActiveRideScreen disposed with cleanup');
+    Logger.debug('ActiveRideScreen disposed with cleanup');
     super.dispose();
   }
 
@@ -1351,7 +1344,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         });
       }
     }, onError: (error) {
-      debugPrint('ActiveRideScreen Stream Error: $error');
+      Logger.error('ActiveRideScreen Stream Error: $error', error: error);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1453,16 +1446,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
                 !messageText.contains('location_update') &&
                 !messageText.startsWith('system:')) {
               
-              debugPrint('🔊 [CHAT] New message from $senderId to $currentUserId - playing sound notification');
+              Logger.debug('New message from $senderId to $currentUserId - playing sound notification', tag: 'CHAT');
               
               // ✅ FIX: Redă sunetul pentru pasager când primește mesaj de la șofer
               _audioService.playMessageReceivedSound().catchError((e) async {
-                debugPrint('🔊 [CHAT] Error playing chat sound: $e');
+                Logger.error('Error playing chat sound: $e', tag: 'CHAT', error: e);
                 // ✅ FALLBACK: Încearcă sunetul de sistem dacă audio custom eșuează
                 try {
                   await SystemSound.play(SystemSoundType.alert);
                 } catch (e2) {
-                  debugPrint('🔊 [CHAT] Even system sound failed: $e2');
+                  Logger.error('Even system sound failed: $e2', tag: 'CHAT');
                 }
               });
               
@@ -1490,13 +1483,13 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
             _firestoreService.markMessageAsRead(widget.rideId, doc.id);
           }
         } catch (e) {
-          debugPrint('⚠️ Error marking message as read: $e');
+          Logger.error('Error marking message as read: $e', error: e);
         }
       }
     });
     
     _isChatListenerActive = true;
-    debugPrint('✅ Chat listening started');
+    Logger.info('Chat listening started');
   }
 
   /// Handler pentru typing indicator
@@ -1766,7 +1759,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         } catch (_) {}
       }
     } catch (e) {
-      debugPrint('❌ Reroute failed: $e');
+      Logger.error('Reroute failed: $e', error: e);
     }
   }
 
@@ -2197,7 +2190,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       ));
 
     } catch (e) {
-      debugPrint("❌ Error drawing route: $e");
+      Logger.error("Error drawing route: $e", error: e);
     }
   }
 
@@ -2219,7 +2212,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       final congestion = (annotation?['congestion'] as List?)?.map((e) => (e ?? '').toString()).toList();
       
       if (coordinates.isEmpty) {
-        debugPrint('Nu s-au găsit coordonate pentru traseu');
+        Logger.debug('Nu s-au găsit coordonate pentru traseu');
         return;
       }
       
@@ -2236,7 +2229,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
           await _mapboxMap!.style.removeStyleSource(sourceId);
         }
       } catch (e) {
-        debugPrint('Cleanup error: $e');
+        Logger.error('Cleanup error: $e', error: e);
       }
       
       // Creează GeoJSON pentru traseu segmentat pe culori (dacă avem congestion)
@@ -2311,10 +2304,10 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         ));
       }
       
-      debugPrint('✅ Traseu desenat cu ${coordinates.length} puncte');
+      Logger.info('Traseu desenat cu ${coordinates.length} puncte');
       // Prefetch disabled in emergency mode
     } catch (e) {
-      debugPrint('❌ Eroare la desenarea traseului: $e');
+      Logger.error('Eroare la desenarea traseului: $e', error: e);
     }
   }
 
@@ -2358,7 +2351,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         MapAnimationOptions(duration: 1000)
       );
     } catch (e) {
-      debugPrint('❌ Eroare la fitting camera: $e');
+      Logger.error('Eroare la fitting camera: $e', error: e);
     }
   }
 
@@ -2439,7 +2432,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       }
       
     } catch (e) {
-      debugPrint("❌ Error drawing passenger route with progress: $e");
+      Logger.error("Error drawing passenger route with progress: $e", error: e);
     }
   }
 
@@ -2518,7 +2511,7 @@ if (newStaticAnnotations.isNotEmpty) {
     }
 }
     } catch (e) {
-      debugPrint('❌ Error updating static markers: $e');
+      Logger.error('Error updating static markers: $e', error: e);
     }
   }
   
@@ -2562,7 +2555,7 @@ if (newStaticAnnotations.isNotEmpty) {
         
         _driverAnnotation = await _markersManager?.create(options);
         
-        debugPrint('🚗 Driver marker created with bearing: $initialBearing°');
+        Logger.info('Driver marker created with bearing: $initialBearing°');
         
     } else {
         final startPoint = MapboxUtils.convertToPoint(_driverAnnotation!.geometry);
@@ -2574,11 +2567,11 @@ if (newStaticAnnotations.isNotEmpty) {
         if (firebaseBearing != null) {
           // Folosește bearing-ul din Firebase (GPS actual)
           finalBearing = firebaseBearing;
-          debugPrint('🧭 Using Firebase bearing: ${finalBearing.toStringAsFixed(1)}°');
+          Logger.debug('Using Firebase bearing: ${finalBearing.toStringAsFixed(1)}°');
         } else {
           // Fallback: calculează bearing-ul bazat pe mișcare
           finalBearing = _calculateBearing(startPoint, endPoint);
-          debugPrint('🧭 Calculated bearing from movement: ${finalBearing.toStringAsFixed(1)}°');
+          Logger.debug('Calculated bearing from movement: ${finalBearing.toStringAsFixed(1)}°');
         }
 
         // ✅ FIX: Animează poziția ȘI rotația cu bearing continuu
@@ -2640,7 +2633,7 @@ if (newStaticAnnotations.isNotEmpty) {
 
   Future<void> _initializeRideAndSubscribe() async {
     try {
-      debugPrint('🗺️ Initializing ride and routing...');
+      Logger.debug('Initializing ride and routing...');
       final ride = await _firestoreService.getRideStream(widget.rideId).first;
       
       _previousRide = ride;
@@ -2656,7 +2649,7 @@ if (newStaticAnnotations.isNotEmpty) {
         _subscribeToRideStatusChanges();
       }
     } catch (e) {
-      debugPrint('❌ Error initializing ride: $e');
+      Logger.error('Error initializing ride: $e', error: e);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n?.errorInitializingRide ?? 'Eroare la inițializarea cursei'}: $e')));
@@ -2669,13 +2662,13 @@ if (newStaticAnnotations.isNotEmpty) {
   Future<void> _initializeRoutingAutomatic(Ride ride) async {
     if (ride.startLatitude == null || ride.startLongitude == null ||
         ride.destinationLatitude == null || ride.destinationLongitude == null) {
-      debugPrint('❌ Missing coordinates for routing');
+      Logger.error('Missing coordinates for routing');
       return;
     }
 
     try {
       setState(() => _isLoadingRoute = true);
-      debugPrint('🗺️ Auto-initializing routing...');
+      Logger.debug('Auto-initializing routing...');
       
       final pickupPoint = Point(coordinates: Position(ride.startLongitude!, ride.startLatitude!));
       final destinationPoint = Point(coordinates: Position(ride.destinationLongitude!, ride.destinationLatitude!));
@@ -2692,11 +2685,11 @@ if (newStaticAnnotations.isNotEmpty) {
       
       waypoints.add(destinationPoint);
       
-      debugPrint('🗺️ Calculating route with ${waypoints.length} waypoints...');
+      Logger.debug('Calculating route with ${waypoints.length} waypoints...');
       final route = await _routingService.getRoute(waypoints);
       
       if (route != null && mounted) {
-        debugPrint('✅ Route calculated, drawing on map...');
+        Logger.info('Route calculated, drawing on map...');
         _routeGeoJSON = route;
         await _drawRouteOnMapOptimized(route);
         await _fitCameraToRoute(route);
@@ -2704,10 +2697,10 @@ if (newStaticAnnotations.isNotEmpty) {
         // ✅ FIX: Inițializează navigația vocală automat
         _initializeVoiceNavigation(route);
         
-        debugPrint('✅ Auto-routing completed successfully');
+        Logger.info('Auto-routing completed successfully');
       }
     } catch (e) {
-      debugPrint('❌ Auto-routing failed: $e');
+      Logger.error('Auto-routing failed: $e', error: e);
     } finally {
       if (mounted) {
         setState(() => _isLoadingRoute = false);
@@ -2720,7 +2713,7 @@ if (newStaticAnnotations.isNotEmpty) {
   // ✅ FIX: Metodă nouă pentru inițializarea navigației vocale
   void _initializeVoiceNavigation(Map<String, dynamic> route) {
     try {
-      debugPrint('🗣️ Initializing voice navigation...');
+      Logger.debug('Initializing voice navigation...');
       
       // Parse navigation steps
       final steps = _navigationService.parseMapboxRoute(route);
@@ -2731,7 +2724,7 @@ if (newStaticAnnotations.isNotEmpty) {
       final isDriver = _previousRide?.driverId == currentUserId;
       
       if (isDriver) {
-        debugPrint('🗣️ Starting voice navigation for driver...');
+        Logger.debug('Starting voice navigation for driver...');
         _navigationService.startNavigation(route);
         
         // ✅ FIX: Primul anunț vocal cu metoda robustă
@@ -2742,24 +2735,24 @@ if (newStaticAnnotations.isNotEmpty) {
       }
       
     } catch (e) {
-      debugPrint('❌ Voice navigation initialization failed: $e');
+      Logger.error('Voice navigation initialization failed: $e', error: e);
     }
   }
 
   // ✅ FIX: Metodă robustă pentru anunțuri vocale
   void _announceNavigationInstructionRobust(NavigationStep step) {
-    debugPrint('🗣️ Announcing: ${step.instruction}');
+    Logger.debug('Announcing: ${step.instruction}');
     
     _ttsTimer?.cancel();
     _ttsTimer = Timer(const Duration(milliseconds: 500), () async {
       try {
         await _ttsService.speak(step.instruction);
-        debugPrint('✅ TTS announced successfully');
+        Logger.info('TTS announced successfully');
         _perf.recordNavTelemetry('tts_ok', {
           'instruction': step.instruction,
         });
       } catch (e) {
-        debugPrint('❌ TTS failed: $e');
+        Logger.error('TTS failed: $e', error: e);
         _perf.recordNavTelemetry('tts_fail', {
           'error': e.toString(),
         });
@@ -2772,7 +2765,7 @@ if (newStaticAnnotations.isNotEmpty) {
             });
           }
         } catch (e2) {
-          debugPrint('❌ Haptic fallback failed: $e2');
+          Logger.error('Haptic fallback failed: $e2');
         }
       }
     });
@@ -2808,24 +2801,24 @@ if (newStaticAnnotations.isNotEmpty) {
         setState(() {});
       }
     } catch (e) {
-      debugPrint("Geocoding failed initially: $e");
+      Logger.error("Geocoding failed initially: $e", error: e);
     }
   }
 
   void _startDriverLocationTracking(String driverId) {
     _driverLocationSubscription?.cancel();
-    debugPrint('🚗 Starting driver location tracking for: $driverId');
+    Logger.debug('Starting driver location tracking for: $driverId');
     
     _driverLocationSubscription = _firestoreService.getDriverLocationStream(driverId).listen((snapshot) {
       if (!mounted) return;
       
       if (!snapshot.exists) {
-        debugPrint('⚠️ Driver location snapshot does not exist');
+        Logger.warning('Driver location snapshot does not exist');
         return;
       }
       
       if (_previousRide == null) {
-        debugPrint('⚠️ No ride data available for location tracking');
+        Logger.warning('No ride data available for location tracking');
         return;
       }
       
@@ -2838,7 +2831,7 @@ if (newStaticAnnotations.isNotEmpty) {
         // ✅ FIX: Extrage bearing-ul din Firestore dacă există
         final bearing = data['bearing'] as double?;
         
-        debugPrint('🚗 Driver location update: ${newDriverPosition.coordinates.lat}, ${newDriverPosition.coordinates.lng}, bearing: $bearing');
+        Logger.debug('Driver location update: ${newDriverPosition.coordinates.lat}, ${newDriverPosition.coordinates.lng}, bearing: $bearing');
         
         // ✅ FIX: Actualizează marker-ul cu bearing din Firestore
         _createOrAnimateDriverMarkerWithBearing(newDriverPosition, _previousRide!, bearing);
@@ -2850,10 +2843,10 @@ if (newStaticAnnotations.isNotEmpty) {
            _followDriverWithCamera(newDriverPosition);
         }
       } catch (e) {
-        debugPrint('❌ Error processing driver location update: $e');
+        Logger.error('Error processing driver location update: $e', error: e);
       }
     }, onError: (error) {
-      debugPrint('❌ Driver location tracking error: $error');
+      Logger.error('Driver location tracking error: $error', error: error);
     });
   }
 
@@ -3050,7 +3043,7 @@ if (newStaticAnnotations.isNotEmpty) {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Precise ETA calculation failed: $e');
+      Logger.error('Precise ETA calculation failed: $e', error: e);
     } finally {
       _isFetchingPreciseEta = false;
     }
@@ -3095,7 +3088,7 @@ if (newStaticAnnotations.isNotEmpty) {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Anonymization fallback error: $e');
+      Logger.error('Anonymization fallback error: $e', error: e);
     }
 
     if (!mounted || !ctx.mounted) return;
@@ -3153,9 +3146,9 @@ if (newStaticAnnotations.isNotEmpty) {
     try {
       final emailReceiptService = EmailReceiptService();
       await emailReceiptService.sendReceiptsForRide(widget.rideId, ride);
-      debugPrint('✅ Receipt emails sent for ride: ${widget.rideId}');
+      Logger.info('Receipt emails sent for ride: ${widget.rideId}');
     } catch (e) {
-      debugPrint('⚠️ Error sending receipt emails: $e');
+      Logger.error('Error sending receipt emails: $e', error: e);
       // Nu blocăm finalizarea cursei dacă email-ul eșuează
     }
     
@@ -3164,9 +3157,9 @@ if (newStaticAnnotations.isNotEmpty) {
       try {
         final incentivesService = DriverIncentivesService();
         await incentivesService.updateIncentivesAfterRideCompletion(ride.driverId!);
-        debugPrint('✅ Driver incentives updated for ride: ${widget.rideId}');
+        Logger.info('Driver incentives updated for ride: ${widget.rideId}');
       } catch (e) {
-        debugPrint('⚠️ Error updating driver incentives: $e');
+        Logger.error('Error updating driver incentives: $e', error: e);
         // Nu blocăm finalizarea cursei dacă incentives eșuează
       }
     }
@@ -3175,7 +3168,7 @@ if (newStaticAnnotations.isNotEmpty) {
       try {
         await _ttsService.speak("Ai sosit");
       } catch (e) {
-        debugPrint('Error playing audio notification for passenger: $e');
+        Logger.error('Error playing audio notification for passenger: $e', error: e);
       }
     }
   }
@@ -3250,7 +3243,7 @@ if (newStaticAnnotations.isNotEmpty) {
           driverPos = Point(coordinates: Position(pos.longitude, pos.latitude));
         }
       } catch (e) {
-        debugPrint("Could not get initial driver location for centering: $e");
+        Logger.debug("Could not get initial driver location for centering: $e");
       }
     }
 
@@ -3303,7 +3296,7 @@ if (newStaticAnnotations.isNotEmpty) {
           _mapboxMap?.flyTo(cameraOptions, MapAnimationOptions(duration: 1500));
         }
       } catch (e) {
-        debugPrint('Error getting route for fitCamera: $e');
+        Logger.error('Error getting route for fitCamera: $e', error: e);
       }
     } else if (waypoints.length == 1) {
        _mapboxMap?.flyTo(CameraOptions(center: MapboxUtils.convertToPoint(waypoints.first), zoom: 15), MapAnimationOptions(duration: 1500));
@@ -4018,7 +4011,7 @@ if (newStaticAnnotations.isNotEmpty) {
                               onLongPress: isMe ? () => _editMessage(doc.id, msg.text) : null,
                             );
                           } catch (e) {
-                            debugPrint('⚠️ Error parsing chat message: $e');
+                            Logger.error('Error parsing chat message: $e', error: e);
                             // Fallback la vechiul format
                             final msgData = doc.data();
                             final isMe = msgData['senderId'] == _currentUserId;
@@ -4583,7 +4576,7 @@ if (newStaticAnnotations.isNotEmpty) {
       _routeGeoJSON = routeData;
       await _drawRouteOnMapOptimized(routeData);
     } catch (e) {
-      debugPrint('❌ Failed to recalc route to entrance: $e');
+      Logger.error('Failed to recalc route to entrance: $e', error: e);
     }
   }
 

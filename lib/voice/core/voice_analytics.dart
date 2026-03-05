@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 /// Voice analytics service for tracking voice-related events and performance metrics
@@ -44,9 +45,9 @@ class VoiceAnalytics {
       await _loadHistoricalData();
       _startPeriodicCleanup();
       _isInitialized = true;
-      debugPrint('VoiceAnalytics initialized successfully');
+      Logger.info('VoiceAnalytics initialized successfully');
     } catch (e) {
-      debugPrint('Failed to initialize VoiceAnalytics: $e');
+      Logger.error('Failed to initialize VoiceAnalytics: $e', error: e);
     }
   }
   
@@ -95,7 +96,7 @@ class VoiceAnalytics {
   
   /// ✅ RESET SESSION: Curăță toate datele din sesiunea curentă
   void resetSession() {
-    debugPrint('🔄 VoiceAnalytics: Resetting session data...');
+    Logger.debug('VoiceAnalytics: Resetting session data...');
     
     // Clear event history
     _eventHistory.clear();
@@ -109,7 +110,7 @@ class VoiceAnalytics {
     // Reset cleanup timer
     _cleanupTimer?.cancel();
     
-    debugPrint('✅ VoiceAnalytics: Session reset completed');
+    Logger.info('VoiceAnalytics: Session reset completed');
   }
 
   /// Start performance timer
@@ -385,7 +386,7 @@ class VoiceAnalytics {
             );
             _eventHistory.add(event);
           } catch (e) {
-            debugPrint('Failed to parse event: $e');
+            Logger.error('Failed to parse event: $e', error: e);
           }
         }
       }
@@ -438,9 +439,9 @@ class VoiceAnalytics {
         }
       }
       
-      debugPrint('Historical data loaded successfully');
+      Logger.info('Historical data loaded successfully');
     } catch (e) {
-      debugPrint('Failed to load historical data: $e');
+      Logger.error('Failed to load historical data: $e', error: e);
     }
   }
   
@@ -487,9 +488,9 @@ class VoiceAnalytics {
       }));
       await prefs.setString('voice_analytics_sessions', jsonEncode(sessionsMap));
       
-      debugPrint('Data saved successfully');
+      Logger.debug('Data saved successfully');
     } catch (e) {
-      debugPrint('Failed to save data: $e');
+      Logger.error('Failed to save data: $e', error: e);
     }
   }
   

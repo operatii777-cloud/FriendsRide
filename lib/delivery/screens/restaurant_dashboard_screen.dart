@@ -8,6 +8,7 @@ import '../services/delivery_service.dart';
 import '../services/restaurant_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'product_edit_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Dashboard Manual pentru restaurante mici
 /// 
@@ -442,7 +443,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
             successCount++;
           } catch (e) {
             errorCount++;
-            debugPrint('Error importing product from CSV: $e');
+            Logger.error('Error importing product from CSV: $e', error: e);
           }
         }
 

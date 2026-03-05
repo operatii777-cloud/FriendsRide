@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:friendsride_app/models/ride_preferences_model.dart';
 import 'package:friendsride_app/widgets/ride_preferences_widget.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Ecran pentru setarea preferințelor de cursă (Uber-like)
 class RidePreferencesScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _RidePreferencesScreenState extends State<RidePreferencesScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading preferences: $e');
+      Logger.error('Error loading preferences: $e', error: e);
       setState(() {
         _preferences = RidePreferences();
         _isLoading = false;
@@ -52,7 +53,7 @@ class _RidePreferencesScreenState extends State<RidePreferencesScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Error saving preferences: $e');
+      Logger.error('Error saving preferences: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

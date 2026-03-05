@@ -3,6 +3,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../tts/natural_voice_synthesizer.dart' as synthesizer;
 import '../states/voice_interaction_states.dart';
 import '../../services/audio_beep_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🎤 Voice Orchestrator - Funcționează EXACT ca Gemini Voice
 /// 
@@ -77,7 +78,7 @@ class VoiceOrchestrator {
     if (_isInitialized) return;
     
     try {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] Initializing (singleton)...');
+      Logger.debug('Initializing (singleton)...', tag: 'VOICE_ORCHESTRATOR');
       
       // 🎤 Inițializez STT
       final sttAvailable = await speechToText.initialize(
@@ -100,10 +101,10 @@ class VoiceOrchestrator {
       await beepService.initialize();
       
       _isInitialized = true;
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ✅ Initialized (singleton)');
+      Logger.info('Initialized (singleton)', tag: 'VOICE_ORCHESTRATOR');
       
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isInitialized = false;
       rethrow;
     }
@@ -117,24 +118,24 @@ class VoiceOrchestrator {
     bool partialResults = true,
   }) async {
     if (!_isInitialized) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Not initialized, initializing now...');
+      Logger.warning('Not initialized, initializing now...', tag: 'VOICE_ORCHESTRATOR');
       await initialize();
     }
     
     if (_isListening) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Already listening, stopping current session...');
+      Logger.warning('Already listening, stopping current session...', tag: 'VOICE_ORCHESTRATOR');
       await stopListening();
     }
     
     if (_isSpeaking) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Currently speaking, stopping speech...');
+      Logger.warning('Currently speaking, stopping speech...', tag: 'VOICE_ORCHESTRATOR');
       await stopSpeaking();
     }
     
     // ✅ FIX: Also wait for the shared NaturalVoiceSynthesizer to finish if it
     // is currently speaking (e.g. called directly from RideFlowManager).
     if (naturalTts.isSpeaking) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ TTS still active, waiting for it to finish...');
+      Logger.warning('TTS still active, waiting for it to finish...', tag: 'VOICE_ORCHESTRATOR');
       while (naturalTts.isSpeaking) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -147,7 +148,7 @@ class VoiceOrchestrator {
       _isListening = true;
       _updateState(VoiceProcessingState.listening);
       
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] Starting to listen with timeout: ${timeoutSeconds}s');
+      Logger.warning('Starting to listen with timeout: ${timeoutSeconds}s', tag: 'VOICE_ORCHESTRATOR');
       
       // 🔔 BEEP de "acum te ascult" - utilizatorul știe când să vorbească
       await beepService.playListeningStartBeep();
@@ -160,14 +161,14 @@ class VoiceOrchestrator {
         // partialResults: partialResults, // ❌ Deprecated
         onResult: (result) {
           if (result.finalResult) {
-            debugPrint('🎤 [VOICE_ORCHESTRATOR] Final result: "${result.recognizedWords}"');
+            Logger.debug('Final result: "${result.recognizedWords}"', tag: 'VOICE_ORCHESTRATOR');
             
             // 🔔🔔 Beep-uri duble când AI procesează informația
             beepService.playProcessingStartBeeps();
             
             _onSpeechResult?.call(result.recognizedWords);
           } else if (partialResults) {
-            debugPrint('🎤 [VOICE_ORCHESTRATOR] Partial: "${result.recognizedWords}"');
+            Logger.debug('Partial: "${result.recognizedWords}"', tag: 'VOICE_ORCHESTRATOR');
           }
         },
       );
@@ -177,11 +178,11 @@ class VoiceOrchestrator {
         await Future.delayed(Duration(milliseconds: 100));
       }
       
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ✅ Listening session completed');
+      Logger.info('Listening session completed', tag: 'VOICE_ORCHESTRATOR');
       return null; // Rezultatul vine prin callback
       
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Listening error: $e');
+      Logger.error('Listening error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isListening = false;
       _updateState(VoiceProcessingState.error);
       _onSpeechError?.call(e.toString());
@@ -192,17 +193,17 @@ class VoiceOrchestrator {
   /// 🗣️ Vorbește textul EXACT ca Gemini Voice
   Future<void> speak(String text, {VoiceEmotion emotion = VoiceEmotion.confident}) async {
     if (!_isInitialized) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Not initialized, initializing now...');
+      Logger.warning('Not initialized, initializing now...', tag: 'VOICE_ORCHESTRATOR');
       await initialize();
     }
     
     if (_isListening) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Currently listening, stopping...');
+      Logger.warning('Currently listening, stopping...', tag: 'VOICE_ORCHESTRATOR');
       await stopListening();
     }
     
     if (_isSpeaking) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ⚠️ Already speaking, stopping current speech...');
+      Logger.warning('Already speaking, stopping current speech...', tag: 'VOICE_ORCHESTRATOR');
       await stopSpeaking();
     }
     
@@ -210,7 +211,7 @@ class VoiceOrchestrator {
       _isSpeaking = true;
       _updateState(VoiceProcessingState.speaking);
       
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] Speaking: "$text"');
+      Logger.debug('Speaking: "$text"', tag: 'VOICE_ORCHESTRATOR');
       
       // 🗣️ Vorbește cu emoția specificată
       await naturalTts.speakWithEmotion(text, emotion);
@@ -221,10 +222,10 @@ class VoiceOrchestrator {
       // 🎯 NOU: Notifică că TTS-ul s-a terminat
       _onTtsCompleted?.call();
       
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ✅ Speech completed');
+      Logger.info('Speech completed', tag: 'VOICE_ORCHESTRATOR');
       
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Speech error: $e');
+      Logger.error('Speech error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isSpeaking = false;
       _updateState(VoiceProcessingState.error);
       _onSpeechError?.call(e.toString());
@@ -254,14 +255,14 @@ class VoiceOrchestrator {
       _isSpeaking = true;
       _updateState(VoiceProcessingState.speaking);
       
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] 🗣️ Speaking: "$text"');
+      Logger.debug('Speaking: "$text"', tag: 'VOICE_ORCHESTRATOR');
       
       await naturalTts.speakWithNaturalPauses(text);
       
       _isSpeaking = false;
       _updateState(VoiceProcessingState.idle);
       
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ✅ Speech completed, transitioning to listening...');
+      Logger.info('Speech completed, transitioning to listening...', tag: 'VOICE_ORCHESTRATOR');
       
       // 🎯 NOU: Notifică că TTS-ul s-a terminat
       _onTtsCompleted?.call();
@@ -273,7 +274,7 @@ class VoiceOrchestrator {
       await _startAutomaticListening();
       
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Natural pauses speech error: $e');
+      Logger.error('Natural pauses speech error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isSpeaking = false;
       _updateState(VoiceProcessingState.error);
     }
@@ -286,10 +287,10 @@ class VoiceOrchestrator {
         await speechToText.stop();
         _isListening = false;
         _updateState(VoiceProcessingState.idle);
-        debugPrint('🎤 [VOICE_ORCHESTRATOR] Listening stopped');
+        Logger.info('Listening stopped', tag: 'VOICE_ORCHESTRATOR');
       }
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Stop listening error: $e');
+      Logger.error('Stop listening error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
     }
   }
   
@@ -300,10 +301,10 @@ class VoiceOrchestrator {
         await naturalTts.stop();
         _isSpeaking = false;
         _updateState(VoiceProcessingState.idle);
-        debugPrint('🎤 [VOICE_ORCHESTRATOR] Speech stopped');
+        Logger.debug('Speech stopped', tag: 'VOICE_ORCHESTRATOR');
       }
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Stop speech error: $e');
+      Logger.error('Stop speech error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
     }
   }
   
@@ -319,10 +320,10 @@ class VoiceOrchestrator {
     try {
       if (_isListening) {
         await speechToText.stop();
-        debugPrint('🎤 [VOICE_ORCHESTRATOR] Listening paused (temporarily)');
+        Logger.info('Listening paused (temporarily)', tag: 'VOICE_ORCHESTRATOR');
       }
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Pause listening error: $e');
+      Logger.error('Pause listening error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
     }
   }
   
@@ -339,17 +340,17 @@ class VoiceOrchestrator {
           pauseFor: Duration(seconds: pauseForSeconds),
           onResult: (result) {
             if (result.finalResult) {
-              debugPrint('🎤 [VOICE_ORCHESTRATOR] Final result: "${result.recognizedWords}"');
+              Logger.debug('Final result: "${result.recognizedWords}"', tag: 'VOICE_ORCHESTRATOR');
               beepService.playProcessingStartBeeps();
               _onSpeechResult?.call(result.recognizedWords);
             }
           },
         );
         
-        debugPrint('🎤 [VOICE_ORCHESTRATOR] Listening resumed');
+        Logger.info('Listening resumed', tag: 'VOICE_ORCHESTRATOR');
       }
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Resume listening error: $e');
+      Logger.error('Resume listening error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isListening = false;
       _updateState(VoiceProcessingState.idle);
     }
@@ -396,7 +397,7 @@ class VoiceOrchestrator {
   /// 🎯 AUTOMAT: Pornește ascultarea imediat după TTS
   Future<void> _startAutomaticListening() async {
     try {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] 🎧 Starting automatic listening after TTS...');
+      Logger.info('Starting automatic listening after TTS...', tag: 'VOICE_ORCHESTRATOR');
       
       // Așteaptă puțin pentru ca utilizatorul să proceseze mesajul
       await Future.delayed(Duration(milliseconds: 800));
@@ -410,7 +411,7 @@ class VoiceOrchestrator {
         );
       }
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Auto-listen error: $e');
+      Logger.error('Auto-listen error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
     }
   }
 
@@ -420,7 +421,7 @@ class VoiceOrchestrator {
     String localeId = 'ro_RO',
   }) async {
     if (_conversationManager?.currentState == VoiceConversationState.waitingForConfirmation) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] Starting automatic listening for confirmation...');
+      Logger.info('Starting automatic listening for confirmation...', tag: 'VOICE_ORCHESTRATOR');
       
       // Așteaptă puțin înainte de a porni ascultarea
       await Future.delayed(Duration(milliseconds: 500));
@@ -432,7 +433,7 @@ class VoiceOrchestrator {
         pauseForSeconds: 10,
       );
     } else {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] Not in confirmation state, skipping auto-listen');
+      Logger.debug('Not in confirmation state, skipping auto-listen', tag: 'VOICE_ORCHESTRATOR');
     }
   }
   
@@ -441,7 +442,7 @@ class VoiceOrchestrator {
     try {
       return await speechToText.initialize();
     } catch (e) {
-      debugPrint('🎤 [VOICE_ORCHESTRATOR] ❌ Speech recognition check failed: $e');
+      Logger.error('Speech recognition check failed: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       return false;
     }
   }

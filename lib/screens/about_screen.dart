@@ -5,6 +5,7 @@ import 'package:friendsride_app/screens/career_screen.dart';
 import 'package:friendsride_app/widgets/rating_stars.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class AboutScreen extends StatelessWidget {
   final bool isPassengerMode;
@@ -45,7 +46,7 @@ class AboutScreen extends StatelessWidget {
                         setState(() {
                           selectedRating = (index + 1).toDouble();
                         });
-                        debugPrint('🌟 Rating selectat: ${index + 1}');
+                        Logger.debug('Rating selectat: ${index + 1}');
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -85,7 +86,7 @@ class AboutScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: selectedRating > 0 ? () {
-                debugPrint('⭐ RATING FINAL: $selectedRating stele');
+                Logger.debug('⭐ RATING FINAL: $selectedRating stele');
                 Navigator.pop(ctx);
                 _sendRating(context, selectedRating);
               } : null,
@@ -109,7 +110,7 @@ class AboutScreen extends StatelessWidget {
 
   // Trimite DOAR rating
   void _sendRating(BuildContext context, double rating) {
-    debugPrint('⭐ RATING TRIMIS: $rating');
+    Logger.debug('⭐ RATING TRIMIS: $rating');
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -121,21 +122,21 @@ class AboutScreen extends StatelessWidget {
 
     // Simulare în background
     Timer(const Duration(seconds: 1), () {
-      debugPrint('🚀 Salvez rating în Firebase...');
-      debugPrint('✅ Rating salvat!');
+      Logger.info('Salvez rating în Firebase...');
+      Logger.info('Rating salvat!');
       _showIndexLink('rating');
     });
   }
 
   // Simulează link-ul pentru index
   void _showIndexLink(String type) {
-    debugPrint('🔍 Test index pentru $type...');
-    debugPrint('');
-    debugPrint('⚡ EROARE FIREBASE - INDEX NECESAR:');
-    debugPrint('🎯🎯🎯 LINK PENTRU INDEX GĂSIT! 🎯🎯🎯');
-    debugPrint('🔗 https://console.firebase.google.com/v1/r/project/friendsride-app/firestore/indexes?create_composite=abc123');
-    debugPrint('👆 Copiază link-ul de mai sus!');
-    debugPrint('');
+    Logger.debug('Test index pentru $type...');
+    Logger.debug('');
+    Logger.debug('EROARE FIREBASE - INDEX NECESAR:');
+    Logger.info('LINK PENTRU INDEX GĂSIT!');
+    Logger.debug('https://console.firebase.google.com/v1/r/project/friendsride-app/firestore/indexes?create_composite=abc123');
+    Logger.debug('Copiază link-ul de mai sus!');
+    Logger.debug('');
   }
 
   @override

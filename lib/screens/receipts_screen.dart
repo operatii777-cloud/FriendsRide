@@ -7,6 +7,7 @@ import 'package:friendsride_app/services/pdf_receipt_service.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class ReceiptsScreen extends StatefulWidget {
   const ReceiptsScreen({super.key});
@@ -118,7 +119,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> with SingleTickerProvid
       } catch (e) {
         if (!mounted) return;
         errorCount++;
-        debugPrint('Error deleting ride $rideId: $e');
+        Logger.error('Error deleting ride $rideId: $e', error: e);
       }
     }
 

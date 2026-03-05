@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:friendsride_app/voice/states/voice_interaction_states.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class DraggableAIButton extends StatefulWidget {
   final VoidCallback? onTap;
@@ -24,7 +25,7 @@ class _DraggableAIButtonState extends State<DraggableAIButton> {
   void initState() {
     super.initState();
     _position = const Offset(300, 300);
-    debugPrint('🎤 DEBUG: DraggableAIButton inițializat la poziția: $_position');
+    Logger.debug('DEBUG: DraggableAIButton inițializat la poziția: $_position');
   }
   
   @override
@@ -39,7 +40,7 @@ class _DraggableAIButtonState extends State<DraggableAIButton> {
       top: safeY,
       child: GestureDetector(
         onPanStart: (details) {
-          debugPrint('🎤 DEBUG: Pan start detectat');
+          Logger.debug('DEBUG: Pan start detectat');
           _isDragging = false;
           _startPanPosition = details.globalPosition;
         },
@@ -57,15 +58,15 @@ class _DraggableAIButtonState extends State<DraggableAIButton> {
           }
         },
         onPanEnd: (details) {
-          debugPrint('🎤 DEBUG: Pan end - isDragging: $_isDragging');
+          Logger.debug('DEBUG: Pan end - isDragging: $_isDragging');
           if (!_isDragging) {
             // A fost tap, nu drag
-            debugPrint('🎤 DEBUG: TAP DETECTAT! Apelează callback');
+            Logger.debug('DEBUG: TAP DETECTAT! Apelează callback');
             if (widget.onTap != null) {
               widget.onTap!();
-              debugPrint('🎤 DEBUG: Callback executat!');
+              Logger.debug('DEBUG: Callback executat!');
             } else {
-              debugPrint('🎤 DEBUG: Nu există callback!');
+              Logger.debug('DEBUG: Nu există callback!');
             }
           }
           _isDragging = false;

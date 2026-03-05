@@ -9,6 +9,7 @@ import 'package:friendsride_app/services/real_time_tracking_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/services/local_notifications_service.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🔥 Firebase Service - Central Hub pentru toate serviciile Firebase
 /// 
@@ -51,7 +52,7 @@ class FirebaseService {
   /// 🚀 Initialize Firebase services (fast initialization only)
   Future<void> initialize() async {
     try {
-      debugPrint('🔥 [FIREBASE] Initializing Firebase services...');
+      Logger.debug('Initializing Firebase services...', tag: 'FIREBASE');
       
       // Initialize core services first (fast operations)
       await _initializeCoreServices();
@@ -59,14 +60,14 @@ class FirebaseService {
       // Defer heavy operations to background
       unawaited(_initializeBackgroundServices());
       
-      debugPrint('✅ Firebase core services initialized');
+      Logger.info('Firebase core services initialized');
     } catch (e) {
-      debugPrint('❌ Error initializing Firebase: $e');
+      Logger.error('Error initializing Firebase: $e', error: e);
       if (!kDebugMode) {
         try {
           await _crashlytics.recordError(e, StackTrace.current);
         } catch (crashlyticsError) {
-          debugPrint('⚠️ Failed to record error in Crashlytics: $crashlyticsError');
+          Logger.error('Failed to record error in Crashlytics: $crashlyticsError');
         }
       }
     }
@@ -80,33 +81,33 @@ class FirebaseService {
       if (googleAppId.isEmpty) {
         _analyticsEnabled = false;
         await _analytics.setAnalyticsCollectionEnabled(false);
-        debugPrint('ℹ️ Firebase Analytics disabled: missing google_app_id');
+        Logger.info('Firebase Analytics disabled: missing google_app_id');
       } else {
         _analyticsEnabled = true;
         await _analytics.setAnalyticsCollectionEnabled(true);
       }
     } catch (e) {
       _analyticsEnabled = false;
-      debugPrint('⚠️ Firebase Analytics configuration error (disabled for this session): $e');
+      Logger.error('Firebase Analytics configuration error (disabled for this session): $e', error: e);
     }
 
     // Enable crashlytics (only if not in debug mode to avoid errors)
     if (!kDebugMode) {
       try {
         await _crashlytics.setCrashlyticsCollectionEnabled(true);
-        debugPrint('✅ Crashlytics enabled for production');
+        Logger.info('Crashlytics enabled for production');
       } catch (e) {
-        debugPrint('⚠️ Crashlytics setup error (non-fatal): $e');
+        Logger.error('Crashlytics setup error (non-fatal): $e', error: e);
       }
     } else {
-      debugPrint('ℹ️ Crashlytics disabled in debug mode');
+      Logger.info('Crashlytics disabled in debug mode');
     }
   }
 
   /// Initialize heavy Firebase services in background
   Future<void> _initializeBackgroundServices() async {
     try {
-      debugPrint('🔄 Starting Firebase background services...');
+      Logger.debug('Starting Firebase background services...');
       
       // Request notification permissions
       await _requestNotificationPermissions();
@@ -122,9 +123,9 @@ class FirebaseService {
         await _analytics.logEvent(name: 'app_initialized');
       }
       
-      debugPrint('✅ Firebase background services initialized');
+      Logger.info('Firebase background services initialized');
     } catch (e) {
-      debugPrint('⚠️ Firebase background services error (non-fatal): $e');
+      Logger.error('Firebase background services error (non-fatal): $e', error: e);
     }
   }
 
@@ -142,12 +143,12 @@ class FirebaseService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('✅ Notification permissions granted');
+        Logger.info('Notification permissions granted');
       } else {
-        debugPrint('⚠️ Notification permissions denied');
+        Logger.warning('Notification permissions denied');
       }
     } catch (e) {
-      debugPrint('❌ Error requesting notification permissions: $e');
+      Logger.error('Error requesting notification permissions: $e', error: e);
     }
   }
 
@@ -159,20 +160,20 @@ class FirebaseService {
     
     // Handle messages when app is in foreground
     _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('📱 Foreground message received: ${message.notification?.title}');
+      Logger.info('Foreground message received: ${message.notification?.title}');
       _handleForegroundMessage(message);
     });
 
     // Handle messages when app is opened from notification
     _appOpenedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('📱 App opened from notification: ${message.notification?.title}');
+      Logger.info('App opened from notification: ${message.notification?.title}');
       _handleNotificationTap(message);
     });
 
     // Handle initial message if app was terminated
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      debugPrint('📱 Initial message: ${initialMessage.notification?.title}');
+      Logger.info('Initial message: ${initialMessage.notification?.title}');
       _handleInitialMessage(initialMessage);
     }
   }
@@ -191,7 +192,7 @@ class FirebaseService {
         _handleChatNotification(message);
         break;
       default:
-        debugPrint('📱 Unknown message type: ${message.data['type']}');
+        Logger.info('Unknown message type: ${message.data['type']}');
     }
     // Show a local heads-up notification as well
     final title = message.notification?.title ?? 'Notificare';
@@ -203,7 +204,7 @@ class FirebaseService {
   void _handleEmergencyNotification(RemoteMessage message) {
     // Extract emergency data
     final emergencyData = message.data;
-    debugPrint('🚨 Emergency notification: ${emergencyData['emergency_type']}');
+    Logger.error('Emergency notification: ${emergencyData['emergency_type']}');
     
     // Trigger emergency alert in UI via callback
     try {
@@ -228,14 +229,14 @@ class FirebaseService {
       // Notify active tracking service about emergency
       _notifyEmergencyToActiveServices(emergencyAlert);
     } catch (e) {
-      debugPrint('❌ Error processing emergency notification: $e');
+      Logger.error('Error processing emergency notification: $e', error: e);
     }
   }
 
   /// 🚗 Handle ride update notifications
   void _handleRideUpdateNotification(RemoteMessage message) {
     final rideData = message.data;
-    debugPrint('🚗 Ride update: ${rideData['update_type']}');
+    Logger.debug('Ride update: ${rideData['update_type']}');
     
     // Update ride status in UI via global notification
     try {
@@ -252,14 +253,14 @@ class FirebaseService {
       // Notify active UI components about ride update
       _notifyRideUpdateToActiveServices(rideUpdate);
     } catch (e) {
-      debugPrint('❌ Error processing ride update notification: $e');
+      Logger.error('Error processing ride update notification: $e', error: e);
     }
   }
 
   /// 💬 Handle chat notifications
   void _handleChatNotification(RemoteMessage message) {
     final chatData = message.data;
-    debugPrint('💬 Chat message: ${chatData['sender_name']}');
+    Logger.debug('Chat message: ${chatData['sender_name']}');
     
     // Show chat notification in UI via overlay notification
     try {
@@ -282,7 +283,7 @@ class FirebaseService {
       // Notify active chat UI about new message
       _notifyChatToActiveServices(chatNotification);
     } catch (e) {
-      debugPrint('❌ Error processing chat notification: $e');
+      Logger.error('Error processing chat notification: $e', error: e);
     }
   }
 
@@ -335,12 +336,12 @@ class FirebaseService {
         },
       );
     } catch (e) {
-      debugPrint('❌ Error saving location update: $e');
+      Logger.error('Error saving location update: $e', error: e);
       if (!kDebugMode) {
         try {
           await _crashlytics.recordError(e, StackTrace.current);
         } catch (crashlyticsError) {
-          debugPrint('⚠️ Failed to record error in Crashlytics: $crashlyticsError');
+          Logger.error('Failed to record error in Crashlytics: $crashlyticsError');
         }
       }
     }
@@ -373,12 +374,12 @@ class FirebaseService {
       // Send push notification to emergency responders
       await _sendEmergencyPushNotification(alert);
     } catch (e) {
-      debugPrint('❌ Error saving emergency alert: $e');
+      Logger.error('Error saving emergency alert: $e', error: e);
       if (!kDebugMode) {
         try {
           await _crashlytics.recordError(e, StackTrace.current);
         } catch (crashlyticsError) {
-          debugPrint('⚠️ Failed to record error in Crashlytics: $crashlyticsError');
+          Logger.error('Failed to record error in Crashlytics: $crashlyticsError');
         }
       }
     }
@@ -402,10 +403,10 @@ class FirebaseService {
       if (tokens.isNotEmpty) {
         // Send via Cloud Functions for better security
         await _sendEmergencyViaCloudFunction(alert, tokens);
-        debugPrint('📱 Emergency notification sent to ${tokens.length} responders');
+        Logger.info('Emergency notification sent to ${tokens.length} responders');
       }
     } catch (e) {
-      debugPrint('❌ Error sending emergency notification: $e');
+      Logger.error('Error sending emergency notification: $e', error: e);
     }
   }
 
@@ -431,12 +432,12 @@ class FirebaseService {
         },
       );
     } catch (e) {
-      debugPrint('❌ Error saving communication: $e');
+      Logger.error('Error saving communication: $e', error: e);
       if (!kDebugMode) {
         try {
           await _crashlytics.recordError(e, StackTrace.current);
         } catch (crashlyticsError) {
-          debugPrint('⚠️ Failed to record error in Crashlytics: $crashlyticsError');
+          Logger.error('Failed to record error in Crashlytics: $crashlyticsError');
         }
       }
     }
@@ -472,12 +473,12 @@ class FirebaseService {
         },
       );
     } catch (e) {
-      debugPrint('❌ Error saving AI prediction: $e');
+      Logger.error('Error saving AI prediction: $e', error: e);
       if (!kDebugMode) {
         try {
           await _crashlytics.recordError(e, StackTrace.current);
         } catch (crashlyticsError) {
-          debugPrint('⚠️ Failed to record error in Crashlytics: $crashlyticsError');
+          Logger.error('Failed to record error in Crashlytics: $crashlyticsError');
         }
       }
     }
@@ -510,12 +511,12 @@ class FirebaseService {
         },
       );
     } catch (e) {
-      debugPrint('❌ Error saving performance metrics: $e');
+      Logger.error('Error saving performance metrics: $e', error: e);
       if (!kDebugMode) {
         try {
           await _crashlytics.recordError(e, StackTrace.current);
         } catch (crashlyticsError) {
-          debugPrint('⚠️ Failed to record error in Crashlytics: $crashlyticsError');
+          Logger.error('Failed to record error in Crashlytics: $crashlyticsError');
         }
       }
     }
@@ -572,7 +573,7 @@ class FirebaseService {
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
-      debugPrint('❌ Error getting device info: $e');
+      Logger.error('Error getting device info: $e', error: e);
       return {
         'platform': 'unknown',
         'version': '1.0.0',
@@ -601,11 +602,11 @@ class FirebaseService {
         'priority': 'high',
       });
       
-      debugPrint('✅ Emergency sent via Cloud Function');
+      Logger.info('Emergency sent via Cloud Function');
     } catch (e) {
-      debugPrint('❌ Error sending emergency via Cloud Function: $e');
+      Logger.error('Error sending emergency via Cloud Function: $e', error: e);
       // Fallback to direct FCM if Cloud Function fails
-      debugPrint('📱 Using direct FCM as fallback');
+      Logger.warning('Using direct FCM as fallback');
     }
   }
 
@@ -614,9 +615,9 @@ class FirebaseService {
     try {
       // Use static notification system or event bus
       // This would connect to active RealTimeTrackingService instances
-      debugPrint('🚨 Notifying active services about emergency: ${alert.type.name}');
+      Logger.error('Notifying active services about emergency: ${alert.type.name}');
     } catch (e) {
-      debugPrint('❌ Error notifying emergency to services: $e');
+      Logger.error('Error notifying emergency to services: $e', error: e);
     }
   }
 
@@ -624,9 +625,9 @@ class FirebaseService {
   void _notifyRideUpdateToActiveServices(Map<String, dynamic> rideUpdate) {
     try {
       // Use static notification system or event bus
-      debugPrint('🚗 Notifying active services about ride update: ${rideUpdate['updateType']}');
+      Logger.debug('Notifying active services about ride update: ${rideUpdate['updateType']}');
     } catch (e) {
-      debugPrint('❌ Error notifying ride update to services: $e');
+      Logger.error('Error notifying ride update to services: $e', error: e);
     }
   }
 
@@ -634,9 +635,9 @@ class FirebaseService {
   void _notifyChatToActiveServices(RealTimeCommunication chat) {
     try {
       // Use static notification system or event bus
-      debugPrint('💬 Notifying active services about chat: ${chat.message}');
+      Logger.debug('Notifying active services about chat: ${chat.message}');
     } catch (e) {
-      debugPrint('❌ Error notifying chat to services: $e');
+      Logger.error('Error notifying chat to services: $e', error: e);
     }
   }
 
@@ -647,6 +648,6 @@ class FirebaseService {
     _appOpenedSubscription?.cancel();
     
     // Firebase services are automatically managed
-    debugPrint('✅ Firebase service disposed');
+    Logger.info('Firebase service disposed');
   }
 }

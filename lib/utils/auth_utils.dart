@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/foundation.dart'; // REMOVED: Unnecessary import
+import 'package:friendsride_app/utils/logger.dart';
 
 class AuthUtils {
   // Metodă statică pentru a afișa dialogul de resetare a parolei
@@ -88,7 +88,7 @@ class AuthUtils {
                       );
                     }
                   } catch (e) {
-                    debugPrint('Error sending password reset email from dialog: $e');
+                    Logger.error('Error sending password reset email from dialog: $e', error: e);
                     if (context.mounted) { // Verificăm context.mounted
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

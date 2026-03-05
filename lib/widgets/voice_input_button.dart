@@ -5,6 +5,7 @@ import 'package:friendsride_app/voice/states/voice_interaction_states.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:friendsride_app/voice/integration/friendsride_voice_integration.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🎤 VoiceInputButton - Buton reutilizabil pentru input vocal în câmpurile de adrese
 /// 
@@ -122,10 +123,10 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         _isInitialized = true;
         setState(() {});
         
-        debugPrint('🎤 VoiceInputButton: Initialized successfully');
+        Logger.info('VoiceInputButton: Initialized successfully');
       }
     } catch (e) {
-      debugPrint('🎤 VoiceInputButton: Initialization error: $e');
+      Logger.error('VoiceInputButton: Initialization error: $e', error: e);
       _showError('Eroare la inițializarea sistemului vocal: $e');
     }
   }
@@ -262,7 +263,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
 
       // Animațiile vor fi pornite prin callback-ul de stare
     } catch (e) {
-      debugPrint('🎤 VoiceInputButton: Start listening error: $e');
+      Logger.error('VoiceInputButton: Start listening error: $e', error: e);
       _showError('Eroare la pornirea înregistrării: $e');
     }
   }
@@ -290,7 +291,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         }
       });
     } catch (e) {
-      debugPrint('🎤 VoiceInputButton: Stop listening error: $e');
+      Logger.error('VoiceInputButton: Stop listening error: $e', error: e);
     }
   }
 
