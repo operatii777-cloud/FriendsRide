@@ -23,6 +23,14 @@ import 'package:friendsride_app/screens/driver_ride_details_screen.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:friendsride_app/theme/app_colors.dart';
 import 'package:friendsride_app/widgets/theme_toggle_button.dart';
+// import 'package:friendsride_app/widgets/draggable_ai_button.dart'; // AI button ascuns temporar
+import 'package:friendsride_app/widgets/ride/ride_emergency_card.dart';
+import 'package:friendsride_app/widgets/ride/ride_stuck_panel.dart';
+import 'package:friendsride_app/widgets/ride/ride_driver_navigation_overlay.dart';
+import 'package:friendsride_app/widgets/ride/draggable_chat_window.dart';
+import 'package:friendsride_app/widgets/ride/ride_passenger_tracking.dart';
+import 'package:friendsride_app/widgets/ride/ride_turn_by_turn_widget.dart';
+import 'package:friendsride_app/widgets/ride/ride_destination_entrance_chips.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
@@ -740,6 +748,18 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
       
       if (timeDiff > 0) {
         _currentSpeed = distance / timeDiff; // meters per second
+
+        // Throttle overspeed haptics (once per 3 seconds)
+        final speedKmh = _currentSpeed * 3.6;
+        if (speedKmh > _currentSpeedLimitKmh + 3) {
+          final now2 = DateTime.now();
+          if (_lastOverspeedHapticAt == null || now2.difference(_lastOverspeedHapticAt!).inSeconds >= 3) {
+            HapticFeedback.heavyImpact();
+            _lastOverspeedHapticAt = now2;
+          }
+        }
+
+        debugPrint('🚗 Speed: ${(_currentSpeed * 3.6).toStringAsFixed(1)} km/h');
         
         Logger.debug('Speed: ${(_currentSpeed * 3.6).toStringAsFixed(1)} km/h');
       }
@@ -778,241 +798,29 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
   // ✅ PHASE 3: Enhanced role-based UI helper
   Widget _buildRoleBasedUIOverlay() {
     if (_isDriverNavigationMode) {
-      return _buildDriverNavigationOverlay();
+      return RideDriverNavigationOverlay(
+        currentSpeed: _currentSpeed,
+        currentSpeedLimit: _currentSpeedLimitKmh,
+        onSpeedLimitChanged: (newLimit) async {
+          if (mounted) setState(() { _currentSpeedLimitKmh = newLimit; });
+          try { final prefs = await SharedPreferences.getInstance(); await prefs.setInt('nav_speed_limit_kmh', newLimit); } catch (_) {}
+        },
+      );
     } else if (_isPassengerTrackingMode) {
-      return _buildPassengerTrackingUI();
+      return RidePassengerTracking(
+        isPassengerTrackingMode: _isPassengerTrackingMode,
+        currentSpeed: _currentSpeed,
+        shouldShowDriverMarker: _shouldShowDriverMarker,
+        pickupEta: _pickupEta,
+        destinationEta: _destinationEta,
+        pickupArrivalTime: _pickupArrivalTime,
+        destinationArrivalTime: _destinationArrivalTime,
+        pickupDistanceKm: _pickupDistanceKm,
+        destinationDistanceKm: _destinationDistanceKm,
+        routeTrafficSummary: _routeTrafficSummary,
+      );
     }
     return const SizedBox.shrink();
-  }
-
-  // ✅ Driver navigation overlay
-  Widget _buildDriverNavigationOverlay() {
-    final speedKmh = _currentSpeed * 3.6;
-    final bool isOverSpeed = speedKmh > _currentSpeedLimitKmh + 3; // small tolerance
-    // Throttle overspeed haptics (once per 3 seconds)
-    if (isOverSpeed) {
-      final now = DateTime.now();
-      if (_lastOverspeedHapticAt == null || now.difference(_lastOverspeedHapticAt!).inSeconds >= 3) {
-        HapticFeedback.heavyImpact();
-        _lastOverspeedHapticAt = now;
-      }
-    }
-    
-    return Positioned(
-      top: 50,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              '🧭 Driver Navigation',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            Row(
-              children: [
-                // Speed limit pill
-                GestureDetector(
-                  onTap: () async {
-                    // Cycle common limits 30→50→60→70→80→90→100→50
-                    final List<int> limits = [30, 50, 60, 70, 80, 90, 100];
-                    final idx = limits.indexOf(_currentSpeedLimitKmh);
-                    final next = limits[(idx >= 0 ? (idx + 1) % limits.length : 1)];
-                    if (mounted) setState(() { _currentSpeedLimitKmh = next; });
-                    try { final prefs = await SharedPreferences.getInstance(); await prefs.setInt('nav_speed_limit_kmh', next); } catch (_) {}
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isOverSpeed ? Colors.red : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isOverSpeed ? Colors.red.shade700 : Colors.grey.shade400),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.speed, size: 16, color: isOverSpeed ? Colors.white : Colors.black87),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_currentSpeedLimitKmh',
-                          style: TextStyle(
-                            color: isOverSpeed ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  '${speedKmh.toStringAsFixed(0)} km/h',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ✅ NEW: Passenger tracking info overlay (PASSENGER ONLY)
-  Widget _buildPassengerTrackingUI() {
-    // Only show for passengers in tracking mode
-    if (!_isPassengerTrackingMode) {
-      return const SizedBox.shrink();
-    }
-    
-    // Show driver marker status for debugging
-    Logger.info('Should show driver marker: $_shouldShowDriverMarker');
-    
-    final speedKmh = _currentSpeed * 3.6;
-    
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Theme.of(context).colorScheme.surface,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Driver info
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                child: Icon(
-                  Icons.drive_eta,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Șoferul tău',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      speedKmh > 1 ? 'Se deplasează: ${speedKmh.toStringAsFixed(0)} km/h' : 'Stă pe loc',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // ETA info for passenger
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Până la preluare',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    _pickupEta != null ? '${_pickupEta!.inMinutes} min' : '—',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  Text(
-                    _pickupDistanceKm != null
-                        ? '${_pickupDistanceKm!.toStringAsFixed(1)} km'
-                        : '—',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  if (_pickupArrivalTime != null)
-                    Text(
-                      'Ridicare ~${DateFormat.Hm().format(_pickupArrivalTime!)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Până la destinație',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    _destinationEta != null ? '${_destinationEta!.inMinutes} min' : '—',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  Text(
-                    _destinationDistanceKm != null
-                        ? '${_destinationDistanceKm!.toStringAsFixed(1)} km'
-                        : '—',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  if (_destinationArrivalTime != null)
-                    Text(
-                      'Sosire ~${DateFormat.Hm().format(_destinationArrivalTime!)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  if (_routeTrafficSummary != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        _routeTrafficSummary!,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.orange.shade700,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   // ✅ Determină rolul și aplică camera corespunzătoare
@@ -1174,74 +982,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     return false;
   }
 
-  Widget _buildStuckRidePanel(Ride ride) {
-    return Material(
-      elevation: 10,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        width: double.infinity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 48),
-            const SizedBox(height: 16),
-            const Text(
-              'Problemă de comunicare',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Ceva nu pare în regulă cu această cursă. A rămas blocată în starea "${ride.status}" de prea mult timp. Puteți forța anularea ei.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () async {
-                try {
-                  await _firestoreService.updateRideStatus(ride.id, 'cancelled');
-                  if (!mounted) return;
-                  final l10n = AppLocalizations.of(context)!;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.rideCancelledSuccessfully), backgroundColor: Colors.green),
-                  );
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const MapScreen()),
-                    (route) => false,
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Builder(
-                      builder: (context) {
-                        final l10n = AppLocalizations.of(context)!;
-                        return Text(l10n.errorCancelling(e.toString()));
-                      },
-                    ), backgroundColor: Colors.red),
-                  );
-                }
-              },
-              icon: const Icon(Icons.cancel_outlined),
-              label: Builder(
-                builder: (context) {
-                  final l10n = AppLocalizations.of(context)!;
-                  return Text(l10n.forceCancelRide);
-                },
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
   void _showStopAddedNotification() async {
     _audioService.playMessageReceivedSound(); 
     await _centerMapIfReady();
@@ -2033,86 +1773,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         ),
       );
     }
-  }
-
-  Widget _buildEmergencyPromptCard() {
-    return Material(
-      elevation: 6,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade200),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.emergency_outlined, color: Colors.red),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'SOS activat',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.red.shade800,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Echipa de siguranță a fost informată. Confirmați când sunteți în siguranță sau continuați să partajați traseul cu contactele de încredere.',
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Text(l10n.iAmSafe);
-                    },
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () => _resolveEmergencyAlert(),
-                ),
-                OutlinedButton(
-                  onPressed: () => _resolveEmergencyAlert(falseAlarm: true),
-                  child: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Text(l10n.falseAlarm);
-                    },
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _openSafetyShareSheet,
-                  icon: const Icon(Icons.share_location),
-                  label: Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return Text(l10n.shareRoute);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _onMapCreated(MapboxMap mapboxMap) async {
@@ -3337,7 +2997,7 @@ if (newStaticAnnotations.isNotEmpty) {
           final isDriver = _currentUserId == ride.driverId;
 
           if (_isRideStuck(ride)) {
-            return Center(child: _buildStuckRidePanel(ride));
+            return Center(child: RideStuckPanel(ride: ride, firestoreService: _firestoreService));
           }
 
           // Compute arrival panel visibility: driver approaching passenger (< 100 m)
@@ -3388,7 +3048,13 @@ if (newStaticAnnotations.isNotEmpty) {
               // AI button ascuns temporar
 
               if (_showTurnByTurnUI && _isDriverView && _currentNavigationStep != null)
-                _buildTurnByTurnUI(),
+                RideTurnByTurnWidget(
+                  currentNavigationStep: _currentNavigationStep!,
+                  voiceMuted: _voiceMuted,
+                  ttsService: _ttsService,
+                  onVoiceMutedChanged: (muted) => setState(() { _voiceMuted = muted; }),
+                  onDismiss: () => setState(() { _showTurnByTurnUI = false; }),
+                ),
 
               // Recenter button for passenger when map is moved
               if (_showRecenterButton && !_isDriverView)
@@ -3445,7 +3111,11 @@ if (newStaticAnnotations.isNotEmpty) {
                   top: 96,
                   left: 16,
                   right: 16,
-                  child: _buildEmergencyPromptCard(),
+                  child: RideEmergencyCard(
+                    onIAmSafe: () => _resolveEmergencyAlert(),
+                    onFalseAlarm: () => _resolveEmergencyAlert(falseAlarm: true),
+                    onShareRoute: _openSafetyShareSheet,
+                  ),
                 ),
               
               // 🗺️ FIX: Loading indicator pentru routing
@@ -3624,7 +3294,7 @@ if (newStaticAnnotations.isNotEmpty) {
                   bottom: 96,
                   left: 16,
                   right: 16,
-                  child: _buildDestinationEntranceChips(),
+                  child: RideDestinationEntranceChips(onEntrySelected: _onSelectDestinationEntrance),
                 ),
 
 
@@ -4271,216 +3941,6 @@ if (newStaticAnnotations.isNotEmpty) {
   
 
 
-  Widget _buildTurnByTurnUI() {
-    if (_currentNavigationStep == null) return const SizedBox.shrink();
-    
-    final step = _currentNavigationStep!;
-    final distance = step.distance;
-    final instruction = step.instruction;
-    
-    Color backgroundColor;
-    Color textColor;
-    
-    if (step.type == 'turn') {
-      if (step.modifier == 'left') {
-        backgroundColor = Colors.blue;
-        textColor = Colors.white;
-      } else if (step.modifier == 'right') {
-        backgroundColor = Colors.green;
-        textColor = Colors.white;
-      } else {
-        backgroundColor = Colors.orange;
-        textColor = Colors.white;
-      }
-    } else if (step.type == 'arrive') {
-      backgroundColor = Colors.green;
-      textColor = Colors.white;
-    } else {
-      backgroundColor = Theme.of(context).colorScheme.primary;
-      textColor = Theme.of(context).colorScheme.onPrimary;
-    }
-    
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Semantics(
-        label: 'Banner navigație. ${step.type ?? ''} ${step.modifier ?? ''}. Distanță ${distance.toStringAsFixed(0)} metri.',
-        liveRegion: true,
-        child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha((255 * 0.3).round()),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: textColor.withAlpha((255 * 0.2).round()),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                _getInstructionIcon(step),
-                color: textColor,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    instruction,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.visible,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${distance.toStringAsFixed(0)} m',
-                    style: TextStyle(
-                      color: textColor.withAlpha((255 * 0.8).round()),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Lane guidance chips (approximation based on modifier)
-                  _buildLaneGuidanceChips(step, textColor),
-                ],
-              ),
-            ),
-            
-            Row(children: [
-              // Repeat instruction
-              IconButton(
-                tooltip: 'Repetă',
-                onPressed: () async {
-                  try { if (!_voiceMuted) await _ttsService.speak(instruction); } catch (_) {}
-                },
-                icon: Icon(Icons.volume_up, color: textColor, size: 20),
-              ),
-              // Mute/unmute
-              StatefulBuilder(
-                builder: (context, setSB) {
-                  return IconButton(
-                    tooltip: _voiceMuted ? 'Unmute voce' : 'Mute voce',
-                    onPressed: () async {
-                      setSB(() { _voiceMuted = !_voiceMuted; });
-                      try {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('nav_voice_muted', _voiceMuted);
-                      } catch (_) {}
-                      if (_voiceMuted) { _ttsService.stop(); }
-                    },
-                    icon: Icon(_voiceMuted ? Icons.volume_off : Icons.volume_up, color: textColor, size: 20),
-                  );
-                },
-              ),
-              // Close banner
-              IconButton(
-                tooltip: 'Ascunde',
-                onPressed: () {
-                  setState(() { _showTurnByTurnUI = false; });
-                },
-                icon: Icon(Icons.close, color: textColor, size: 20),
-              ),
-            ]),
-          ],
-        ),
-      ),
-      ),
-    );
-  }
-
-  Widget _buildLaneGuidanceChips(NavigationStep step, Color textColor) {
-    final List<Map<String, dynamic>> lanes = _deriveLanesFromStep(step);
-    if (lanes.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: 6,
-      runSpacing: 4,
-      children: lanes.map((lane) {
-        final bool isRecommended = lane['rec'] == true;
-        final IconData icon = lane['icon'] as IconData;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: isRecommended ? textColor.withAlpha((255 * 0.18).round()) : textColor.withAlpha((255 * 0.08).round()),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isRecommended ? textColor : textColor.withAlpha((255 * 0.5).round()), width: isRecommended ? 1.5 : 1.0),
-          ),
-          child: Icon(icon, size: 16, color: textColor),
-        );
-      }).toList(),
-    );
-  }
-
-  List<Map<String, dynamic>> _deriveLanesFromStep(NavigationStep step) {
-    // Heuristic lane guidance based on modifier and type when lane data is unavailable
-    // We present 3 lanes where the middle/left/right is recommended depending on modifier
-    final String? modifier = step.modifier;
-    if (modifier == null) return [];
-    IconData left = Icons.turn_left;
-    IconData straight = Icons.straight;
-    IconData right = Icons.turn_right;
-    final lanes = [
-      {'icon': left, 'rec': modifier.contains('left')},
-      {'icon': straight, 'rec': modifier.contains('straight') || modifier == 'slight left' || modifier == 'slight right'},
-      {'icon': right, 'rec': modifier.contains('right')},
-    ];
-    return lanes;
-  }
-
-  IconData _getInstructionIcon(NavigationStep step) {
-    switch (step.type) {
-      case 'turn':
-        switch (step.modifier) {
-          case 'left':
-            return Icons.arrow_back;
-          case 'right':
-            return Icons.arrow_forward;
-          case 'slight left':
-            return Icons.arrow_back;
-          case 'slight right':
-            return Icons.arrow_forward;
-          case 'sharp left':
-            return Icons.arrow_back;
-          case 'sharp right':
-            return Icons.arrow_forward;
-          case 'uturn':
-            return Icons.refresh;
-          default:
-            return Icons.arrow_forward;
-        }
-      case 'arrive':
-        return Icons.location_on;
-      case 'depart':
-        return Icons.directions_car;
-      case 'merge':
-        return Icons.arrow_forward;
-      case 'exit':
-        return Icons.arrow_forward;
-      default:
-        return Icons.navigation;
-    }
-  }
-
   bool _shouldShowDestinationEntranceChips(Ride ride) {
     if (_currentUserId != ride.driverId) return false;
     if (ride.status != 'in_progress') return false;
@@ -4492,41 +3952,6 @@ if (newStaticAnnotations.isNotEmpty) {
       _destinationLocation!.coordinates.lng,
     ) * 1000.0;
     return meters <= 200.0; // show chips when close to destination
-  }
-
-  Widget _buildDestinationEntranceChips() {
-    final entries = ['Nord', 'Est', 'Sud', 'Vest'];
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Alege intrarea',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: entries.map((e) {
-                return ActionChip(
-                  label: Text(e),
-                  onPressed: () => _onSelectDestinationEntrance(e),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _onSelectDestinationEntrance(String label) async {
@@ -4668,482 +4093,4 @@ if (newStaticAnnotations.isNotEmpty) {
     );
   }
   
-}
-
-// ✅ NOU: Chat Window Mobil și Interactiv
-class DraggableChatWindow extends StatefulWidget {
-  final VoidCallback onClose;
-  final String rideId;
-  final String otherUserName;
-  final String otherUserPhone;
-  final Function(String) onCall;
-
-  const DraggableChatWindow({
-    super.key,
-    required this.onClose,
-    required this.rideId,
-    required this.otherUserName,
-    required this.otherUserPhone,
-    required this.onCall,
-  });
-
-  @override
-  State<DraggableChatWindow> createState() => _DraggableChatWindowState();
-}
-
-class _DraggableChatWindowState extends State<DraggableChatWindow> {
-  final TextEditingController _chatController = TextEditingController();
-  final ScrollController _chatScrollController = ScrollController();
-  Offset _position = const Offset(50, 100);
-  bool _isDragging = false;
-  bool _isMinimized = false;
-
-  void _editMessageInDraggable(String messageId, String currentText) {
-    final editController = TextEditingController(text: currentText);
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Builder(
-          builder: (context) {
-            final l10n = AppLocalizations.of(context)!;
-            return Text(l10n.editMessage);
-          },
-        ),
-        content: TextField(
-          controller: editController,
-          decoration: InputDecoration(
-            hintText: AppLocalizations.of(context)?.writeNewText ?? 'Scrie noul text...',
-            border: const OutlineInputBorder(),
-          ),
-          maxLines: 3,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Builder(
-              builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
-                return Text(l10n.cancel);
-              },
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newText = editController.text.trim();
-              if (newText.isNotEmpty && newText != currentText) {
-                final navigator = Navigator.of(dialogContext);
-                final scaffoldMessenger = ScaffoldMessenger.of(dialogContext);
-                
-                try {
-                  await FirestoreService().editChatMessage(widget.rideId, messageId, newText);
-                  if (mounted) {
-                    navigator.pop();
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Builder(
-                          builder: (context) {
-                            final l10n = AppLocalizations.of(context)!;
-                            return Text(l10n.messageEditedSuccess);
-                          },
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    navigator.pop();
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Builder(
-                          builder: (context) {
-                            final l10n = AppLocalizations.of(context)!;
-                            return Text(l10n.errorEditingMessage(e.toString()));
-                          },
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              } else {
-                Navigator.pop(dialogContext);
-              }
-            },
-            child: Builder(
-              builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
-                return Text(l10n.save);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: _position.dx,
-      top: _position.dy,
-      child: GestureDetector(
-        onPanUpdate: (details) {
-          if (!_isMinimized) {
-            setState(() {
-              _position += details.delta;
-              _isDragging = true;
-            });
-          }
-        },
-        onPanEnd: (details) {
-          setState(() {
-            _isDragging = false;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          width: _isMinimized ? 60 : MediaQuery.of(context).size.width * 0.8,
-          height: _isMinimized ? 60 : MediaQuery.of(context).size.height * 0.6,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(_isMinimized ? 30 : 16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha((255 * 0.3).round()),
-                blurRadius: _isDragging ? 20 : 10,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: _isMinimized ? _buildMinimizedView() : _buildFullChatView(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMinimizedView() {
-    return GestureDetector(
-      onTap: () => setState(() => _isMinimized = false),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: const Icon(
-          Icons.chat_bubble,
-          color: Colors.white,
-          size: 30,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFullChatView() {
-    return Column(
-      children: [
-        // Header cu drag handle și controale
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Row(
-            children: [
-              // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((255 * 0.7).round()),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  "Chat cu ${widget.otherUserName}",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              // Butoane de control
-              IconButton(
-                onPressed: () => widget.onCall(widget.otherUserPhone),
-                icon: Icon(
-                  Icons.call,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-              IconButton(
-                onPressed: () => setState(() => _isMinimized = true),
-                icon: Icon(
-                  Icons.minimize,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-              IconButton(
-                onPressed: widget.onClose,
-                icon: Icon(
-                  Icons.close,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Chat messages
-        Expanded(
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirestoreService().getChatMessages(widget.rideId),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final messages = snapshot.data!.docs;
-              return ListView.builder(
-                controller: _chatScrollController,
-                reverse: true,
-                padding: const EdgeInsets.all(8),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final msg = messages[index].data();
-                  final isMe = msg['senderId'] == FirebaseAuth.instance.currentUser?.uid;
-                  final timestamp = msg['timestamp'] as Timestamp?;
-                  
-                  // Convertim la ChatMessage pentru WhatsAppMessageBubble
-                  try {
-                    final chatMsg = ChatMessage.fromMap(msg);
-                    return WhatsAppMessageBubble(
-                      message: chatMsg,
-                      isMe: isMe,
-                      otherUserName: isMe ? null : widget.otherUserName,
-                      onLongPress: isMe ? () => _editMessageInDraggable(messages[index].id, msg['text'] ?? msg['message'] ?? '') : null,
-                    );
-                  } catch (e) {
-                    // Fallback la vechiul format dacă conversia eșuează
-                    return _buildMessageBubble(msg, isMe, timestamp, messages[index].id);
-                  }
-                },
-              );
-            },
-          ),
-        ),
-        // Input field
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _chatController,
-                  decoration: const InputDecoration(
-                    hintText: "Scrie un mesaj...",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  onSubmitted: (_) => _sendMessage(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
-                onPressed: _sendMessage,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMessageBubble(Map<String, dynamic> msg, bool isMe, Timestamp? timestamp, String messageId) {
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        onLongPress: isMe ? () => _editMessage(messageId, msg['text']) : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.6),
-          decoration: BoxDecoration(
-            color: isMe ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(16),
-            border: isMe ? Border.all(color: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.3).round()), width: 1) : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          msg['text'],
-                          style: TextStyle(
-                            color: isMe ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSecondaryContainer,
-                          ),
-                        ),
-                        if (msg['isEdited'] == true) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            '(editat)',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: (isMe ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSecondaryContainer).withAlpha((255 * 0.6).round()),
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (isMe) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.edit,
-                      size: 14,
-                      color: (isMe ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSecondaryContainer).withAlpha((255 * 0.7).round()),
-                    ),
-                  ],
-                ],
-              ),
-              if (timestamp != null)
-                Text(
-                  "${timestamp.toDate().hour.toString().padLeft(2, '0')}:${timestamp.toDate().minute.toString().padLeft(2, '0')}",
-                  style: TextStyle(
-                    color: (isMe ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSecondaryContainer).withAlpha((255 * 0.7).round()),
-                    fontSize: 12,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _sendMessage() {
-    final messageText = _chatController.text.trim();
-    if (messageText.isEmpty) return;
-
-    try {
-      unawaited(FirestoreService().sendChatMessage(widget.rideId, messageText));
-      _chatController.clear();
-      HapticFeedback.lightImpact();
-      FocusScope.of(context).unfocus();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Eroare la trimiterea mesajului: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _editMessage(String messageId, String currentText) {
-    final editController = TextEditingController(text: currentText);
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Builder(
-          builder: (context) {
-            final l10n = AppLocalizations.of(context)!;
-            return Text(l10n.editMessage);
-          },
-        ),
-        content: TextField(
-          controller: editController,
-          decoration: InputDecoration(
-            hintText: AppLocalizations.of(context)?.writeNewText ?? 'Scrie noul text...',
-            border: const OutlineInputBorder(),
-          ),
-          maxLines: 3,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Builder(
-              builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
-                return Text(l10n.cancel);
-              },
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newText = editController.text.trim();
-              
-              if (newText.isNotEmpty && newText != currentText) {
-                // ✅ FIX: Captează context-ul ÎNAINTE de await
-                final navigator = Navigator.of(dialogContext);
-                final scaffoldMessenger = ScaffoldMessenger.of(dialogContext);
-                
-                try {
-                  await FirestoreService().editChatMessage(widget.rideId, messageId, newText);
-                  
-                  if (mounted) {
-                    navigator.pop();
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Builder(
-                          builder: (context) {
-                            final l10n = AppLocalizations.of(context)!;
-                            return Text(l10n.messageEditedSuccess);
-                          },
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    navigator.pop();
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Builder(
-                          builder: (context) {
-                            final l10n = AppLocalizations.of(context)!;
-                            return Text(l10n.errorEditingMessage(e.toString()));
-                          },
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              } else {
-                Navigator.pop(dialogContext);
-              }
-            },
-            child: Builder(
-              builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
-                return Text(l10n.save);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
 }

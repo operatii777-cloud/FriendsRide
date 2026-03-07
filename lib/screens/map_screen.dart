@@ -36,6 +36,14 @@ import 'package:friendsride_app/services/bucharest_locations_database.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/widgets/assistant_status_overlay.dart';
 import 'package:friendsride_app/providers/assistant_status_provider.dart';
+import 'package:friendsride_app/widgets/map/map_voice_overlay.dart';
+import 'package:friendsride_app/widgets/map/map_ride_offer_popup.dart';
+import 'package:friendsride_app/widgets/map/map_driver_waiting.dart';
+import 'package:friendsride_app/widgets/map/map_poi_card.dart';
+import 'package:friendsride_app/widgets/map/map_poi_category_chips.dart';
+import 'package:friendsride_app/widgets/map/map_driver_interface.dart';;
+import 'package:friendsride_app/widgets/map/map_ride_info_panel.dart';
+import 'package:friendsride_app/widgets/map/map_intermediate_stops.dart';
 import 'package:friendsride_app/utils/logger.dart';
 
 
@@ -1728,47 +1736,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     return pickupStates.contains(status);
   }
 
-  String _formatDriverEta(Duration? duration) {
-    if (duration == null) return '—';
-    if (duration.inMinutes >= 1) {
-      return '${duration.inMinutes} min';
-    }
-    if (duration.inSeconds >= 30) {
-      return '<1 min';
-    }
-    return '<30 sec';
-  }
-
-  String _formatDriverDistance(double? distanceKm) {
-    if (distanceKm == null) return '—';
-    if (distanceKm >= 1) {
-      return '${distanceKm.toStringAsFixed(1)} km';
-    }
-    final meters = (distanceKm * 1000).round();
-    return '$meters m';
-  }
-
-  String _formatRideStatus(String? status) {
-    switch (status) {
-      case 'driver_found':
-        return 'În drum către pasager';
-      case 'accepted':
-        return 'Confirmată';
-      case 'driver_en_route':
-        return 'În drum către preluare';
-      case 'arrived':
-        return 'Șoferul a sosit';
-      case 'in_progress':
-        return 'Cursă în desfășurare';
-      case 'completed':
-        return 'Finalizată';
-      case 'cancelled':
-        return 'Anulată';
-      default:
-        return 'Status necunoscut';
-    }
-  }
-
   void _updateDriverRideEstimates(geolocator.Position driverPosition) {
     if (!mounted || _currentActiveRide == null) return;
 
@@ -2417,7 +2384,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
             left: 0,
             right: 0,
             child: SafeArea(
-              child: _buildPoiCategoryChips(),
+              child: MapPoiCategoryChips(onCategoryTapped: _onPoiCategoryTapped),
             ),
           ),
 
@@ -2452,9 +2419,36 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               const Center(child: CircularProgressIndicator())
           else if (_currentRole == UserRole.driver && _isDriverAvailable)
             if (_currentRideOffer != null)
-              _buildRideOfferPopup()
+              MapRideOfferPopup(
+                ride: _currentRideOffer!,
+                remainingSeconds: _remainingSeconds,
+                isProcessingAccept: _isProcessingAccept,
+                isProcessingDecline: _isProcessingDecline,
+                onAccept: () => _acceptRide(_currentRideOffer!),
+                onDecline: () => _declineRide(_currentRideOffer!),
+              )
             else
-              _buildDriverInterface(),
+              MapDriverInterface(
+                firestoreService: _firestoreService,
+                currentActiveRide: _currentActiveRide,
+                driverPickupEta: _driverPickupEta,
+                driverPickupDistanceKm: _driverPickupDistanceKm,
+                driverPickupArrivalTime: _driverPickupArrivalTime,
+                driverDestinationEta: _driverDestinationEta,
+                driverDestinationDistanceKm: _driverDestinationDistanceKm,
+                driverDestinationArrivalTime: _driverDestinationArrivalTime,
+                driverTrafficSummary: _driverTrafficSummary,
+                driverCategoryName: _driverCategory?.name,
+                pendingRidesCount: _pendingRides.length,
+                onNewRideAssigned: (ride) => unawaited(_playRideOfferSoundRobust()),
+                onNavigateToRide: _navigateToActiveRideScreen,
+                onListenForChat: _listenForChatMessages,
+                onUpdateEstimates: _currentPositionObject != null
+                    ? () => _updateDriverRideEstimates(_currentPositionObject!)
+                    : null,
+                onResetEtaMetrics: _resetDriverEtaMetrics,
+                onActiveRideChanged: (ride) { _currentActiveRide = ride; },
+              )
           
           // NOU: Card informativ pentru POI-uri - Draggable Overlay (bounded, non-blocking)
           if (_showPoiCard && _selectedPoi != null)
@@ -2492,7 +2486,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
                       },
                       child: SizedBox(
                         width: cardWidth,
-                        child: _buildPoiCard(),
+                        child: MapPoiCard(
+                          poi: _selectedPoi!,
+                          onClose: _closePoiCard,
+                          onSetAsPickup: () => _setPOIAsPickup(_selectedPoi!),
+                          onSetAsDestination: () => _setPOIAsDestination(_selectedPoi!),
+                          onAddAsStop: () => _addPOIAsStop(_selectedPoi!),
+                        ),
                       ),
                     ),
                   );
@@ -2539,7 +2539,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               top: 100,
               left: 16,
               right: 16,
-              child: _buildIntermediateStopsList(), // ✅ AICI se folosește funcția!
+              child: MapIntermediateStops(
+                stops: _intermediateStops,
+                onRemoveStop: _removeStop,
+              ),
             ),
           
           // Camera control buttons moved to AppBar
@@ -2686,7 +2689,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               bottom: 200,
               left: 16,
               right: 16,
-              child: _buildRideInfoPanel(), // ✅ AICI se folosește funcția!
+              child: MapRideInfoPanel(
+                pickupLatitude: _pickupLatitude,
+                destinationLatitude: _destinationLatitude,
+                pickupText: _pickupController.text,
+                destinationText: _destinationController.text,
+                stopsCount: _intermediateStops.length,
+                onClearPickup: _clearPickup,
+                onClearDestination: _clearDestination,
+                onStartRide: _startRideRequest,
+              ),
             ),
           
           // 🎤 AI BUTTON - Afișat doar pentru pasageri și șoferi indisponibili
@@ -2727,7 +2739,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               
               if (!voiceIntegration.isVoiceActive) return const SizedBox.shrink();
               
-              return _buildVoiceOverlay(voiceIntegration);
+              return MapVoiceOverlay(voiceIntegration: voiceIntegration);
             },
           ),
           
@@ -2738,121 +2750,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     );
   }
 
-  Widget _buildRideOfferPopup() {
-    final ride = _currentRideOffer;
-    if (ride == null) return const SizedBox.shrink();
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView( // ✅ FIX: Adăugat pentru a preveni overflow
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded( // ✅ FIX: Adăugat Expanded pentru titlu
-                      child: Text(
-                        'Cursă nouă',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black12),
-                      child: Text('${_remainingSeconds}s', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.place, color: Colors.red, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded( // ✅ FIX: Adăugat Expanded
-                        child: Text(
-                          ride.destinationAddress,
-                          maxLines: 3,
-                          overflow: TextOverflow.visible,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 6),
-                    Row(children: [
-                      const Icon(Icons.trip_origin, color: Colors.green, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded( // ✅ FIX: Adăugat Expanded
-                        child: Text(
-                          ride.startAddress,
-                          maxLines: 2,
-                          overflow: TextOverflow.visible,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ]),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessingDecline ? null : () => _declineRide(ride),
-                      icon: _isProcessingDecline 
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.close, size: 18),
-                      label: Text(_isProcessingDecline ? 'Refuz...' : 'Refuză'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.red.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessingAccept ? null : () => _acceptRide(ride),
-                      icon: _isProcessingAccept 
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.check, size: 18),
-                      label: Text(_isProcessingAccept ? 'Accept...' : 'Acceptă'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.green.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
 double _calculateDirectDistance(double lat1, double lon1, double lat2, double lon2) {
     const double earthRadius = 6371; // km
@@ -2870,602 +2767,10 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
     return earthRadius * c;
   }
 
-  Widget _buildDriverInterface() {
-    return StreamBuilder<Ride?>(
-      stream: _firestoreService.getActiveDriverRideStream(),
-      builder: (context, activeRideSnapshot) {
-        if (activeRideSnapshot.connectionState == ConnectionState.waiting){
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final Ride? newActiveRide = activeRideSnapshot.data;
-        
-        // ✅ NOU: Navigare automată când apare o cursă nouă acceptată
-        if (newActiveRide != null && _currentActiveRide?.id != newActiveRide.id) {
-          Logger.debug("Cursă nouă atribuită (${newActiveRide.id}). Se redă sunetul de notificare.");
-          // ✅ FIX: Folosește metoda robustă pentru notificarea de cursă
-          unawaited(_playRideOfferSoundRobust());
-          
-          // ✅ NOU: Navigare automată la ActiveRideScreen când apare o cursă nouă
-          // Verifică dacă statusul permite navigarea (nu navigăm pentru 'driver_found' care încă așteaptă confirmare)
-          if (['accepted', 'arrived', 'in_progress'].contains(newActiveRide.status)) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && _currentActiveRide?.id != newActiveRide.id) {
-                Logger.debug('Auto-navigating to ActiveRideScreen for ride ${newActiveRide.id}', tag: 'MAP');
-                _navigateToActiveRideScreen(newActiveRide.id);
-              }
-            });
-          }
-        }
-        _currentActiveRide = newActiveRide;
-        
-        if (newActiveRide == null) {
-          if (_driverPickupEta != null ||
-              _driverDestinationEta != null ||
-              _driverTrafficSummary != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _resetDriverEtaMetrics();
-              }
-            });
-          }
-          return _buildDriverWaitingIndicator();
-        }
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          _listenForChatMessages(newActiveRide.id);
-          if (_currentPositionObject != null) {
-            _updateDriverRideEstimates(_currentPositionObject!);
-          }
-        });
-
-        final statusLabel = _formatRideStatus(newActiveRide.status);
-        final trafficSummary = _driverTrafficSummary;
-
-        return Positioned(
-          bottom: 20, left: 20, right: 20,
-          child: GestureDetector(
-            onTap: () => _navigateToActiveRideScreen(newActiveRide.id),
-            child: Card(
-              color: Colors.orange.shade600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(60),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.local_taxi, color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min, // ✅ FIX: Adăugat mainAxisSize
-                            children: [
-                              Text(
-                                'Cursă activă',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1, // ✅ FIX: Adăugat maxLines
-                                overflow: TextOverflow.ellipsis, // ✅ FIX: Adăugat overflow
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Pasager: ${newActiveRide.passengerId}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.visible,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                statusLabel,
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(200),
-                                  fontSize: 12,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.visible,
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (trafficSummary != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(40),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              trafficSummary,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Preluare',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                newActiveRide.startAddress,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Destinație',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                newActiveRide.destinationAddress,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              'Până la preluare',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatDriverEta(_driverPickupEta),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              _formatDriverDistance(_driverPickupDistanceKm),
-                              style: TextStyle(
-                                color: Colors.white.withAlpha(200),
-                                fontSize: 12,
-                              ),
-                            ),
-                            if (_driverPickupArrivalTime != null)
-                              Text(
-                                'Ridicare ~${DateFormat.Hm().format(_driverPickupArrivalTime!)}',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(200),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Până la destinație',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatDriverEta(_driverDestinationEta),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              _formatDriverDistance(_driverDestinationDistanceKm),
-                              style: TextStyle(
-                                color: Colors.white.withAlpha(200),
-                                fontSize: 12,
-                              ),
-                            ),
-                            if (_driverDestinationArrivalTime != null)
-                              Text(
-                                'Sosire ~${DateFormat.Hm().format(_driverDestinationArrivalTime!)}',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(200),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(40),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.white, size: 16),
-                          SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              'Harta este înghețată pentru performanță',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'Atinge pentru detalii ➜',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(220),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDriverWaitingIndicator() {
-    return Positioned(
-      bottom: 120,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              colors: [Colors.green.shade400, Colors.green.shade600],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(51),
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Căutăm curse în zona ta...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Categoria: ${_driverCategory?.name ?? 'standard'} • ${_pendingRides.length} curse disponibile",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withAlpha(204),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // =================
-  // POI UI WIDGETS
-  // =================
-
-  /// Construiește card-ul informativ pentru POI selectat
-  Widget _buildPoiCard() {
-    final poi = _selectedPoi!;
-    
-    return Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header cu imagine și buton închidere
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                  child: Image.network(
-                    poi.imageUrl,
-                    height: 150,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 150,
-                        color: Colors.grey.shade300,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          size: 48,
-                          color: Colors.grey,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: _closePoiCard,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Color.fromARGB(153, 0, 0, 0),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Conținut
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Titlu
-                  Text(
-                    poi.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Descriere
-                  Text(
-                    poi.description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Butoane de acțiune - NOU: 3 butoane pentru pickup, destination, stop
-                  _buildPOIActions(poi),
-                ],
-              ),
-            ),
-          ],
-      ),
-    );
-  }
-
-  /// Construiește butoanele de acțiune pentru POI cu 3 opțiuni
-  Widget _buildPOIActions(PointOfInterest poi) {
-    return Column(
-      children: [
-        // Prima linie - Plecare și Destinație
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _setPOIAsPickup(poi),
-                icon: const Icon(Icons.my_location, size: 18),
-                label: const Text('Plecare'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _setPOIAsDestination(poi),
-                icon: const Icon(Icons.flag, size: 18),
-                label: const Text('Destinație'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 8),
-        
-        // A doua linie - Oprire intermediară
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _addPOIAsStop(poi),
-            icon: const Icon(Icons.add_location, size: 18),
-            label: const Text('Adaugă ca oprire'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   // =================
   // POI CATEGORY CHIPS OVERLAY + ACTIONS
   // =================
-
-  Widget _buildPoiCategoryChips() {
-    final List<PoiCategory> categories = [
-      PoiCategory.gasStation,
-      PoiCategory.restaurant,
-      PoiCategory.parking,
-      PoiCategory.hotel,
-      PoiCategory.hospital,
-      PoiCategory.pharmacy,
-      PoiCategory.supermarket,
-      PoiCategory.bank,
-      PoiCategory.atm,
-      PoiCategory.school,
-      PoiCategory.university,
-      PoiCategory.library,
-      PoiCategory.police,
-      PoiCategory.postOffice,
-      PoiCategory.mall,
-      PoiCategory.bakery,
-      PoiCategory.barPub,
-      PoiCategory.park,
-      PoiCategory.museum,
-      PoiCategory.cinema,
-      PoiCategory.theatre,
-      PoiCategory.playground,
-      PoiCategory.chargingStation,
-      PoiCategory.carWash,
-      PoiCategory.carRepair,
-      PoiCategory.publicTransport,
-      PoiCategory.airport,
-      PoiCategory.other,
-      PoiCategory.tourism,
-    ];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final category in categories) ...[
-              ActionChip(
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(category.emoji, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(width: 6),
-                    Text(category.displayName),
-                  ],
-                ),
-                onPressed: () => _onPoiCategoryTapped(category),
-                backgroundColor: Colors.white,
-                elevation: 2,
-                shadowColor: Colors.black12,
-                side: BorderSide(color: Colors.grey.shade300),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 
   Future<void> _onPoiCategoryTapped(PoiCategory category) async {
     if (!mounted) return;
@@ -4110,51 +3415,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
     }
   }
 
-  /// Widget pentru afișarea listei de opriri intermediare
-  Widget _buildIntermediateStopsList() {
-    if (_intermediateStops.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Opriri intermediare (${_intermediateStops.length})',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _intermediateStops.length,
-            itemBuilder: (context, index) {
-              final stop = _intermediateStops[index];
-              return ListTile(
-                leading: Icon(Icons.location_on, color: Colors.orange),
-                title: Text(stop),
-                subtitle: Text(
-                  'Oprire ${index + 1}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _removeStop(stop),
-                  tooltip: 'Șterge oprirea',
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // _buildIntermediateStopsList() extracted to lib/widgets/map/map_intermediate_stops.dart
 
   /// Curăță pickup-ul
   void _clearPickup() {
@@ -4437,33 +3698,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   }
 
   /// Widget pentru butonul de start ride
-  Widget _buildStartRideButton() {
-    final canStartRide = _pickupLatitude != null && _destinationLatitude != null;
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: canStartRide ? _startRideRequest : null, // ✅ AICI se folosește funcția!
-        style: ElevatedButton.styleFrom(
-          backgroundColor: canStartRide ? Colors.green : Colors.grey,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-        ),
-        child: Text(
-          canStartRide ? '🚗 Începe călătoria' : 'Selectează pickup și destinația',
-          style: const TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
+  // _buildStartRideButton() extracted to lib/widgets/map/map_ride_info_panel.dart
   /// Închide card-ul POI
   void _closePoiCard() {
     Logger.debug('Closing POI card safely...');
@@ -4825,90 +4060,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   }
 
   /// Widget pentru afișarea informațiilor despre ride
-  Widget _buildRideInfoPanel() {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Informații călătorie',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12.0),
-            
-            // Pickup info
-            if (_pickupLatitude != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.my_location, color: Colors.blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Plecare: ${_pickupController.text}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.clear, color: Colors.red, size: 20),
-                    onPressed: () {
-                      _clearPickup();
-                      _showSnackBar('Punctul de plecare a fost șters'); // ✅ AICI se folosește funcția!
-                    },
-                    tooltip: 'Șterge pickup',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8.0),
-            ],
-            
-            // Destination info
-            if (_destinationLatitude != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.flag, color: Colors.green, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Destinație: ${_destinationController.text}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.clear, color: Colors.red, size: 20),
-                    onPressed: () {
-                      _clearDestination();
-                      _showSnackBar('Destinația a fost ștearsă'); // ✅ AICI se folosește funcția!
-                    },
-                    tooltip: 'Șterge destinația',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8.0),
-            ],
-            
-            // Intermediate stops info
-            if (_intermediateStops.isNotEmpty) ...[
-              Text(
-                'Opriri: ${_intermediateStops.length}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange,
-                ),
-              ),
-              const SizedBox(height: 8.0),
-            ],
-            
-            // Start ride button
-            _buildStartRideButton(),
-          ],
-        ),
-      ),
-    );
-  }
+  // _buildRideInfoPanel() extracted to lib/widgets/map/map_ride_info_panel.dart
 
   void _showSafeSnackBar(String message, Color backgroundColor, {SnackBarAction? action}) {
     if (!mounted) {
@@ -5100,391 +4252,5 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   //   );
   // }
   
-  // ✅ NOU: Metode helper pentru overlay-ul de voce
-  // ignore: unused_element
-  Widget _buildVoiceIcon(VoiceProcessingState state) {
-    switch (state) {
-      case VoiceProcessingState.listening:
-        return Icon(Icons.mic, color: Colors.red, size: 64); // roșu când ascultă
-      case VoiceProcessingState.thinking:
-        return CircularProgressIndicator(color: Colors.white); // loading când procesează
-      case VoiceProcessingState.speaking:
-        return Icon(Icons.volume_up, color: Colors.green, size: 64); // verde când vorbește
-      case VoiceProcessingState.waiting:
-        return Icon(Icons.hourglass_empty, color: Colors.yellow, size: 64); // galben când așteaptă
-      case VoiceProcessingState.waitingForConfirmation:
-        return Icon(Icons.question_answer, color: Colors.purple, size: 64); // violet când așteaptă confirmarea
-      case VoiceProcessingState.confirmationReceived:
-        return Icon(Icons.check_circle, color: Colors.green, size: 64); // verde când confirmarea e primită
-      case VoiceProcessingState.error:
-        return Icon(Icons.error, color: Colors.red, size: 64); // roșu pentru eroare
-      case VoiceProcessingState.idle:
-        return Icon(Icons.mic_off, color: Colors.grey, size: 64);
-    }
-  }
-
-  // ignore: unused_element
-  String _getStatusText(VoiceProcessingState state) {
-    switch (state) {
-      case VoiceProcessingState.listening:
-        return "Te ascult...";
-      case VoiceProcessingState.thinking:
-        return "Procesez...";
-      case VoiceProcessingState.speaking:
-        return "Îți răspund...";
-      case VoiceProcessingState.waiting:
-        return "Aștept...";
-      case VoiceProcessingState.waitingForConfirmation:
-        return "Aștept confirmarea...";
-      case VoiceProcessingState.confirmationReceived:
-        return "Confirmarea primită!";
-      case VoiceProcessingState.error:
-        return "Eroare - încearcă din nou";
-      case VoiceProcessingState.idle:
-        return "Apasă pentru a începe";
-    }
-  }
-
-  /// 🎤 ÎMBUNĂTĂȚIT: Construiește overlay-ul vocal cu feedback vizual complet
-  Widget _buildVoiceOverlay(FriendsRideVoiceIntegration voiceIntegration) {
-    final l10n = AppLocalizations.of(context)!;
-    final state = voiceIntegration.currentContext.processingState;
-    final voiceContext = voiceIntegration.currentContext;
-    
-    // ✅ EXTRAGE INFORMAȚII DIN CONTEXT
-    final lastAiMessage = _getLastAIResponse(voiceContext.conversationHistory);
-    // Note: Destination and pickup will be extracted from voice controller when available
-    // final destination = voiceIntegration.voiceDestination ?? '';
-    // final pickup = voiceIntegration.voicePickup ?? '';
-    // final estimatedPrice = 0.0;
-    
-    // Determină culoarea ecranului în funcție de stare
-    Color backgroundColor;
-    IconData icon;
-    String statusText;
-    String instructionText;
-    
-    switch (state) {
-      case VoiceProcessingState.speaking:
-        backgroundColor = Colors.green.shade600; // Fond verde mai clar, fără negru
-        icon = Icons.volume_up;
-        statusText = l10n.aiSpeaking;
-        instructionText = lastAiMessage.isNotEmpty ? lastAiMessage : '🗣️ ${l10n.pleaseListenToResponse}';
-        break;
-        
-      case VoiceProcessingState.listening:
-        backgroundColor = Colors.red.shade600; // Fond roșu mai clar, fără negru
-        icon = Icons.mic;
-        statusText = l10n.aiListening;
-        instructionText = '🎤 ${l10n.speakNow}';
-        break;
-        
-      case VoiceProcessingState.thinking:
-        backgroundColor = Colors.orange.shade600; // Fond portocaliu mai clar, fără negru
-        icon = Icons.psychology;
-        statusText = l10n.aiProcessing;
-        instructionText = '🧠 ${l10n.processingInformation}';
-        break;
-        
-      case VoiceProcessingState.waiting:
-      case VoiceProcessingState.waitingForConfirmation:
-        backgroundColor = Colors.blue.shade600; // Fond albastru mai clar, fără negru
-        icon = Icons.hourglass_empty;
-        statusText = l10n.waitingForResponse;
-        instructionText = lastAiMessage.isNotEmpty ? lastAiMessage : '⏳ ${l10n.pleaseWait}';
-        break;
-        
-      case VoiceProcessingState.idle:
-      default:
-        backgroundColor = Colors.blue.shade600; // Fond albastru mai clar, fără negru
-        icon = Icons.mic_none;
-        statusText = l10n.voiceAssistant;
-        instructionText = l10n.pressButtonToStart;
-        break;
-    }
-    
-    final mediaQuery = MediaQuery.of(this.context);
-    final bottomInset = mediaQuery.padding.bottom;
-
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: bottomInset + 24,
-      child: AnimatedScale(
-        scale: 1,
-        duration: const Duration(milliseconds: 200),
-        child: Material(
-          elevation: 12,
-          borderRadius: BorderRadius.circular(24),
-          color: backgroundColor, // Fond colorat solid, fără transparență care ar putea părea negru
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Stack(
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.95, end: 1.05),
-                      duration: const Duration(milliseconds: 1200),
-                      curve: Curves.easeInOut,
-                      builder: (context, scale, child) => Transform.scale(
-                        scale: scale,
-                        child: Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Icon(icon, size: 36, color: Colors.white),
-                        ),
-                      ),
-                      onEnd: () {
-                        if (mounted) setState(() {});
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      statusText,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.visible,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      instructionText,
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.visible,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    // ✅ AFIȘEAZĂ INFORMAȚII DESPRE CURSĂ (dacă sunt disponibile)
-                    // Note: Will be enabled when voice context provides pickup/destination/price
-                    // if (destination.isNotEmpty || pickup.isNotEmpty || estimatedPrice > 0)
-                    //   Container(...)
-                    if (voiceIntegration.currentContext.conversationHistory.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        constraints: const BoxConstraints(maxHeight: 72),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.25), // Mai vizibil, nu negru
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.2),
-                        ),
-                        child: SingleChildScrollView(
-                          child: Text(
-                            _getLastAIResponse(voiceIntegration.currentContext.conversationHistory),
-                            textAlign: TextAlign.center,
-                            maxLines: 4,
-                            overflow: TextOverflow.fade,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13, // Font puțin mai mare pentru lizibilitate
-                              fontWeight: FontWeight.w500, // Puțin mai bold
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (voiceIntegration.currentContext.conversationHistory.isNotEmpty)
-                      const SizedBox(height: 16),
-                    if (state == VoiceProcessingState.listening || state == VoiceProcessingState.speaking)
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.3, end: 1.0),
-                        duration: const Duration(milliseconds: 800),
-                        curve: Curves.easeInOut,
-                        builder: (context, value, child) => Container(
-                          width: 48,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: value),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        onEnd: () {
-                          if (mounted) setState(() {});
-                        },
-                      ),
-                    const SizedBox(height: 18),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 10,
-                      runSpacing: 6,
-                      children: [
-                        _buildColorLegendItem(Colors.green, 'AI vorbește'),
-                        _buildColorLegendItem(Colors.red, 'Dvs. vorbiți'),
-                        _buildColorLegendItem(Colors.orange, 'Procesează'),
-                      ],
-                    ),
-                  ],
-                ),
-                if (state != VoiceProcessingState.listening && state != VoiceProcessingState.speaking)
-                  Positioned(
-                    top: -8,
-                    right: -8,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () async {
-                        Logger.debug('DEBUG: Close button pressed');
-                        try {
-                          await voiceIntegration.stopVoiceInteraction();
-                        } catch (e) {
-                          Logger.error('DEBUG:  Eroare la oprirea voice interaction: $e', error: e);
-                        }
-                      },
-                      tooltip: 'Închide asistent vocal',
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  
-  /// 🎨 Element de legendă pentru culori - COMPACT
-  Widget _buildColorLegendItem(Color color, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 0.5),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // ignore: unused_element
-  Widget _buildOldVoiceOverlay(FriendsRideVoiceIntegration voiceIntegration) {
-    // 📝 DEPRECATED: Funcție veche păstrată pentru referință
-    // Noua implementare folosește ecran complet cu culori: verde/roșu/orange
-    return const SizedBox.shrink();
-  }
-
-  /// 🎯 Extrage ultimul răspuns AI din istoricul conversației
-  String _getLastAIResponse(List<String> conversationHistory) {
-    if (conversationHistory.isEmpty) {
-      return 'Salutare! Unde doriți să mergeți?';
-    }
-    
-    // Caută ultimul mesaj de la AI (începe cu "AI:")
-    for (int i = conversationHistory.length - 1; i >= 0; i--) {
-      final message = conversationHistory[i];
-      if (message.startsWith('AI:')) {
-        return message.substring(3).trim(); // Elimină "AI:" și spațiile
-      }
-    }
-    
-    return 'Salutare! Unde doriți să mergeți?';
-  }
-
-  /// 🎤 Construiește indicatorul pentru starea de procesare
-  // ignore: unused_element
-  Widget _buildProcessingStateIndicator(VoiceProcessingState state) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: _getStateColor(state).withAlpha(51),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _getStateColor(state)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _getStateIcon(state),
-          const SizedBox(width: 8),
-          Text(
-            _getStatusText(state),
-            style: TextStyle(
-              color: _getStateColor(state),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 🎨 Returnează culoarea pentru starea de procesare
-  Color _getStateColor(VoiceProcessingState state) {
-    switch (state) {
-      case VoiceProcessingState.listening:
-        return Colors.red;
-      case VoiceProcessingState.thinking:
-        return Colors.orange;
-      case VoiceProcessingState.speaking:
-        return Colors.green;
-      case VoiceProcessingState.waiting:
-        return Colors.yellow;
-      case VoiceProcessingState.waitingForConfirmation:
-        return Colors.purple;
-      case VoiceProcessingState.confirmationReceived:
-        return Colors.green;
-      case VoiceProcessingState.error:
-        return Colors.red;
-      case VoiceProcessingState.idle:
-        return Colors.grey;
-    }
-  }
-
-  /// 🎨 Returnează iconița pentru starea de procesare
-  Widget _getStateIcon(VoiceProcessingState state) {
-    switch (state) {
-      case VoiceProcessingState.listening:
-        return const Icon(Icons.mic, color: Colors.red, size: 20);
-      case VoiceProcessingState.thinking:
-        return const Icon(Icons.psychology, color: Colors.orange, size: 20);
-      case VoiceProcessingState.speaking:
-        return const Icon(Icons.volume_up, color: Colors.green, size: 20);
-      case VoiceProcessingState.waiting:
-        return const Icon(Icons.hourglass_empty, color: Colors.yellow, size: 20);
-      case VoiceProcessingState.waitingForConfirmation:
-        return const Icon(Icons.question_answer, color: Colors.purple, size: 20);
-      case VoiceProcessingState.confirmationReceived:
-        return const Icon(Icons.check_circle, color: Colors.green, size: 20);
-      case VoiceProcessingState.error:
-        return const Icon(Icons.error, color: Colors.red, size: 20);
-      case VoiceProcessingState.idle:
-        return const Icon(Icons.mic_off, color: Colors.grey, size: 20);
-    }
-  }
+  // Voice overlay extracted to lib/widgets/map/map_voice_overlay.dart
 }
