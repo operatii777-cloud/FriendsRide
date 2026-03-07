@@ -305,23 +305,7 @@ class SurgeZoneInfo {
     final data = doc.data() ?? {};
     final activeRequests = (data['activeRequests'] as num?)?.toInt() ?? 0;
     final availableDrivers = (data['availableDrivers'] as num?)?.toInt() ?? 0;
-    double multiplier;
-    if (availableDrivers > 0) {
-      final ratio = activeRequests / availableDrivers;
-      if (ratio > 2.0) {
-        multiplier = (2.5 + (ratio - 2.0) * 0.5).clamp(1.0, 3.0);
-      } else if (ratio > 1.5) {
-        multiplier = (2.0 + (ratio - 1.5) * 1.0).clamp(1.0, 3.0);
-      } else if (ratio > 1.2) {
-        multiplier = (1.5 + (ratio - 1.2) * 1.67).clamp(1.0, 3.0);
-      } else if (ratio > 1.0) {
-        multiplier = (1.0 + (ratio - 1.0) * 2.5).clamp(1.0, 3.0);
-      } else {
-        multiplier = 1.0;
-      }
-    } else {
-      multiplier = activeRequests > 0 ? 2.0 : 1.0;
-    }
+    final multiplier = _computeMultiplier(activeRequests, availableDrivers);
 
     return SurgeZoneInfo(
       geohash: doc.id,
@@ -332,5 +316,48 @@ class SurgeZoneInfo {
       availableDrivers: availableDrivers,
       lastUpdated: (data['lastUpdated'] as Timestamp?)?.toDate(),
     );
+  }
+
+  /// Calculates the surge multiplier from demand/supply metrics.
+  ///
+  /// Pricing tiers (demand/supply ratio → multiplier):
+  /// - ratio ≤ 1.0  → 1.0x  (no surge)
+  /// - ratio 1.0–1.2 → up to 1.5x (low surge, linear scale ×2.5/unit)
+  /// - ratio 1.2–1.5 → up to 2.0x (moderate surge, linear scale ×1.67/unit)
+  /// - ratio 1.5–2.0 → up to 2.5x (high surge, linear scale ×1.0/unit)
+  /// - ratio > 2.0   → up to 3.0x  (very high surge, capped at 3.0)
+  /// - no drivers    → 2.0x  if requests > 0, else 1.0x
+  static const double _tierVeryHighRatio = 2.0;
+  static const double _tierHighRatio = 1.5;
+  static const double _tierModerateRatio = 1.2;
+  static const double _tierLowRatio = 1.0;
+
+  static const double _baseVeryHigh = 2.5;
+  static const double _baseHigh = 2.0;
+  static const double _baseModerate = 1.5;
+
+  static const double _slopeVeryHigh = 0.5;
+  static const double _slopeHigh = 1.0;
+  static const double _slopeModerate = 1.67;
+  static const double _slopeLow = 2.5;
+
+  static double _computeMultiplier(int activeRequests, int availableDrivers) {
+    if (availableDrivers <= 0) {
+      return activeRequests > 0 ? 2.0 : 1.0;
+    }
+    final ratio = activeRequests / availableDrivers;
+    double multiplier;
+    if (ratio > _tierVeryHighRatio) {
+      multiplier = _baseVeryHigh + (ratio - _tierVeryHighRatio) * _slopeVeryHigh;
+    } else if (ratio > _tierHighRatio) {
+      multiplier = _baseHigh + (ratio - _tierHighRatio) * _slopeHigh;
+    } else if (ratio > _tierModerateRatio) {
+      multiplier = _baseModerate + (ratio - _tierModerateRatio) * _slopeModerate;
+    } else if (ratio > _tierLowRatio) {
+      multiplier = 1.0 + (ratio - _tierLowRatio) * _slopeLow;
+    } else {
+      multiplier = 1.0;
+    }
+    return multiplier.clamp(1.0, 3.0);
   }
 }

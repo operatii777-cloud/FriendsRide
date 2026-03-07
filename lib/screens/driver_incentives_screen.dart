@@ -68,7 +68,7 @@ class _DriverIncentivesScreenState extends State<DriverIncentivesScreen>
                 }
 
                 final incentives = snapshot.data ?? [];
-    final active =
+                final active =
                     incentives.where((i) => i.isActive && !i.isCompleted).toList();
                 final completed =
                     incentives.where((i) => i.isCompleted).toList();
