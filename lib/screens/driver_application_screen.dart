@@ -5,6 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:friendsride_app/models/driver_document_model.dart';
 import 'package:friendsride_app/services/driver_application_service.dart';
 import 'package:friendsride_app/utils/logger.dart';
+import 'package:friendsride_app/widgets/driver_document_status_widget.dart';
+import 'package:intl/intl.dart';
 
 class DriverApplicationScreen extends StatefulWidget {
   const DriverApplicationScreen({super.key});
@@ -12,6 +14,16 @@ class DriverApplicationScreen extends StatefulWidget {
   @override
   State<DriverApplicationScreen> createState() => _DriverApplicationScreenState();
 }
+
+/// Document types that commonly carry an expiry date.
+const _expiryDocTypes = {
+  DriverDocumentType.drivingLicenseFront,
+  DriverDocumentType.drivingLicenseBack,
+  DriverDocumentType.carInsurance,
+  DriverDocumentType.criminalRecord,
+  DriverDocumentType.transportAttestation,
+  DriverDocumentType.idCard,
+};
 
 class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
   int _currentStep = 0;
@@ -32,6 +44,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
   DriverApplicationData? _currentApplication;
   bool _isLoading = false;
   final Map<DriverDocumentType, bool> _uploadingStatus = {};
+  // Tracks locally-chosen expiry dates before upload completes
+  final Map<DriverDocumentType, DateTime> _pendingExpiryDates = {};
 
   @override
   void initState() {
@@ -150,12 +164,27 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
 
       if (fileToUpload == null) return;
 
+      // Optionally pick an expiry date for documents that may expire
+      final expiryDate = await _showExpiryDateDialog(documentType);
+      if (expiryDate != null) {
+        _pendingExpiryDates[documentType] = expiryDate;
+      }
+
       // Upload documentul
       await _applicationService.uploadDocument(
         documentType: documentType,
         file: fileToUpload,
         fileName: fileName,
       );
+
+      // Save expiry date if the user provided one
+      if (_pendingExpiryDates.containsKey(documentType)) {
+        await _applicationService.setDocumentExpiryDate(
+          documentType,
+          _pendingExpiryDates[documentType]!,
+        );
+        _pendingExpiryDates.remove(documentType);
+      }
 
       // Actualizează aplicația locală
       await _loadCurrentApplication();
@@ -262,6 +291,40 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Shows a date picker for optionally setting an expiry date on a document.
+  /// Returns null if the user skips or dismisses.
+  Future<DateTime?> _showExpiryDateDialog(DriverDocumentType documentType) async {
+    if (!_expiryDocTypes.contains(documentType)) return null;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Dată expirare'),
+        content: Text('Doriți să setați data de expirare pentru '
+            '"${documentType.displayName}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Nu, sari peste'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Da'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return null;
+
+    return showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+      helpText: 'Selectați data de expirare',
     );
   }
 
@@ -579,6 +642,10 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                   ),
                 ),
                 if (isUploaded) ...[
+                  const SizedBox(height: 8),
+                  DriverDocumentStatusWidget(
+                    document: _currentApplication!.documents[documentType]!,
+                  ),
                   const SizedBox(height: 12),
                   Container(
                     height: 80,
@@ -636,6 +703,55 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAccessCodeBanner() {
+    final app = _currentApplication;
+    if (app == null) return const SizedBox.shrink();
+    if (!['activated', 'approved'].contains(app.status)) return const SizedBox.shrink();
+    if (app.accessCode == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.teal.shade300),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_user, color: Colors.teal, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Cont Activat 🎉',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Cod acces: ${app.accessCode}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                    color: Colors.teal,
+                  ),
+                ),
+                if (app.accessCodeGeneratedAt != null)
+                  Text(
+                    'Generat la: ${DateFormat('dd.MM.yyyy HH:mm').format(app.accessCodeGeneratedAt!)}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -764,6 +880,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           return Column(
             children: [
               _buildProgressIndicator(),
+              _buildAccessCodeBanner(),
               Expanded(
                 child: Stepper(
                   type: StepperType.vertical,
