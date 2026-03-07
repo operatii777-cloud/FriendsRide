@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/widgets/rating_stars.dart';
+import 'package:friendsride_app/widgets/split_fare_widget.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/utils/logger.dart';
@@ -334,6 +335,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   if (_currentUserRole == UserRole.passenger) ...[
                     const SizedBox(height: 32),
                     _buildTipSection(),
+                    const SizedBox(height: 16),
+                    SplitFareWidget(
+                      rideId: widget.rideId,
+                      totalAmount: ride.totalCost,
+                    ),
                   ],
                   
                   const SizedBox(height: 24),

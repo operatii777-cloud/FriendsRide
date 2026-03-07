@@ -56,6 +56,7 @@ import 'package:friendsride_app/services/email_receipt_service.dart';
 import 'package:friendsride_app/services/driver_incentives_service.dart';
 import 'package:friendsride_app/services/loyalty_program_service.dart';
 import 'package:friendsride_app/widgets/cancellation_policy_widget.dart';
+import 'package:friendsride_app/widgets/rate_passenger_widget.dart';
 import 'package:friendsride_app/widgets/real_time_eta_widget.dart';
 import 'package:friendsride_app/widgets/turn_by_turn_navigation_widget.dart';
 import 'package:friendsride_app/utils/logger.dart';
@@ -1054,9 +1055,15 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
         _rideStatusSubscription?.cancel();
         _stopDriverLocationTracking();
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (!mounted) return;
           if (isDriver) {
+            // Show rate-passenger dialog before navigating away
+            await RatePassengerWidget.show(
+              context: context,
+              rideId: widget.rideId,
+            );
+            if (!mounted) return;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (ctx) => DriverRideDetailsScreen(ride: ride)),
