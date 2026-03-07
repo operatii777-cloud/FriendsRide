@@ -54,6 +54,7 @@ import 'package:friendsride_app/widgets/chat/gif_picker_widget.dart';
 import 'package:friendsride_app/models/chat_message_model.dart';
 import 'package:friendsride_app/services/email_receipt_service.dart';
 import 'package:friendsride_app/services/driver_incentives_service.dart';
+import 'package:friendsride_app/services/loyalty_program_service.dart';
 import 'package:friendsride_app/widgets/cancellation_policy_widget.dart';
 import 'package:friendsride_app/widgets/real_time_eta_widget.dart';
 import 'package:friendsride_app/widgets/turn_by_turn_navigation_widget.dart';
@@ -2821,6 +2822,18 @@ if (newStaticAnnotations.isNotEmpty) {
       } catch (e) {
         Logger.error('Error updating driver incentives: $e', error: e);
         // Nu blocăm finalizarea cursei dacă incentives eșuează
+      }
+    }
+
+    // ✅ Actualizează programul de loialitate al pasagerului după finalizarea cursei
+    if (!isDriver && ride.passengerId.isNotEmpty) {
+      try {
+        final loyaltyService = LoyaltyProgramService();
+        await loyaltyService.updateLoyaltyAfterRide(ride.passengerId, ride);
+        Logger.info('Loyalty program updated for passenger: ${ride.passengerId}');
+      } catch (e) {
+        Logger.error('Error updating loyalty program: $e', error: e);
+        // Nu blocăm finalizarea cursei dacă loyalty eșuează
       }
     }
     

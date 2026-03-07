@@ -169,6 +169,66 @@ class _RidePreferencesWidgetState extends State<RidePreferencesWidget> {
             },
             icon: Icons.route,
           ),
+
+          const SizedBox(height: 16),
+
+          // Vehicul preferat
+          _buildPreferenceDropdown(
+            'Vehicul preferat',
+            _preferences.preferredVehicle,
+            ['any', 'sedan', 'suv', 'van'],
+            (value) {
+              setState(() {
+                _preferences = _preferences.copyWith(preferredVehicle: value);
+              });
+              widget.onPreferencesChanged(_preferences);
+            },
+            icon: Icons.directions_car,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Preferință AC
+          _buildPreferenceDropdown(
+            'Climatizare (AC)',
+            _preferences.acPreference,
+            ['any', 'on', 'off'],
+            (value) {
+              setState(() {
+                _preferences = _preferences.copyWith(acPreference: value);
+              });
+              widget.onPreferencesChanged(_preferences);
+            },
+            icon: Icons.ac_unit,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Note pentru șofer
+          Semantics(
+            label: 'Note pentru șofer',
+            child: TextFormField(
+              initialValue: _preferences.notes,
+              maxLength: 200,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Note pentru șofer (opțional)',
+                hintText: 'Ex: Vă rog să așteptați la intrare...',
+                prefixIcon: const Icon(Icons.note_alt_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _preferences = _preferences.copyWith(
+                    notes: value.isEmpty ? null : value,
+                  );
+                });
+                widget.onPreferencesChanged(_preferences);
+              },
+            ),
+          ),
         ],
       ),
     );

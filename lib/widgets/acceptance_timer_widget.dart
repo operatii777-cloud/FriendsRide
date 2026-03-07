@@ -73,7 +73,12 @@ class _AcceptanceTimerWidgetState extends State<AcceptanceTimerWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Semantics(
+      label: 'Cerere nouă de cursă de la ${widget.pickupAddress} la ${widget.destinationAddress}. '
+          'Tarif: ${widget.fare.toStringAsFixed(2)} RON. '
+          'Timp rămas: $_remaining secunde.',
+      liveRegion: true,
+      child: Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -174,33 +179,41 @@ class _AcceptanceTimerWidgetState extends State<AcceptanceTimerWidget>
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: widget.onDecline,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: BorderSide(color: AppColors.error),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                      child: Semantics(
+                        label: 'Refuză cererea de cursă',
+                        button: true,
+                        child: OutlinedButton(
+                          onPressed: widget.onDecline,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: AppColors.error),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Refuză',
+                              style: AppTextStyles.button
+                                  .copyWith(color: AppColors.error)),
                         ),
-                        child: Text('Refuză',
-                            style: AppTextStyles.button
-                                .copyWith(color: AppColors.error)),
                       ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       flex: 2,
-                      child: ElevatedButton(
-                        onPressed: widget.onAccept,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                      child: Semantics(
+                        label: 'Acceptă cererea de cursă',
+                        button: true,
+                        child: ElevatedButton(
+                          onPressed: widget.onAccept,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('Acceptă',
+                              style: AppTextStyles.button),
                         ),
-                        child: Text('Acceptă',
-                            style: AppTextStyles.button),
                       ),
                     ),
                   ],
@@ -210,6 +223,7 @@ class _AcceptanceTimerWidgetState extends State<AcceptanceTimerWidget>
           ),
         ],
       ),
+    ),
     );
   }
 }

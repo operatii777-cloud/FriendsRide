@@ -102,7 +102,11 @@ class _PromotionWidgetState extends State<PromotionWidget> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Card(
+    return Semantics(
+      label: _appliedPromotion == null
+          ? 'Câmp cod promoțional'
+          : 'Cod promoțional aplicat: ${_appliedPromotion!.title}',
+      child: Card(
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -111,7 +115,7 @@ class _PromotionWidgetState extends State<PromotionWidget> {
           children: [
             Row(
               children: [
-                const Icon(Icons.local_offer, color: AppColors.primary),
+                const Icon(Icons.local_offer, color: AppColors.primary, semanticLabel: 'Promoție'),
                 const SizedBox(width: 8),
                 Text(
                   l10n.promotionCode,
@@ -178,9 +182,13 @@ class _PromotionWidgetState extends State<PromotionWidget> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: _removePromotion,
+                    Semantics(
+                      label: 'Elimină codul promoțional',
+                      button: true,
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: _removePromotion,
+                      ),
                     ),
                   ],
                 ),
@@ -189,6 +197,7 @@ class _PromotionWidgetState extends State<PromotionWidget> {
           ],
         ),
       ),
+    ),
     );
   }
 }

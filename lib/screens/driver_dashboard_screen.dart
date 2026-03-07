@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/screens/driver_ride_details_screen.dart';
+import 'package:friendsride_app/screens/driver_incentives_screen.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/services/pdf_receipt_service.dart';
@@ -383,13 +384,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               ),
             ],
             
-            // ✅ NOU: Incentives
+            // ✅ NOU: Incentives cu link către ecranul dedicat
             DriverIncentivesListWidget(
               incentives: _incentives,
               onIncentiveTap: (incentive) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Incentive: ${incentive.title}'),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DriverIncentivesScreen(),
                   ),
                 );
               },

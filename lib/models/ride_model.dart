@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/models/ride_preferences_model.dart';
 import 'package:friendsride_app/utils/logger.dart';
 
 // MODIFICAT: Am adăugat 'family'
@@ -66,6 +67,7 @@ class Ride {
   final DateTime? assignedAt;
   final bool isScheduled;
   final DateTime? scheduledPickupTime;
+  final RidePreferences? ridePreferences;
 
   const Ride({
     required this.id,
@@ -107,6 +109,7 @@ class Ride {
     this.assignedAt,
     this.isScheduled = false,
     this.scheduledPickupTime,
+    this.ridePreferences,
   });
 
   Map<String, dynamic> toMap() {
@@ -149,6 +152,7 @@ class Ride {
       'assignedAt': assignedAt != null ? Timestamp.fromDate(assignedAt!) : null,
       'isScheduled': isScheduled,
       'scheduledPickupTime': scheduledPickupTime != null ? Timestamp.fromDate(scheduledPickupTime!) : null,
+      'ridePreferences': ridePreferences?.toMap(),
     };
   }
   
@@ -202,6 +206,9 @@ class Ride {
       isScheduled: map['isScheduled'] ?? false,
       scheduledPickupTime: map['scheduledPickupTime'] != null 
         ? (map['scheduledPickupTime'] as Timestamp).toDate() 
+        : null,
+      ridePreferences: map['ridePreferences'] != null
+        ? RidePreferences.fromMap(Map<String, dynamic>.from(map['ridePreferences']))
         : null,
     );
   }
@@ -259,6 +266,9 @@ class Ride {
       assignedAt: (data['assignedAt'] as Timestamp?)?.toDate(),
       isScheduled: data['isScheduled'] ?? false,
       scheduledPickupTime: (data['scheduledPickupTime'] as Timestamp?)?.toDate(),
+      ridePreferences: data['ridePreferences'] != null
+        ? RidePreferences.fromMap(Map<String, dynamic>.from(data['ridePreferences']))
+        : null,
     );
   }
 }

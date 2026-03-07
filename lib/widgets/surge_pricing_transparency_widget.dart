@@ -47,7 +47,13 @@ class SurgePricingTransparencyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!_isSurge) return const SizedBox.shrink();
 
-    return Container(
+    final semanticDescription = '$_surgeLabel – multiplicator ×${multiplier.toStringAsFixed(1)}. '
+        '${reason ?? _surgeDescription}';
+
+    return Semantics(
+      label: semanticDescription,
+      liveRegion: true,
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _surgeColor.withOpacity(0.08),
@@ -60,7 +66,7 @@ class SurgePricingTransparencyWidget extends StatelessWidget {
           // Header row
           Row(
             children: [
-              Icon(Icons.trending_up, color: _surgeColor, size: 22),
+              Icon(Icons.trending_up, color: _surgeColor, size: 22, semanticLabel: 'Cerere crescută'),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -103,6 +109,7 @@ class SurgePricingTransparencyWidget extends StatelessWidget {
           ],
         ],
       ),
+    ),
     );
   }
 }

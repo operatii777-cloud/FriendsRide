@@ -8,7 +8,9 @@ import '../utils/mapbox_utils.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Visibility;
 import 'package:friendsride_app/models/ride_model.dart';
+import 'package:friendsride_app/models/ride_preferences_model.dart';
 import 'package:friendsride_app/models/saved_address_model.dart';
+import 'package:friendsride_app/models/promotion_model.dart';
 import 'package:friendsride_app/screens/legal_screen.dart';
 import 'package:friendsride_app/screens/map_picker_screen.dart';
 import 'package:friendsride_app/screens/searching_for_driver_screen.dart';
@@ -19,9 +21,11 @@ import 'package:friendsride_app/services/routing_service.dart';
 import 'package:friendsride_app/services/ride_sharing_service.dart';
 import 'package:friendsride_app/widgets/ride_sharing_option_widget.dart';
 import 'package:friendsride_app/widgets/category_card.dart';
+import 'package:friendsride_app/widgets/promotion_widget.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:friendsride_app/utils/logger.dart';
 
 class RideRequestScreen extends StatefulWidget {
@@ -77,6 +81,11 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
   final bool _isRideSharingEnabled = true; // ✅ ACTIVAT
   bool _isRideSharingSelected = false;
 
+  // ✅ Promotion & ride preferences
+  Promotion? _appliedPromotion;
+  double _promoDiscount = 0.0;
+  RidePreferences? _ridePreferences;
+
   // User Data
   List<AddressSuggestion> _suggestions = [];
   Timer? _debounce;
@@ -126,6 +135,25 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     _startFocusNode.addListener(_onFocusChange);
     _destinationFocusNode.addListener(_onFocusChange);
     _loadSavedAddresses();
+    _loadRidePreferences();
+  }
+
+  /// Loads user ride preferences from Firestore
+  Future<void> _loadRidePreferences() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (doc.exists && doc.data()?['ridePreferences'] != null) {
+        setState(() {
+          _ridePreferences = RidePreferences.fromMap(
+            Map<String, dynamic>.from(doc.data()!['ridePreferences']),
+          );
+        });
+      }
+    } catch (e) {
+      Logger.error('Error loading ride preferences: $e', error: e);
+    }
   }
 
   @override
@@ -319,7 +347,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       baseFare: fareDetails['baseFare']!,
       perKmRate: fareDetails['perKmRate']!,
       perMinRate: fareDetails['perMinRate']!,
-      totalCost: fareDetails['totalCost']!,
+      totalCost: (fareDetails['totalCost']! - _promoDiscount).clamp(0, double.infinity),
       appCommission: fareDetails['appCommission']!,
       driverEarnings: fareDetails['driverEarnings']!,
       timestamp: DateTime.now(),
@@ -328,6 +356,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       stops: [],
       isScheduled: widget.isScheduling,
       scheduledPickupTime: finalScheduledTime,
+      ridePreferences: _ridePreferences,
     );
 
     String? rideId;
@@ -598,6 +627,22 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
             },
           ),
         ],
+
+        // ✅ Promotion code widget
+        const SizedBox(height: 12),
+        PromotionWidget(
+          rideAmount: _faresByCategory[_selectedCategory]?['totalCost'] ?? 0.0,
+          category: _selectedCategory.name,
+          onPromotionApplied: (promotion) {
+            setState(() {
+              _appliedPromotion = promotion;
+              _promoDiscount = promotion != null
+                  ? promotion.calculateDiscount(
+                      _faresByCategory[_selectedCategory]?['totalCost'] ?? 0.0)
+                  : 0.0;
+            });
+          },
+        ),
         
         const SizedBox(height: 16),
         // ✅ NOU: Mesaj pentru auto-start
