@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/screens/auth_screen.dart';
 import 'package:friendsride_app/screens/change_password_screen.dart';
 import 'package:friendsride_app/services/account_service.dart';
@@ -9,9 +10,10 @@ class SecurityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Siguranță și Securitate'),
+        title: Text(l10n.securityAndSafety),
       ),
       body: ListView(
         padding: const EdgeInsets.all(8.0),
@@ -19,8 +21,8 @@ class SecurityScreen extends StatelessWidget {
           // ── Password ────────────────────────────────────────────────────
           ListTile(
             leading: const Icon(Icons.password_outlined),
-            title: const Text('Schimbă parola'),
-            subtitle: const Text('Modifică parola contului tău'),
+            title: Text(l10n.changePassword),
+            subtitle: Text(l10n.changePasswordSubtitle),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
               Navigator.push(
@@ -33,11 +35,11 @@ class SecurityScreen extends StatelessWidget {
           const Divider(),
 
           // ── Session management ───────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Text(
-              'Sesiuni',
-              style: TextStyle(
+              l10n.sessions,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey,
@@ -47,8 +49,8 @@ class SecurityScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.devices_outlined),
-            title: const Text('Deconectare de pe toate dispozitivele'),
-            subtitle: const Text('Ieșire din cont pe toate dispozitivele conectate'),
+            title: Text(l10n.logoutAllDevices),
+            subtitle: Text(l10n.logoutAllDevicesSubtitle),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () => _confirmLogoutAllDevices(context),
           ),
@@ -56,11 +58,11 @@ class SecurityScreen extends StatelessWidget {
           const Divider(),
 
           // ── Danger zone ──────────────────────────────────────────────────
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Text(
-              'Zonă periculoasă',
-              style: TextStyle(
+              l10n.dangerZone,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Colors.red,
@@ -70,11 +72,11 @@ class SecurityScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
-            title: const Text(
-              'Ștergere cont',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+            title: Text(
+              l10n.deleteAccount,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
             ),
-            subtitle: const Text('Șterge permanent contul și toate datele asociate'),
+            subtitle: Text(l10n.deleteAccountSubtitle),
             trailing: const Icon(Icons.arrow_forward_ios, color: Colors.red),
             onTap: () => _showDeleteAccountDialog(context),
           ),
@@ -86,18 +88,16 @@ class SecurityScreen extends StatelessWidget {
   // ── Logout all devices ─────────────────────────────────────────────────────
 
   void _confirmLogoutAllDevices(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Deconectare de pe toate dispozitivele'),
-        content: const Text(
-          'Vei fi deconectat de pe toate dispozitivele, inclusiv cel curent. '
-          'Va trebui să te autentifici din nou.',
-        ),
+        title: Text(l10n.confirmLogoutAllDevicesTitle),
+        content: Text(l10n.confirmLogoutAllDevicesContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Anulează'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -114,13 +114,13 @@ class SecurityScreen extends StatelessWidget {
               } catch (e) {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text('Eroare: $e'),
+                    content: Text(l10n.errorPrefix(e)),
                     backgroundColor: Colors.red,
                   ),
                 );
               }
             },
-            child: const Text('Deconectează'),
+            child: Text(l10n.disconnect),
           ),
         ],
       ),
@@ -130,6 +130,7 @@ class SecurityScreen extends StatelessWidget {
   // ── Delete account ─────────────────────────────────────────────────────────
 
   void _showDeleteAccountDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final passwordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -142,7 +143,7 @@ class SecurityScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Ștergere cont permanent'),
+        title: Text(l10n.permanentDeleteAccount),
         content: Form(
           key: formKey,
           child: Column(
@@ -151,29 +152,29 @@ class SecurityScreen extends StatelessWidget {
             children: [
               const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
               const SizedBox(height: 12),
-              const Text(
-                'Atenție! Această acțiune este ireversibilă.',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                l10n.attention,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Vor fi șterse definitiv:\n'
-                '• Profilul tău\n'
-                '• Istoricul curselor\n'
-                '• Toate datele asociate contului',
+              Text(
+                '${l10n.willBeDeletedTitle}\n'
+                '${l10n.willBeDeletedProfile}\n'
+                '${l10n.willBeDeletedRideHistory}\n'
+                '${l10n.willBeDeletedData}',
               ),
               if (isEmailUser) ...[
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Parola contului',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock_outline),
+                  decoration: InputDecoration(
+                    labelText: l10n.accountPassword,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.lock_outline),
                   ),
                   validator: (value) => (value == null || value.isEmpty)
-                      ? 'Introduceți parola pentru confirmare.'
+                      ? l10n.enterPasswordConfirm
                       : null,
                 ),
               ],
@@ -183,7 +184,7 @@ class SecurityScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Anulează'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -227,9 +228,9 @@ class SecurityScreen extends StatelessWidget {
                 );
               }
             },
-            child: const Text(
-              'Ștergere cont',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              l10n.deleteAccountButton,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],

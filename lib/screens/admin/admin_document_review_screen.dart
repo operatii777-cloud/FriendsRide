@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/models/driver_document_model.dart';
 import 'package:friendsride_app/services/driver_application_service.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +14,10 @@ class AdminDocumentReviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verificare Documente Șoferi'),
+        title: Text(l10n.adminDocumentReview),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -27,19 +29,19 @@ class AdminDocumentReviewScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Eroare: ${snapshot.error}'));
+            return Center(child: Text(l10n.errorPrefix(snapshot.error!)));
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
-                  SizedBox(height: 16),
+                  const Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                  const SizedBox(height: 16),
                   Text(
-                    'Nu există aplicații în așteptare.',
-                    style: TextStyle(fontSize: 16),
+                    l10n.noPendingApplications,
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),
@@ -80,7 +82,8 @@ class _ApplicantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = data['fullName'] as String? ?? 'Aplicant necunoscut';
+    final l10n = AppLocalizations.of(context)!;
+    final name = data['fullName'] as String? ?? l10n.unknownApplicant;
     final appStatus = data['status'] as String? ?? 'submitted';
     final allApproved = _allRequiredApproved(data);
     final applicationData = DriverApplicationData.fromFirestore(data);
@@ -113,7 +116,7 @@ class _ApplicantCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Status: $appStatus',
+                        l10n.statusLabel(appStatus),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -158,12 +161,13 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final (color, label) = switch (appStatus) {
-      'submitted' => (Colors.orange, 'Trimis'),
-      'under_review' => (Colors.blue, 'În revizuire'),
-      'approved' => (Colors.green, 'Aprobat'),
-      'activated' => (Colors.teal, 'Activat'),
-      'rejected' => (Colors.red, 'Respins'),
+      'submitted' => (Colors.orange, l10n.statusSubmitted),
+      'under_review' => (Colors.blue, l10n.statusUnderReview),
+      'approved' => (Colors.green, l10n.statusApproved),
+      'activated' => (Colors.teal, l10n.statusActivated),
+      'rejected' => (Colors.red, l10n.statusRejected),
       _ => (Colors.grey, appStatus),
     };
     return Chip(
@@ -183,6 +187,7 @@ class _MissingDocRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -196,7 +201,7 @@ class _MissingDocRow extends StatelessWidget {
             ),
           ),
           Text(
-            docType.isRequired ? 'Lipsă (obligatoriu)' : 'Lipsă',
+            docType.isRequired ? l10n.missingRequired : l10n.missing,
             style: TextStyle(
               fontSize: 11,
               color: docType.isRequired ? Colors.red : Colors.grey,
@@ -236,17 +241,19 @@ class _DocumentReviewRowState extends State<_DocumentReviewRow> {
         DriverDocumentStatus.approved,
       );
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ ${widget.document.type.displayName} aprobat'),
+            content: Text(l10n.documentApproved(widget.document.type.displayName)),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Eroare: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.errorPrefix(e)), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -255,29 +262,30 @@ class _DocumentReviewRowState extends State<_DocumentReviewRow> {
   }
 
   Future<void> _reject() async {
+    final l10n = AppLocalizations.of(context)!;
     final reasonController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Respinge: ${widget.document.type.displayName}'),
+        title: Text(l10n.rejectDocumentTitle(widget.document.type.displayName)),
         content: TextField(
           controller: reasonController,
-          decoration: const InputDecoration(
-            labelText: 'Motiv respingere',
-            hintText: 'ex. Imagine neclară, document expirat',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.rejectReason,
+            hintText: l10n.rejectionHint,
+            border: const OutlineInputBorder(),
           ),
           maxLines: 2,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Anulează'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Respinge', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.rejectTooltip, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -294,17 +302,19 @@ class _DocumentReviewRowState extends State<_DocumentReviewRow> {
         reason: reasonController.text.trim(),
       );
       if (mounted) {
+        final l10n2 = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ ${widget.document.type.displayName} respins'),
+            content: Text(l10n2.documentRejected(widget.document.type.displayName)),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n2 = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Eroare: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n2.errorPrefix(e)), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -411,12 +421,12 @@ class _DocumentReviewRowState extends State<_DocumentReviewRow> {
                     ),
                     if (doc.uploadedAt != null)
                       Text(
-                        'Încărcat: ${DateFormat('dd.MM.yyyy HH:mm').format(doc.uploadedAt!)}',
+                        AppLocalizations.of(context)!.uploadedAt(DateFormat('dd.MM.yyyy HH:mm').format(doc.uploadedAt!)),
                         style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                       ),
                     if (doc.expiryDate != null)
                       Text(
-                        'Expiră: ${DateFormat('dd.MM.yyyy').format(doc.expiryDate!)}',
+                        AppLocalizations.of(context)!.docExpiresOn(DateFormat('dd.MM.yyyy').format(doc.expiryDate!)),
                         style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                       ),
                     Row(
@@ -447,13 +457,13 @@ class _DocumentReviewRowState extends State<_DocumentReviewRow> {
                 if (doc.status != DriverDocumentStatus.approved)
                   IconButton(
                     icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                    tooltip: 'Aprobă',
+                    tooltip: AppLocalizations.of(context)!.approveTooltip,
                     onPressed: _approve,
                   ),
                 if (doc.status != DriverDocumentStatus.rejected)
                   IconButton(
                     icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                    tooltip: 'Respinge',
+                    tooltip: AppLocalizations.of(context)!.rejectTooltip,
                     onPressed: _reject,
                   ),
               ],
@@ -465,7 +475,7 @@ class _DocumentReviewRowState extends State<_DocumentReviewRow> {
             Padding(
               padding: const EdgeInsets.only(left: 58, top: 4),
               child: Text(
-                'Motiv: ${doc.rejectionReason}',
+                AppLocalizations.of(context)!.rejectionReasonLabel(doc.rejectionReason!),
                 style: const TextStyle(fontSize: 12, color: Colors.red),
               ),
             ),
@@ -495,17 +505,18 @@ class _ActivateDriverButtonState extends State<_ActivateDriverButton> {
     try {
       final code = await _service.generateAndSendAccessCode(widget.userId);
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            title: const Text('Șofer Activat ✅'),
+            title: Text(l10n.driverActivatedTitle),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${widget.applicantName} a fost activat cu succes.'),
+                Text(l10n.driverActivatedContent(widget.applicantName)),
                 const SizedBox(height: 16),
-                const Text('Cod de acces:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(l10n.accessCodeLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -525,16 +536,16 @@ class _ActivateDriverButtonState extends State<_ActivateDriverButton> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Transmiteți acest cod șoferului.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                Text(
+                  l10n.sendCodeToDriver,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
             actions: [
               ElevatedButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Închide'),
+                child: Text(l10n.close),
               ),
             ],
           ),
@@ -542,8 +553,9 @@ class _ActivateDriverButtonState extends State<_ActivateDriverButton> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Eroare la activare: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.activationError(e)), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -553,6 +565,7 @@ class _ActivateDriverButtonState extends State<_ActivateDriverButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -560,7 +573,7 @@ class _ActivateDriverButtonState extends State<_ActivateDriverButton> {
         icon: _loading
             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.verified_user),
-        label: const Text('Activează Șofer'),
+        label: Text(l10n.activateDriver),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
@@ -580,6 +593,7 @@ class _AccessCodeDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (accessCode == null) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -590,7 +604,7 @@ class _AccessCodeDisplay extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text('Cod de acces generat:', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(l10n.accessCodeGenerated, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           Text(
             accessCode!,

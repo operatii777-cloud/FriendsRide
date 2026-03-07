@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/models/driver_document_model.dart';
 import 'package:intl/intl.dart';
 
@@ -35,21 +36,22 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final (icon, color, label) = switch (document.status) {
       DriverDocumentStatus.approved => (
           Icons.check_circle,
           Colors.green,
-          'Aprobat',
+          l10n.docStatusApproved,
         ),
       DriverDocumentStatus.rejected => (
           Icons.cancel,
           Colors.red,
-          'Respins',
+          l10n.docStatusRejected,
         ),
       DriverDocumentStatus.pending => (
           Icons.access_time,
           Colors.orange,
-          'În așteptare',
+          l10n.docStatusPending,
         ),
     };
 
@@ -68,7 +70,7 @@ class _StatusRow extends StatelessWidget {
         if (document.expiryDate != null) ...[
           const SizedBox(width: 8),
           Text(
-            'Expiră: ${DateFormat('dd.MM.yyyy').format(document.expiryDate!)}',
+            l10n.docExpiresOn(DateFormat('dd.MM.yyyy').format(document.expiryDate!)),
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey.shade600,
@@ -118,12 +120,14 @@ class _ExpiryBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final color = expired ? Colors.red : Colors.orange;
     final bgColor = expired ? Colors.red.shade50 : Colors.orange.shade50;
     final borderColor = expired ? Colors.red.shade300 : Colors.orange.shade300;
+    final dateStr = DateFormat('dd.MM.yyyy').format(expiryDate);
     final label = expired
-        ? 'EXPIRAT (${DateFormat('dd.MM.yyyy').format(expiryDate)})'
-        : 'Expiră în curând (${DateFormat('dd.MM.yyyy').format(expiryDate)})';
+        ? l10n.docExpiredLabel(dateStr)
+        : l10n.docExpiringSoonLabel(dateStr);
 
     return Container(
       margin: const EdgeInsets.only(top: 6),

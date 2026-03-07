@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:friendsride_app/models/driver_document_model.dart';
@@ -86,7 +87,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Eroare la încărcarea datelor: $e'),
+          content: Text(AppLocalizations.of(context)!.applicationLoadError(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -192,7 +193,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${documentType.displayName} a fost încărcat cu succes!'),
+            content: Text(AppLocalizations.of(context)!.documentUploadSuccess(documentType.displayName)),
             backgroundColor: Colors.green,
           ),
         );
@@ -203,7 +204,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la încărcarea documentului: ${_getErrorMessage(e)}'),
+            content: Text(AppLocalizations.of(context)!.documentUploadError(_getErrorMessage(e))),
             backgroundColor: Colors.red,
           ),
         );
@@ -223,7 +224,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${documentType.displayName} a fost șters cu succes!'),
+            content: Text(AppLocalizations.of(context)!.documentDeleteSuccess(documentType.displayName)),
             backgroundColor: Colors.green,
           ),
         );
@@ -232,7 +233,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la ștergerea documentului: $e'),
+            content: Text(AppLocalizations.of(context)!.documentDeleteError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -245,22 +246,22 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Selectează sursa'),
-          content: const Text('De unde dorești să selectezi imaginea?'),
+          title: Text(AppLocalizations.of(context)!.selectSourceTitle),
+          content: Text(AppLocalizations.of(context)!.selectSourceContent),
           actions: [
             TextButton.icon(
               onPressed: () => Navigator.pop(context, ImageSource.camera),
               icon: const Icon(Icons.camera_alt),
-              label: const Text('Cameră'),
+              label: Text(AppLocalizations.of(context)!.cameraOption),
             ),
             TextButton.icon(
               onPressed: () => Navigator.pop(context, ImageSource.gallery),
               icon: const Icon(Icons.photo_library),
-              label: const Text('Galerie'),
+              label: Text(AppLocalizations.of(context)!.galleryOption),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Anulează'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
           ],
         );
@@ -272,22 +273,22 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
     return await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Selectează tipul fișierului'),
-        content: const Text('Dorești să încarci o imagine sau un document PDF?'),
+        title: Text(AppLocalizations.of(context)!.selectFileTypeTitle),
+        content: Text(AppLocalizations.of(context)!.selectFileTypeContent),
         actions: [
           TextButton.icon(
             onPressed: () => Navigator.pop(context, 'image'),
             icon: const Icon(Icons.image),
-            label: const Text('Imagine'),
+            label: Text(AppLocalizations.of(context)!.imageOption),
           ),
           TextButton.icon(
             onPressed: () => Navigator.pop(context, 'pdf'),
             icon: const Icon(Icons.picture_as_pdf),
-            label: const Text('PDF'),
+            label: Text(AppLocalizations.of(context)!.pdfOption),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Anulează'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
         ],
       ),
@@ -302,13 +303,12 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Dată expirare'),
-        content: Text('Doriți să setați data de expirare pentru '
-            '"${documentType.displayName}"?'),
+        title: Text(AppLocalizations.of(context)!.expiryDateTitle),
+        content: Text(AppLocalizations.of(context)!.expiryDateQuestion(documentType.displayName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Nu, sari peste'),
+            child: Text(AppLocalizations.of(context)!.skipExpiry),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -324,7 +324,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       initialDate: DateTime.now().add(const Duration(days: 365)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
-      helpText: 'Selectați data de expirare',
+      helpText: AppLocalizations.of(context)!.selectExpiryDate,
     );
   }
 
@@ -358,9 +358,9 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                             children: [
                               Icon(Icons.picture_as_pdf, size: 64, color: Colors.red),
                               SizedBox(height: 16),
-                              Text('Document PDF'),
+                              Text(AppLocalizations.of(context)!.pdfDocument),
                               SizedBox(height: 8),
-                              Text('Apasă pentru a deschide', style: TextStyle(color: Colors.grey)),
+                              Text(AppLocalizations.of(context)!.tapToOpen, style: TextStyle(color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -383,7 +383,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                 children: [
                                   Icon(Icons.error, size: 48, color: Colors.red),
                                   SizedBox(height: 8),
-                                  Text('Eroare la încărcarea imaginii'),
+                                  Text(AppLocalizations.of(context)!.errorLoadingImage),
                                 ],
                               ),
                             ),
@@ -410,7 +410,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Fotografiază'),
+                title: Text(AppLocalizations.of(context)!.photographOption),
                 onTap: () {
                   Navigator.pop(context);
                   _uploadDocument(documentType);
@@ -418,7 +418,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Selectează din galerie'),
+                title: Text(AppLocalizations.of(context)!.selectFromGallery),
                 onTap: () {
                   Navigator.pop(context);
                   _uploadDocument(documentType);
@@ -427,7 +427,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
               if (isUploaded)
                 ListTile(
                   leading: const Icon(Icons.visibility),
-                  title: const Text('Vizualizează'),
+                  title: Text(AppLocalizations.of(context)!.viewDocumentOption),
                   onTap: () {
                     Navigator.pop(context);
                     _viewDocument(documentType);
@@ -436,7 +436,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
               if (isUploaded)
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Șterge', style: TextStyle(color: Colors.red)),
+                  title: Text(AppLocalizations.of(context)!.deleteDocumentOption, style: const TextStyle(color: Colors.red)),
                   onTap: () {
                     Navigator.pop(context);
                     _removeDocument(documentType);
@@ -444,7 +444,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                 ),
               ListTile(
                 leading: const Icon(Icons.cancel),
-                title: const Text('Anulează'),
+                title: Text(AppLocalizations.of(context)!.cancel),
                 onTap: () => Navigator.pop(context),
               ),
             ],
@@ -486,7 +486,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la salvarea datelor: $e'),
+            content: Text(AppLocalizations.of(context)!.applicationSaveError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -511,7 +511,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Aplicația a fost trimisă cu succes pentru verificare!'),
+            content: Text(AppLocalizations.of(context)!.applicationSubmitSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -521,7 +521,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la trimiterea aplicației: $e'),
+            content: Text(AppLocalizations.of(context)!.applicationSubmitError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -537,13 +537,13 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
     final errorString = error.toString();
     
     if (errorString.contains('prea mare')) {
-      return 'Fișierul este prea mare (max 10MB)';
+      return AppLocalizations.of(context)!.fileTooLarge;
     } else if (errorString.contains('404') || errorString.contains('Not Found')) {
-      return 'Serviciul nu este disponibil temporar';
+      return AppLocalizations.of(context)!.serviceUnavailable;
     } else if (errorString.contains('Network')) {
-      return 'Problemă de conexiune. Verificați internetul';
+      return AppLocalizations.of(context)!.connectionError;
     } else {
-      return 'Eroare neașteptată. Încercați din nou';
+      return AppLocalizations.of(context)!.unexpectedError;
     }
   }
 
@@ -597,7 +597,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    'Obligatoriu',
+                                    AppLocalizations.of(context)!.requiredBadge,
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: Colors.red.shade700,
@@ -634,8 +634,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                 const SizedBox(height: 8),
                 Text(
                   isUploaded 
-                      ? 'Document încărcat cu succes' 
-                      : 'Apasă pentru a încărca documentul',
+                      ? AppLocalizations.of(context)!.documentUploadedText 
+                      : AppLocalizations.of(context)!.tapToUploadText,
                   style: TextStyle(
                     color: isUploaded ? Colors.green : Colors.grey.shade600,
                     fontSize: 14,
@@ -728,8 +728,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Cont Activat 🎉',
+                Text(
+                  AppLocalizations.of(context)!.accountActivated,
                   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
                 ),
                 const SizedBox(height: 2),
@@ -744,7 +744,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                 ),
                 if (app.accessCodeGeneratedAt != null)
                   Text(
-                    'Generat la: ${DateFormat('dd.MM.yyyy HH:mm').format(app.accessCodeGeneratedAt!)}',
+                    AppLocalizations.of(context)!.accessCodeGeneratedAt(DateFormat('dd.MM.yyyy HH:mm').format(app.accessCodeGeneratedAt!)),
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
               ],
@@ -783,8 +783,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Progres aplicație',
+              Text(
+                AppLocalizations.of(context)!.applicationProgress,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -815,8 +815,8 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           const SizedBox(height: 8),
           Text(
             progress >= 1.0
-                ? 'Aplicația este completă și poate fi trimisă!'
-                : 'Completați informațiile și documentele pentru a continua',
+                ? AppLocalizations.of(context)!.applicationComplete
+                : AppLocalizations.of(context)!.applicationIncomplete,
             style: TextStyle(
               fontSize: 12,
               color: progress >= 1.0 ? Colors.green : Colors.grey.shade600,
@@ -833,7 +833,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
     if (_isLoading && _currentApplication == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Devino Șofer Partener'),
+          title: Text(AppLocalizations.of(context)!.bePartnerDriver),
         ),
         body: const Center(
           child: CircularProgressIndicator(),
@@ -843,7 +843,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Devino Șofer Partener'),
+        title: Text(AppLocalizations.of(context)!.bePartnerDriver),
         actions: [
           if (_currentApplication != null)
             Container(
@@ -911,7 +911,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                     height: 16,
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
-                                : const Text('Continuă'),
+                                : Text(AppLocalizations.of(context)!.continueBtn),
                           )
                         else
                           ElevatedButton(
@@ -927,27 +927,27 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                     height: 16,
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
-                                : const Text('Trimite Aplicația', style: TextStyle(color: Colors.white)),
+                                : Text(AppLocalizations.of(context)!.submitApplication, style: const TextStyle(color: Colors.white)),
                           ),
                         const SizedBox(width: 8),
                         if (details.stepIndex > 0)
                           TextButton(
                             onPressed: _isLoading ? null : details.onStepCancel,
-                            child: const Text('Înapoi'),
+                            child: Text(AppLocalizations.of(context)!.backBtn),
                           ),
                       ],
                     );
                   },
                   steps: [
-                    // Pasul 1: Informații Personale
+                    // Step 1: Personal Information
                     Step(
-                      title: const Text('Informații Personale'),
+                      title: Text(AppLocalizations.of(context)!.personalInfoStep),
                       content: Column(
                         children: [
                           TextFormField(
                             controller: _fullNameController,
                             decoration: const InputDecoration(
-                              labelText: 'Nume Complet *',
+                              labelText: AppLocalizations.of(context)!.fullNameLabel,
                               border: OutlineInputBorder(),
                             ),
                           ),
@@ -955,7 +955,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                           TextFormField(
                             controller: _ageController,
                             decoration: const InputDecoration(
-                              labelText: 'Vârstă *',
+                              labelText: AppLocalizations.of(context)!.ageLabel,
                               border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
@@ -970,9 +970,9 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                       isActive: _currentStep >= 0,
                       state: _currentStep > 0 ? StepState.complete : StepState.indexed,
                     ),
-                    // Pasul 2: Informații Autovehicul
+                    // Step 2: Vehicle Information
                     Step(
-                      title: const Text('Informații Autovehicul'),
+                      title: Text(AppLocalizations.of(context)!.vehicleInfoStep),
                       content: Column(
                         children: [
                           Row(
@@ -981,7 +981,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                 child: TextFormField(
                                   controller: _carBrandController,
                                   decoration: const InputDecoration(
-                                    labelText: 'Marcă *',
+                                    labelText: AppLocalizations.of(context)!.carBrandLabel,
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
@@ -991,7 +991,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                 child: TextFormField(
                                   controller: _carModelController,
                                   decoration: const InputDecoration(
-                                    labelText: 'Model *',
+                                    labelText: AppLocalizations.of(context)!.carModelLabel,
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
@@ -1005,7 +1005,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                 child: TextFormField(
                                   controller: _carColorController,
                                   decoration: const InputDecoration(
-                                    labelText: 'Culoare *',
+                                    labelText: AppLocalizations.of(context)!.carColorLabel,
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
@@ -1015,7 +1015,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                 child: TextFormField(
                                   controller: _carYearController,
                                   decoration: const InputDecoration(
-                                    labelText: 'An Fabricație *',
+                                    labelText: AppLocalizations.of(context)!.carYearLabel,
                                     border: OutlineInputBorder(),
                                   ),
                                   keyboardType: TextInputType.number,
@@ -1027,7 +1027,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                           TextFormField(
                             controller: _licensePlateController,
                             decoration: const InputDecoration(
-                              labelText: 'Număr Înmatriculare *',
+                              labelText: AppLocalizations.of(context)!.licensePlateLabel,
                               border: OutlineInputBorder(),
                             ),
                           ),
@@ -1039,9 +1039,9 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                       isActive: _currentStep >= 1,
                       state: _currentStep > 1 ? StepState.complete : StepState.indexed,
                     ),
-                    // Pasul 3: Documente și Finalizare
+                    // Step 3: Final Documents
                     Step(
-                      title: const Text('Documente Finale'),
+                      title: Text(AppLocalizations.of(context)!.finalDocumentsStep),
                       content: Column(
                         children: [
                           _buildUploadButton(DriverDocumentType.criminalRecord),
@@ -1050,7 +1050,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                           TextFormField(
                             controller: _bankAccountController,
                             decoration: const InputDecoration(
-                              labelText: 'Cont Bancar (IBAN)',
+                              labelText: AppLocalizations.of(context)!.bankAccountLabel,
                               border: OutlineInputBorder(),
                               hintText: 'RO49 AAAA 1B31 0075 9384 0000',
                             ),
@@ -1071,7 +1071,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                     Icon(Icons.info_outline, color: Colors.blue.shade700),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Informații importante',
+                                      AppLocalizations.of(context)!.importantInfoTitle,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.blue.shade700,
@@ -1080,13 +1080,9 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                const Text(
-                                  'Prin trimiterea aplicației, confirmați că:\n'
-                                  '• Toate informațiile furnizate sunt corecte\n'
-                                  '• Sunteți de acord cu Termenii și Condițiile\n'
-                                  '• Acceptați verificarea documentelor\n'
-                                  '• Aveți cel puțin 21 de ani împliniți',
-                                  style: TextStyle(fontSize: 14),
+                                Text(
+                                  AppLocalizations.of(context)!.applicationConfirmationText,
+                                  style: const TextStyle(fontSize: 14),
                                 ),
                               ],
                             ),
@@ -1104,10 +1100,10 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                                 children: [
                                   Icon(Icons.warning_amber, color: Colors.orange.shade700),
                                   const SizedBox(width: 12),
-                                  const Expanded(
+                                  Expanded(
                                     child: Text(
-                                      'Vă rugăm să completați toate câmpurile obligatorii și să încărcați documentele necesare înainte de a trimite aplicația.',
-                                      style: TextStyle(fontSize: 14),
+                                      AppLocalizations.of(context)!.applicationIncompleteWarning,
+                                      style: const TextStyle(fontSize: 14),
                                     ),
                                   ),
                                 ],

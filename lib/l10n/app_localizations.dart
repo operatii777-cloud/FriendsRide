@@ -5833,6 +5833,874 @@ abstract class AppLocalizations {
   /// In ro, this message translates to:
   /// **'Notă: Indicatorul se actualizează automat când pornești sau oprești interacțiunea vocală cu AI-ul.'**
   String get assistantStatusOverlayHelpNote;
+
+  /// No description provided for @securityAndSafety.
+  ///
+  /// In ro, this message translates to:
+  /// **'Siguranță și Securitate'**
+  String get securityAndSafety;
+
+  /// No description provided for @changePasswordSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Modifică parola contului tău'**
+  String get changePasswordSubtitle;
+
+  /// No description provided for @sessions.
+  ///
+  /// In ro, this message translates to:
+  /// **'Sesiuni'**
+  String get sessions;
+
+  /// No description provided for @logoutAllDevices.
+  ///
+  /// In ro, this message translates to:
+  /// **'Deconectare de pe toate dispozitivele'**
+  String get logoutAllDevices;
+
+  /// No description provided for @logoutAllDevicesSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ieșire din cont pe toate dispozitivele conectate'**
+  String get logoutAllDevicesSubtitle;
+
+  /// No description provided for @dangerZone.
+  ///
+  /// In ro, this message translates to:
+  /// **'Zonă periculoasă'**
+  String get dangerZone;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ștergere cont'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Șterge permanent contul și toate datele asociate'**
+  String get deleteAccountSubtitle;
+
+  /// No description provided for @confirmLogoutAllDevicesTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Deconectare de pe toate dispozitivele'**
+  String get confirmLogoutAllDevicesTitle;
+
+  /// No description provided for @confirmLogoutAllDevicesContent.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vei fi deconectat de pe toate dispozitivele, inclusiv cel curent. Va trebui să te autentifici din nou.'**
+  String get confirmLogoutAllDevicesContent;
+
+  /// No description provided for @disconnect.
+  ///
+  /// In ro, this message translates to:
+  /// **'Deconectează'**
+  String get disconnect;
+
+  /// No description provided for @permanentDeleteAccount.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ștergere cont permanent'**
+  String get permanentDeleteAccount;
+
+  /// No description provided for @attention.
+  ///
+  /// In ro, this message translates to:
+  /// **'Atenție! Această acțiune este ireversibilă.'**
+  String get attention;
+
+  /// No description provided for @willBeDeletedTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vor fi șterse definitiv:'**
+  String get willBeDeletedTitle;
+
+  /// No description provided for @willBeDeletedProfile.
+  ///
+  /// In ro, this message translates to:
+  /// **'• Profilul tău'**
+  String get willBeDeletedProfile;
+
+  /// No description provided for @willBeDeletedRideHistory.
+  ///
+  /// In ro, this message translates to:
+  /// **'• Istoricul curselor'**
+  String get willBeDeletedRideHistory;
+
+  /// No description provided for @willBeDeletedData.
+  ///
+  /// In ro, this message translates to:
+  /// **'• Toate datele asociate contului'**
+  String get willBeDeletedData;
+
+  /// No description provided for @accountPassword.
+  ///
+  /// In ro, this message translates to:
+  /// **'Parola contului'**
+  String get accountPassword;
+
+  /// No description provided for @enterPasswordConfirm.
+  ///
+  /// In ro, this message translates to:
+  /// **'Introduceți parola pentru confirmare.'**
+  String get enterPasswordConfirm;
+
+  /// No description provided for @deleteAccountButton.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ștergere cont'**
+  String get deleteAccountButton;
+
+  /// No description provided for @errorPrefix.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare: {error}'**
+  String errorPrefix(Object error);
+
+  /// No description provided for @notificationPreferences.
+  ///
+  /// In ro, this message translates to:
+  /// **'Preferințe notificări'**
+  String get notificationPreferences;
+
+  /// No description provided for @notifRideSection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Curse'**
+  String get notifRideSection;
+
+  /// No description provided for @notifRideNotifications.
+  ///
+  /// In ro, this message translates to:
+  /// **'Notificări curse'**
+  String get notifRideNotifications;
+
+  /// No description provided for @notifRideNotificationsSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Solicitări noi, cursă acceptată, șofer în apropiere etc.'**
+  String get notifRideNotificationsSubtitle;
+
+  /// No description provided for @notifCommunicationSection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Comunicare'**
+  String get notifCommunicationSection;
+
+  /// No description provided for @notifChatMessages.
+  ///
+  /// In ro, this message translates to:
+  /// **'Mesaje chat'**
+  String get notifChatMessages;
+
+  /// No description provided for @notifChatMessagesSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Notificări pentru mesaje noi din conversații'**
+  String get notifChatMessagesSubtitle;
+
+  /// No description provided for @notifMarketingSection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Marketing și actualizări'**
+  String get notifMarketingSection;
+
+  /// No description provided for @notifPromoOffers.
+  ///
+  /// In ro, this message translates to:
+  /// **'Promoții și oferte'**
+  String get notifPromoOffers;
+
+  /// No description provided for @notifPromoOffersSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Reduceri, coduri promoționale și oferte speciale'**
+  String get notifPromoOffersSubtitle;
+
+  /// No description provided for @notifAppUpdates.
+  ///
+  /// In ro, this message translates to:
+  /// **'Actualizări aplicație'**
+  String get notifAppUpdates;
+
+  /// No description provided for @notifAppUpdatesSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Noutăți și îmbunătățiri ale aplicației'**
+  String get notifAppUpdatesSubtitle;
+
+  /// No description provided for @notifSafetySection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Siguranță'**
+  String get notifSafetySection;
+
+  /// No description provided for @notifSafetyAlerts.
+  ///
+  /// In ro, this message translates to:
+  /// **'Alerte de siguranță'**
+  String get notifSafetyAlerts;
+
+  /// No description provided for @notifSafetyAlertsSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Notificări importante legate de siguranța ta în cursă'**
+  String get notifSafetyAlertsSubtitle;
+
+  /// No description provided for @notifSavedSuccess.
+  ///
+  /// In ro, this message translates to:
+  /// **'Preferințe salvate cu succes.'**
+  String get notifSavedSuccess;
+
+  /// No description provided for @notifLoadError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la încărcarea preferințelor: {error}'**
+  String notifLoadError(Object error);
+
+  /// No description provided for @notifSaveError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la salvare: {error}'**
+  String notifSaveError(Object error);
+
+  /// No description provided for @privacyLocationSection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Locație'**
+  String get privacyLocationSection;
+
+  /// No description provided for @privacyLocationSharing.
+  ///
+  /// In ro, this message translates to:
+  /// **'Partajare locație în timp real'**
+  String get privacyLocationSharing;
+
+  /// No description provided for @privacyLocationSharingSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Permite partajarea locației tale cu șoferul în timpul cursei'**
+  String get privacyLocationSharingSubtitle;
+
+  /// No description provided for @privacyProfileSection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Profil'**
+  String get privacyProfileSection;
+
+  /// No description provided for @privacyProfileVisibility.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vizibilitate profil pentru șoferi'**
+  String get privacyProfileVisibility;
+
+  /// No description provided for @privacyProfileVisibilitySubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Șoferii pot vedea profilul tău (nume, fotografie, rating)'**
+  String get privacyProfileVisibilitySubtitle;
+
+  /// No description provided for @privacyRideHistoryVisible.
+  ///
+  /// In ro, this message translates to:
+  /// **'Istoricul curselor vizibil'**
+  String get privacyRideHistoryVisible;
+
+  /// No description provided for @privacyRideHistoryVisibleSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Permite afișarea istoricului curselor în profilul tău public'**
+  String get privacyRideHistoryVisibleSubtitle;
+
+  /// No description provided for @privacyDataSection.
+  ///
+  /// In ro, this message translates to:
+  /// **'Date și analiză'**
+  String get privacyDataSection;
+
+  /// No description provided for @privacyAnalyticsConsent.
+  ///
+  /// In ro, this message translates to:
+  /// **'Date pentru îmbunătățirea serviciului'**
+  String get privacyAnalyticsConsent;
+
+  /// No description provided for @privacyAnalyticsConsentSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ajută-ne să îmbunătățim aplicația prin partajarea datelor de utilizare anonime'**
+  String get privacyAnalyticsConsentSubtitle;
+
+  /// No description provided for @privacyGdprNote.
+  ///
+  /// In ro, this message translates to:
+  /// **'Datele tale sunt procesate conform GDPR. Poți solicita exportul sau ștergerea datelor din secțiunea Siguranță și Securitate.'**
+  String get privacyGdprNote;
+
+  /// No description provided for @privacySavedSuccess.
+  ///
+  /// In ro, this message translates to:
+  /// **'Setări de confidențialitate salvate.'**
+  String get privacySavedSuccess;
+
+  /// No description provided for @privacyLoadError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la încărcarea setărilor: {error}'**
+  String privacyLoadError(Object error);
+
+  /// No description provided for @privacySaveError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la salvare: {error}'**
+  String privacySaveError(Object error);
+
+  /// No description provided for @adminDocumentReview.
+  ///
+  /// In ro, this message translates to:
+  /// **'Verificare Documente Șoferi'**
+  String get adminDocumentReview;
+
+  /// No description provided for @noPendingApplications.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nu există aplicații în așteptare.'**
+  String get noPendingApplications;
+
+  /// No description provided for @unknownApplicant.
+  ///
+  /// In ro, this message translates to:
+  /// **'Aplicant necunoscut'**
+  String get unknownApplicant;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Status: {status}'**
+  String statusLabel(Object status);
+
+  /// No description provided for @missingRequired.
+  ///
+  /// In ro, this message translates to:
+  /// **'Lipsă (obligatoriu)'**
+  String get missingRequired;
+
+  /// No description provided for @missing.
+  ///
+  /// In ro, this message translates to:
+  /// **'Lipsă'**
+  String get missing;
+
+  /// No description provided for @rejectDocumentTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Respinge: {name}'**
+  String rejectDocumentTitle(Object name);
+
+  /// No description provided for @rejectReason.
+  ///
+  /// In ro, this message translates to:
+  /// **'Motiv respingere'**
+  String get rejectReason;
+
+  /// No description provided for @rejectionHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'ex. Imagine neclară, document expirat'**
+  String get rejectionHint;
+
+  /// No description provided for @documentApproved.
+  ///
+  /// In ro, this message translates to:
+  /// **'✅ {name} aprobat'**
+  String documentApproved(Object name);
+
+  /// No description provided for @documentRejected.
+  ///
+  /// In ro, this message translates to:
+  /// **'❌ {name} respins'**
+  String documentRejected(Object name);
+
+  /// No description provided for @activateDriver.
+  ///
+  /// In ro, this message translates to:
+  /// **'Activează Șofer'**
+  String get activateDriver;
+
+  /// No description provided for @driverActivatedTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Șofer Activat ✅'**
+  String get driverActivatedTitle;
+
+  /// No description provided for @driverActivatedContent.
+  ///
+  /// In ro, this message translates to:
+  /// **'{name} a fost activat cu succes.'**
+  String driverActivatedContent(Object name);
+
+  /// No description provided for @accessCodeLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cod de acces:'**
+  String get accessCodeLabel;
+
+  /// No description provided for @accessCodeGenerated.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cod de acces generat:'**
+  String get accessCodeGenerated;
+
+  /// No description provided for @sendCodeToDriver.
+  ///
+  /// In ro, this message translates to:
+  /// **'Transmiteți acest cod șoferului.'**
+  String get sendCodeToDriver;
+
+  /// No description provided for @activationError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la activare: {error}'**
+  String activationError(Object error);
+
+  /// No description provided for @approveTooltip.
+  ///
+  /// In ro, this message translates to:
+  /// **'Aprobă'**
+  String get approveTooltip;
+
+  /// No description provided for @rejectTooltip.
+  ///
+  /// In ro, this message translates to:
+  /// **'Respinge'**
+  String get rejectTooltip;
+
+  /// No description provided for @rejectionReasonLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Motiv: {reason}'**
+  String rejectionReasonLabel(Object reason);
+
+  /// No description provided for @statusSubmitted.
+  ///
+  /// In ro, this message translates to:
+  /// **'Trimis'**
+  String get statusSubmitted;
+
+  /// No description provided for @statusUnderReview.
+  ///
+  /// In ro, this message translates to:
+  /// **'În revizuire'**
+  String get statusUnderReview;
+
+  /// No description provided for @statusApproved.
+  ///
+  /// In ro, this message translates to:
+  /// **'Aprobat'**
+  String get statusApproved;
+
+  /// No description provided for @statusActivated.
+  ///
+  /// In ro, this message translates to:
+  /// **'Activat'**
+  String get statusActivated;
+
+  /// No description provided for @statusRejected.
+  ///
+  /// In ro, this message translates to:
+  /// **'Respins'**
+  String get statusRejected;
+
+  /// No description provided for @docStatusApproved.
+  ///
+  /// In ro, this message translates to:
+  /// **'Aprobat'**
+  String get docStatusApproved;
+
+  /// No description provided for @docStatusRejected.
+  ///
+  /// In ro, this message translates to:
+  /// **'Respins'**
+  String get docStatusRejected;
+
+  /// No description provided for @docStatusPending.
+  ///
+  /// In ro, this message translates to:
+  /// **'În așteptare'**
+  String get docStatusPending;
+
+  /// No description provided for @docExpiresOn.
+  ///
+  /// In ro, this message translates to:
+  /// **'Expiră: {date}'**
+  String docExpiresOn(Object date);
+
+  /// No description provided for @docExpiredLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'EXPIRAT ({date})'**
+  String docExpiredLabel(Object date);
+
+  /// No description provided for @docExpiringSoonLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Expiră în curând ({date})'**
+  String docExpiringSoonLabel(Object date);
+
+  /// No description provided for @bePartnerDriver.
+  ///
+  /// In ro, this message translates to:
+  /// **'Devino Șofer Partener'**
+  String get bePartnerDriver;
+
+  /// No description provided for @applicationProgress.
+  ///
+  /// In ro, this message translates to:
+  /// **'Progres aplicație'**
+  String get applicationProgress;
+
+  /// No description provided for @applicationComplete.
+  ///
+  /// In ro, this message translates to:
+  /// **'Aplicația este completă și poate fi trimisă!'**
+  String get applicationComplete;
+
+  /// No description provided for @applicationIncomplete.
+  ///
+  /// In ro, this message translates to:
+  /// **'Completați informațiile și documentele pentru a continua'**
+  String get applicationIncomplete;
+
+  /// No description provided for @accountActivated.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cont Activat 🎉'**
+  String get accountActivated;
+
+  /// No description provided for @accessCodeGeneratedAt.
+  ///
+  /// In ro, this message translates to:
+  /// **'Generat la: {date}'**
+  String accessCodeGeneratedAt(Object date);
+
+  /// No description provided for @personalInfoStep.
+  ///
+  /// In ro, this message translates to:
+  /// **'Informații Personale'**
+  String get personalInfoStep;
+
+  /// No description provided for @vehicleInfoStep.
+  ///
+  /// In ro, this message translates to:
+  /// **'Informații Autovehicul'**
+  String get vehicleInfoStep;
+
+  /// No description provided for @finalDocumentsStep.
+  ///
+  /// In ro, this message translates to:
+  /// **'Documente Finale'**
+  String get finalDocumentsStep;
+
+  /// No description provided for @fullNameLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nume Complet *'**
+  String get fullNameLabel;
+
+  /// No description provided for @ageLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vârstă *'**
+  String get ageLabel;
+
+  /// No description provided for @carBrandLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Marcă *'**
+  String get carBrandLabel;
+
+  /// No description provided for @carModelLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Model *'**
+  String get carModelLabel;
+
+  /// No description provided for @carColorLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Culoare *'**
+  String get carColorLabel;
+
+  /// No description provided for @carYearLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'An Fabricație *'**
+  String get carYearLabel;
+
+  /// No description provided for @licensePlateLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Număr Înmatriculare *'**
+  String get licensePlateLabel;
+
+  /// No description provided for @bankAccountLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cont Bancar (IBAN)'**
+  String get bankAccountLabel;
+
+  /// No description provided for @importantInfoTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Informații importante'**
+  String get importantInfoTitle;
+
+  /// No description provided for @applicationConfirmationText.
+  ///
+  /// In ro, this message translates to:
+  /// **'Prin trimiterea aplicației, confirmați că:
+• Toate informațiile furnizate sunt corecte
+• Sunteți de acord cu Termenii și Condițiile
+• Acceptați verificarea documentelor
+• Aveți cel puțin 21 de ani împliniți'**
+  String get applicationConfirmationText;
+
+  /// No description provided for @applicationIncompleteWarning.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vă rugăm să completați toate câmpurile obligatorii și să încărcați documentele necesare înainte de a trimite aplicația.'**
+  String get applicationIncompleteWarning;
+
+  /// No description provided for @applicationSubmitSuccess.
+  ///
+  /// In ro, this message translates to:
+  /// **'Aplicația a fost trimisă cu succes pentru verificare!'**
+  String get applicationSubmitSuccess;
+
+  /// No description provided for @applicationLoadError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la încărcarea datelor: {error}'**
+  String applicationLoadError(Object error);
+
+  /// No description provided for @applicationSaveError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la salvarea datelor: {error}'**
+  String applicationSaveError(Object error);
+
+  /// No description provided for @applicationSubmitError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la trimiterea aplicației: {error}'**
+  String applicationSubmitError(Object error);
+
+  /// No description provided for @documentUploadSuccess.
+  ///
+  /// In ro, this message translates to:
+  /// **'{name} a fost încărcat cu succes!'**
+  String documentUploadSuccess(Object name);
+
+  /// No description provided for @documentDeleteSuccess.
+  ///
+  /// In ro, this message translates to:
+  /// **'{name} a fost șters cu succes!'**
+  String documentDeleteSuccess(Object name);
+
+  /// No description provided for @documentUploadError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la încărcarea documentului: {error}'**
+  String documentUploadError(Object error);
+
+  /// No description provided for @documentDeleteError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la ștergerea documentului: {error}'**
+  String documentDeleteError(Object error);
+
+  /// No description provided for @selectSourceTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Selectează sursa'**
+  String get selectSourceTitle;
+
+  /// No description provided for @selectSourceContent.
+  ///
+  /// In ro, this message translates to:
+  /// **'De unde dorești să selectezi imaginea?'**
+  String get selectSourceContent;
+
+  /// No description provided for @cameraOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cameră'**
+  String get cameraOption;
+
+  /// No description provided for @galleryOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'Galerie'**
+  String get galleryOption;
+
+  /// No description provided for @selectFileTypeTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Selectează tipul fișierului'**
+  String get selectFileTypeTitle;
+
+  /// No description provided for @selectFileTypeContent.
+  ///
+  /// In ro, this message translates to:
+  /// **'Dorești să încarci o imagine sau un document PDF?'**
+  String get selectFileTypeContent;
+
+  /// No description provided for @imageOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'Imagine'**
+  String get imageOption;
+
+  /// No description provided for @pdfOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'PDF'**
+  String get pdfOption;
+
+  /// No description provided for @requiredBadge.
+  ///
+  /// In ro, this message translates to:
+  /// **'Obligatoriu'**
+  String get requiredBadge;
+
+  /// No description provided for @documentUploadedText.
+  ///
+  /// In ro, this message translates to:
+  /// **'Document încărcat cu succes'**
+  String get documentUploadedText;
+
+  /// No description provided for @tapToUploadText.
+  ///
+  /// In ro, this message translates to:
+  /// **'Apasă pentru a încărca documentul'**
+  String get tapToUploadText;
+
+  /// No description provided for @continueBtn.
+  ///
+  /// In ro, this message translates to:
+  /// **'Continuă'**
+  String get continueBtn;
+
+  /// No description provided for @submitApplication.
+  ///
+  /// In ro, this message translates to:
+  /// **'Trimite Aplicația'**
+  String get submitApplication;
+
+  /// No description provided for @backBtn.
+  ///
+  /// In ro, this message translates to:
+  /// **'Înapoi'**
+  String get backBtn;
+
+  /// No description provided for @expiryDateTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Dată expirare'**
+  String get expiryDateTitle;
+
+  /// No description provided for @expiryDateQuestion.
+  ///
+  /// In ro, this message translates to:
+  /// **'Doriți să setați data de expirare pentru "{name}"?'**
+  String expiryDateQuestion(Object name);
+
+  /// No description provided for @skipExpiry.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nu, sari peste'**
+  String get skipExpiry;
+
+  /// No description provided for @photographOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'Fotografiază'**
+  String get photographOption;
+
+  /// No description provided for @selectFromGallery.
+  ///
+  /// In ro, this message translates to:
+  /// **'Selectează din galerie'**
+  String get selectFromGallery;
+
+  /// No description provided for @viewDocumentOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vizualizează'**
+  String get viewDocumentOption;
+
+  /// No description provided for @deleteDocumentOption.
+  ///
+  /// In ro, this message translates to:
+  /// **'Șterge'**
+  String get deleteDocumentOption;
+
+  /// No description provided for @pdfDocument.
+  ///
+  /// In ro, this message translates to:
+  /// **'Document PDF'**
+  String get pdfDocument;
+
+  /// No description provided for @tapToOpen.
+  ///
+  /// In ro, this message translates to:
+  /// **'Apasă pentru a deschide'**
+  String get tapToOpen;
+
+  /// No description provided for @errorLoadingImage.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la încărcarea imaginii'**
+  String get errorLoadingImage;
+
+  /// No description provided for @fileTooLarge.
+  ///
+  /// In ro, this message translates to:
+  /// **'Fișierul este prea mare (max 10MB)'**
+  String get fileTooLarge;
+
+  /// No description provided for @serviceUnavailable.
+  ///
+  /// In ro, this message translates to:
+  /// **'Serviciul nu este disponibil temporar'**
+  String get serviceUnavailable;
+
+  /// No description provided for @connectionError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Problemă de conexiune. Verificați internetul'**
+  String get connectionError;
+
+  /// No description provided for @unexpectedError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare neașteptată. Încercați din nou'**
+  String get unexpectedError;
+
+  /// No description provided for @uploadedAt.
+  ///
+  /// In ro, this message translates to:
+  /// **'Încărcat: {date}'**
+  String uploadedAt(Object date);
+
+  /// No description provided for @selectExpiryDate.
+  ///
+  /// In ro, this message translates to:
+  /// **'Selectați data de expirare'**
+  String get selectExpiryDate;
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/l10n/app_localizations.dart';
 
 class NotificationPreferencesScreen extends StatefulWidget {
   const NotificationPreferencesScreen({super.key});
@@ -58,9 +59,10 @@ class _NotificationPreferencesScreenState
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la încărcarea preferințelor: $e'),
+            content: Text(l10n.notifLoadError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -89,18 +91,20 @@ class _NotificationPreferencesScreenState
       });
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Preferințe salvate cu succes.'),
+          SnackBar(
+            content: Text(l10n.notifSavedSuccess),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la salvare: $e'),
+            content: Text(l10n.notifSaveError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -130,9 +134,10 @@ class _NotificationPreferencesScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Preferințe notificări'),
+        title: Text(l10n.notificationPreferences),
         actions: [
           if (_isSaving)
             const Padding(
@@ -152,47 +157,45 @@ class _NotificationPreferencesScreenState
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                _buildSectionHeader('Curse'),
+                _buildSectionHeader(l10n.notifRideSection),
                 _buildToggleTile(
                   icon: Icons.directions_car_outlined,
-                  title: 'Notificări curse',
-                  subtitle:
-                      'Solicitări noi, cursă acceptată, șofer în apropiere etc.',
+                  title: l10n.notifRideNotifications,
+                  subtitle: l10n.notifRideNotificationsSubtitle,
                   value: _rideNotifications,
                   key: 'rideNotifications',
                 ),
                 const Divider(height: 1),
-                _buildSectionHeader('Comunicare'),
+                _buildSectionHeader(l10n.notifCommunicationSection),
                 _buildToggleTile(
                   icon: Icons.chat_bubble_outline,
-                  title: 'Mesaje chat',
-                  subtitle: 'Notificări pentru mesaje noi din conversații',
+                  title: l10n.notifChatMessages,
+                  subtitle: l10n.notifChatMessagesSubtitle,
                   value: _chatNotifications,
                   key: 'chatNotifications',
                 ),
                 const Divider(height: 1),
-                _buildSectionHeader('Marketing și actualizări'),
+                _buildSectionHeader(l10n.notifMarketingSection),
                 _buildToggleTile(
                   icon: Icons.local_offer_outlined,
-                  title: 'Promoții și oferte',
-                  subtitle: 'Reduceri, coduri promoționale și oferte speciale',
+                  title: l10n.notifPromoOffers,
+                  subtitle: l10n.notifPromoOffersSubtitle,
                   value: _promoNotifications,
                   key: 'promoNotifications',
                 ),
                 _buildToggleTile(
                   icon: Icons.system_update_outlined,
-                  title: 'Actualizări aplicație',
-                  subtitle: 'Noutăți și îmbunătățiri ale aplicației',
+                  title: l10n.notifAppUpdates,
+                  subtitle: l10n.notifAppUpdatesSubtitle,
                   value: _appUpdates,
                   key: 'appUpdates',
                 ),
                 const Divider(height: 1),
-                _buildSectionHeader('Siguranță'),
+                _buildSectionHeader(l10n.notifSafetySection),
                 _buildToggleTile(
                   icon: Icons.shield_outlined,
-                  title: 'Alerte de siguranță',
-                  subtitle:
-                      'Notificări importante legate de siguranța ta în cursă',
+                  title: l10n.notifSafetyAlerts,
+                  subtitle: l10n.notifSafetyAlertsSubtitle,
                   value: _safetyAlerts,
                   key: 'safetyAlerts',
                 ),

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/l10n/app_localizations.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -54,9 +55,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la încărcarea setărilor: $e'),
+            content: Text(l10n.privacyLoadError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -84,18 +86,20 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       });
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Setări de confidențialitate salvate.'),
+          SnackBar(
+            content: Text(l10n.privacySavedSuccess),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la salvare: $e'),
+            content: Text(l10n.privacySaveError(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -123,9 +127,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Confidențialitate'),
+        title: Text(l10n.privacy),
         actions: [
           if (_isSaving)
             const Padding(
@@ -145,40 +150,36 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                _buildSectionHeader('Locație'),
+                _buildSectionHeader(l10n.privacyLocationSection),
                 _buildToggleTile(
                   icon: Icons.location_on_outlined,
-                  title: 'Partajare locație în timp real',
-                  subtitle:
-                      'Permite partajarea locației tale cu șoferul în timpul cursei',
+                  title: l10n.privacyLocationSharing,
+                  subtitle: l10n.privacyLocationSharingSubtitle,
                   value: _locationSharing,
                   key: 'locationSharing',
                 ),
                 const Divider(height: 1),
-                _buildSectionHeader('Profil'),
+                _buildSectionHeader(l10n.privacyProfileSection),
                 _buildToggleTile(
                   icon: Icons.person_outline,
-                  title: 'Vizibilitate profil pentru șoferi',
-                  subtitle:
-                      'Șoferii pot vedea profilul tău (nume, fotografie, rating)',
+                  title: l10n.privacyProfileVisibility,
+                  subtitle: l10n.privacyProfileVisibilitySubtitle,
                   value: _profileVisibility,
                   key: 'profileVisibility',
                 ),
                 _buildToggleTile(
                   icon: Icons.history_outlined,
-                  title: 'Istoricul curselor vizibil',
-                  subtitle:
-                      'Permite afișarea istoricului curselor în profilul tău public',
+                  title: l10n.privacyRideHistoryVisible,
+                  subtitle: l10n.privacyRideHistoryVisibleSubtitle,
                   value: _rideHistoryVisible,
                   key: 'rideHistoryVisible',
                 ),
                 const Divider(height: 1),
-                _buildSectionHeader('Date și analiză'),
+                _buildSectionHeader(l10n.privacyDataSection),
                 _buildToggleTile(
                   icon: Icons.analytics_outlined,
-                  title: 'Date pentru îmbunătățirea serviciului',
-                  subtitle:
-                      'Ajută-ne să îmbunătățim aplicația prin partajarea datelor de utilizare anonime',
+                  title: l10n.privacyAnalyticsConsent,
+                  subtitle: l10n.privacyAnalyticsConsentSubtitle,
                   value: _analyticsConsent,
                   key: 'analyticsConsent',
                 ),
@@ -186,8 +187,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
-                    'Datele tale sunt procesate conform GDPR. '
-                    'Poți solicita exportul sau ștergerea datelor din secțiunea Siguranță și Securitate.',
+                    l10n.privacyGdprNote,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
