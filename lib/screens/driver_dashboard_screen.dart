@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/screens/driver_ride_details_screen.dart';
+import 'package:friendsride_app/screens/driver_daily_report_screen.dart';
 import 'package:friendsride_app/screens/driver_incentives_screen.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
@@ -454,6 +455,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               onTap: _isGeneratingDailyReport ? null : () {
                 Navigator.pop(context);
                 _generateDailyReport();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart, color: Colors.blue),
+              title: const Text('Raport zilnic'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DriverDailyReportScreen(),
+                  ),
+                );
               },
             ),
           ],

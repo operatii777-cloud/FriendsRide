@@ -3346,6 +3346,86 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     }
     return null;
   }
+
+  // ─── Feature: Favorite Drivers ───────────────────────────────────────────
+
+  Future<void> addFavoriteDriver(String driverId) async {
+    if (_uid == null) throw Exception("User not authenticated.");
+    await _db
+        .collection('users')
+        .doc(_uid)
+        .collection('favoriteDrivers')
+        .doc(driverId)
+        .set({'addedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> removeFavoriteDriver(String driverId) async {
+    if (_uid == null) throw Exception("User not authenticated.");
+    await _db
+        .collection('users')
+        .doc(_uid)
+        .collection('favoriteDrivers')
+        .doc(driverId)
+        .delete();
+  }
+
+  Future<bool> isFavoriteDriver(String driverId) async {
+    if (_uid == null) return false;
+    final doc = await _db
+        .collection('users')
+        .doc(_uid)
+        .collection('favoriteDrivers')
+        .doc(driverId)
+        .get();
+    return doc.exists;
+  }
+
+  Stream<List<String>> getFavoriteDriverIds() {
+    if (_uid == null) return Stream.value([]);
+    return _db
+        .collection('users')
+        .doc(_uid)
+        .collection('favoriteDrivers')
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.id).toList());
+  }
+
+  // ─── Feature: Cancellation Fee Check ─────────────────────────────────────
+
+  /// Returns true if the driver was assigned more than 3 minutes ago,
+  /// meaning a 5 RON cancellation fee should apply.
+  Future<bool> getCancellationFeeApplicable(String rideId) async {
+    try {
+      final doc = await _db.collection('ride_requests').doc(rideId).get();
+      if (!doc.exists) return false;
+      final data = doc.data()!;
+      final assignedAt = (data['assignedAt'] as Timestamp?)?.toDate();
+      if (assignedAt == null) return false;
+      return DateTime.now().difference(assignedAt).inMinutes >= 3;
+    } catch (e) {
+      Logger.error('getCancellationFeeApplicable error: $e', error: e);
+      return false;
+    }
+  }
+
+  // ─── Feature: Driver Daily Stats ─────────────────────────────────────────
+
+  /// Returns today's completed rides for the current driver.
+  Stream<List<Ride>> getDriverTodayRides() {
+    if (_uid == null) return Stream.value([]);
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    return _db
+        .collection('ride_requests')
+        .where('driverId', isEqualTo: _uid)
+        .where('status', isEqualTo: 'completed')
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => Ride.fromFirestore(d as DocumentSnapshot<Map<String, dynamic>>))
+            .toList());
+  }
 }
 
 /// DATABASE OPTIMIZATION: Query cache entry with custom TTL

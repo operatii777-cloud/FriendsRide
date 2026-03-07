@@ -2846,7 +2846,47 @@ if (newStaticAnnotations.isNotEmpty) {
 
   Future<void> _handleCancelRide(String rideId, Ride ride) async {
     if (!mounted) return;
-    
+
+    // Check if a 5 RON cancellation fee applies (driver assigned > 3 min ago)
+    final feeApplicable = await _firestoreService.getCancellationFeeApplicable(rideId);
+
+    if (!mounted) return;
+
+    if (feeApplicable && _currentUserId != ride.driverId) {
+      // Show fee warning dialog before the normal cancellation flow
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Taxă de anulare'),
+          content: const Text(
+            'Vei fi taxat cu 5 RON dacă anulezi acum. Ești sigur?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Nu'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Da, anulează', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // Record the cancellation fee on the ride document before cancelling
+      try {
+        await _firestoreService.updateRideFields(rideId, {'cancellationFee': 5.0});
+      } catch (e) {
+        // Non-fatal — proceed with cancellation anyway
+      }
+    }
+
+    if (!mounted) return;
+
     // ✅ ÎMBUNĂTĂȚIT: Folosește CancellationPolicyDialog
     await showDialog<bool>(
       context: context,
