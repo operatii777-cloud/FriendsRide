@@ -10,6 +10,16 @@ class RidePreferences {
   final bool? preferChildSeat; // Preferă scaun pentru copii
   final String? accessibilityNeeds; // Nevoi de accesibilitate
 
+  // ── Câmpuri noi ────────────────────────────────────────────────────────────
+  /// Tipul de vehicul preferat: 'sedan', 'suv', 'van', 'any' (implicit)
+  final String? preferredVehicle;
+
+  /// Preferință AC: 'on', 'off', 'any' (implicit)
+  final String? acPreference;
+
+  /// Note suplimentare pentru șofer (max 200 caractere recomandat)
+  final String? notes;
+
   const RidePreferences({
     this.preferMusic,
     this.musicPreference,
@@ -20,6 +30,9 @@ class RidePreferences {
     this.routePreference,
     this.preferChildSeat,
     this.accessibilityNeeds,
+    this.preferredVehicle,
+    this.acPreference,
+    this.notes,
   });
 
   Map<String, dynamic> toMap() {
@@ -33,6 +46,9 @@ class RidePreferences {
       if (routePreference != null) 'routePreference': routePreference,
       if (preferChildSeat != null) 'preferChildSeat': preferChildSeat,
       if (accessibilityNeeds != null) 'accessibilityNeeds': accessibilityNeeds,
+      if (preferredVehicle != null) 'preferredVehicle': preferredVehicle,
+      if (acPreference != null) 'acPreference': acPreference,
+      if (notes != null) 'notes': notes,
     };
   }
 
@@ -47,6 +63,9 @@ class RidePreferences {
       routePreference: map['routePreference'] as String?,
       preferChildSeat: map['preferChildSeat'] as bool?,
       accessibilityNeeds: map['accessibilityNeeds'] as String?,
+      preferredVehicle: map['preferredVehicle'] as String?,
+      acPreference: map['acPreference'] as String?,
+      notes: map['notes'] as String?,
     );
   }
 
@@ -60,6 +79,9 @@ class RidePreferences {
     String? routePreference,
     bool? preferChildSeat,
     String? accessibilityNeeds,
+    String? preferredVehicle,
+    String? acPreference,
+    String? notes,
   }) {
     return RidePreferences(
       preferMusic: preferMusic ?? this.preferMusic,
@@ -71,6 +93,9 @@ class RidePreferences {
       routePreference: routePreference ?? this.routePreference,
       preferChildSeat: preferChildSeat ?? this.preferChildSeat,
       accessibilityNeeds: accessibilityNeeds ?? this.accessibilityNeeds,
+      preferredVehicle: preferredVehicle ?? this.preferredVehicle,
+      acPreference: acPreference ?? this.acPreference,
+      notes: notes ?? this.notes,
     );
   }
 }

@@ -239,5 +239,128 @@ class DriverIncentivesService {
       Logger.error('Error checking guaranteed earnings', error: e, tag: 'DriverIncentives');
     }
   }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Bonus & Performance API
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /// Returnează toate bonusurile disponibile și câștigate pentru un șofer.
+  ///
+  /// Grupate în: [active] (în curs), [completed] (finalizate cu recompensă),
+  /// [expired] (expirate fără completare).
+  Future<Map<String, List<DriverIncentive>>> getBonuses(String driverId) async {
+    try {
+      final all = await getDriverIncentives(driverId);
+      final now = DateTime.now();
+
+      final active = all.where((i) => i.isActive && !i.isCompleted).toList();
+      final completed = all.where((i) => i.isCompleted).toList();
+      final expired = all.where((i) {
+        return !i.isCompleted && i.endDate.toDate().isBefore(now);
+      }).toList();
+
+      return {
+        'active': active,
+        'completed': completed,
+        'expired': expired,
+      };
+    } catch (e) {
+      Logger.error('getBonuses failed: $e', error: e, tag: 'DriverIncentives');
+      return {'active': [], 'completed': [], 'expired': []};
+    }
+  }
+
+  /// Înregistrează metricile de performanță ale șoferului după o cursă.
+  ///
+  /// Actualizează: acceptanceRate, completionRate, averageRating și
+  /// verifică dacă vreun incentive a fost completat.
+  Future<void> trackPerformance(String driverId, {
+    bool? rideAccepted,
+    bool? rideCompleted,
+    double? ratingGiven,
+  }) async {
+    try {
+      final ref = _db.collection('driver_performance').doc(driverId);
+      final doc = await ref.get();
+
+      final data = doc.exists ? doc.data()! : <String, dynamic>{};
+      int totalOffers = (data['totalOffers'] as num?)?.toInt() ?? 0;
+      int acceptedOffers = (data['acceptedOffers'] as num?)?.toInt() ?? 0;
+      int totalRides = (data['totalRides'] as num?)?.toInt() ?? 0;
+      int completedRides = (data['completedRides'] as num?)?.toInt() ?? 0;
+      double ratingSum = (data['ratingSum'] as num?)?.toDouble() ?? 0.0;
+      int ratingCount = (data['ratingCount'] as num?)?.toInt() ?? 0;
+
+      if (rideAccepted != null) {
+        totalOffers++;
+        if (rideAccepted) acceptedOffers++;
+      }
+
+      if (rideCompleted != null) {
+        totalRides++;
+        if (rideCompleted) completedRides++;
+      }
+
+      if (ratingGiven != null && ratingGiven > 0) {
+        ratingSum += ratingGiven;
+        ratingCount++;
+      }
+
+      final acceptanceRate = totalOffers > 0 ? acceptedOffers / totalOffers : 1.0;
+      final completionRate = totalRides > 0 ? completedRides / totalRides : 1.0;
+      final averageRating = ratingCount > 0 ? ratingSum / ratingCount : 5.0;
+
+      await ref.set({
+        'driverId': driverId,
+        'totalOffers': totalOffers,
+        'acceptedOffers': acceptedOffers,
+        'totalRides': totalRides,
+        'completedRides': completedRides,
+        'ratingSum': ratingSum,
+        'ratingCount': ratingCount,
+        'acceptanceRate': acceptanceRate,
+        'completionRate': completionRate,
+        'averageRating': averageRating,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      Logger.info(
+        'trackPerformance: driver=$driverId acceptance=${(acceptanceRate * 100).toStringAsFixed(1)}% '
+        'completion=${(completionRate * 100).toStringAsFixed(1)}% rating=$averageRating',
+        tag: 'DriverIncentives',
+      );
+
+      // Verifică dacă un incentive de tip achievement trebuie deblocat
+      await _checkAchievementUnlocks(driverId, completedRides, averageRating);
+    } catch (e) {
+      Logger.error('trackPerformance failed: $e', error: e, tag: 'DriverIncentives');
+    }
+  }
+
+  /// Verifică deblocarea achievement-urilor bazate pe performanță
+  Future<void> _checkAchievementUnlocks(
+      String driverId, int completedRides, double averageRating) async {
+    try {
+      final achievementIncentives = await _db
+          .collection('driver_incentives')
+          .where('driverId', isEqualTo: driverId)
+          .where('type', isEqualTo: 'achievement')
+          .where('isCompleted', isEqualTo: false)
+          .get();
+
+      for (final doc in achievementIncentives.docs) {
+        final incentive = DriverIncentive.fromMap({'id': doc.id, ...doc.data()});
+        if (incentive.targetRides != null && completedRides >= incentive.targetRides!) {
+          await completeIncentive(incentive.id, driverId, incentive.reward);
+          Logger.info(
+            'Achievement unlocked: ${incentive.title} for driver $driverId',
+            tag: 'DriverIncentives',
+          );
+        }
+      }
+    } catch (e) {
+      Logger.error('_checkAchievementUnlocks failed: $e', error: e, tag: 'DriverIncentives');
+    }
+  }
 }
 

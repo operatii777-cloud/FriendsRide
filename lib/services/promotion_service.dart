@@ -209,5 +209,85 @@ class PromotionService {
       return [];
     }
   }
+
+  /// Validează un cod promoțional fără a-l aplica.
+  /// Returnează [true] și mesaj de succes dacă codul este valid și activ,
+  /// sau [false] și mesaj de eroare în caz contrar.
+  Future<Map<String, dynamic>> validatePromoCode({
+    required String code,
+    String? category,
+  }) async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) {
+        return {'valid': false, 'message': 'Utilizatorul nu este autentificat'};
+      }
+
+      final snapshot = await _db
+          .collection('promotions')
+          .where('code', isEqualTo: code.toUpperCase())
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return {'valid': false, 'message': 'Cod promoțional inexistent'};
+      }
+
+      final docData = snapshot.docs.first.data();
+      final promotion = Promotion.fromMap({'id': snapshot.docs.first.id, ...docData});
+
+      if (!promotion.isValid) {
+        return {'valid': false, 'message': 'Cod expirat sau inactiv'};
+      }
+
+      if (promotion.applicableCategories != null &&
+          category != null &&
+          !promotion.applicableCategories!.contains(category)) {
+        return {'valid': false, 'message': 'Codul nu este aplicabil pentru această categorie'};
+      }
+
+      if (promotion.maxUses != null) {
+        final usesCount = await _getPromotionUsesCount(promotion.id);
+        if (usesCount >= promotion.maxUses!) {
+          return {'valid': false, 'message': 'Cod promoțional epuizat'};
+        }
+      }
+
+      if (promotion.maxUsesPerUser != null) {
+        final userUsesCount = await _getUserPromotionUsesCount(userId, promotion.id);
+        if (userUsesCount >= promotion.maxUsesPerUser!) {
+          return {
+            'valid': false,
+            'message': 'Ai folosit deja acest cod de ${promotion.maxUsesPerUser} ori'
+          };
+        }
+      }
+
+      return {
+        'valid': true,
+        'message': 'Cod valid: ${promotion.title}',
+        'promotion': promotion,
+      };
+    } catch (e) {
+      Logger.error('Error validating promo code', error: e, tag: 'PromotionService');
+      return {'valid': false, 'message': 'Eroare la validarea codului'};
+    }
+  }
+
+  /// Aplică direct un cod promoțional la o sumă dată și returnează
+  /// suma finală după discount. Salvează utilizarea în Firestore.
+  Future<Map<String, dynamic>> applyPromotion({
+    required String code,
+    required double rideAmount,
+    String? category,
+    bool isFirstRide = false,
+  }) async {
+    return validateAndApplyPromotion(
+      code: code,
+      rideAmount: rideAmount,
+      category: category,
+      isFirstRide: isFirstRide,
+    );
+  }
 }
 
