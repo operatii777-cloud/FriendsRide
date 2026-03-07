@@ -20,6 +20,9 @@ class RidePreferences {
   /// Note suplimentare pentru șofer (max 200 caractere recomandat)
   final String? notes;
 
+  /// Preferință șofer de gen feminin (pentru siguranță)
+  final bool? preferFemaleDriver;
+
   const RidePreferences({
     this.preferMusic,
     this.musicPreference,
@@ -33,6 +36,7 @@ class RidePreferences {
     this.preferredVehicle,
     this.acPreference,
     this.notes,
+    this.preferFemaleDriver,
   });
 
   Map<String, dynamic> toMap() {
@@ -49,6 +53,7 @@ class RidePreferences {
       if (preferredVehicle != null) 'preferredVehicle': preferredVehicle,
       if (acPreference != null) 'acPreference': acPreference,
       if (notes != null) 'notes': notes,
+      if (preferFemaleDriver != null) 'preferFemaleDriver': preferFemaleDriver,
     };
   }
 
@@ -66,6 +71,7 @@ class RidePreferences {
       preferredVehicle: map['preferredVehicle'] as String?,
       acPreference: map['acPreference'] as String?,
       notes: map['notes'] as String?,
+      preferFemaleDriver: map['preferFemaleDriver'] as bool?,
     );
   }
 
@@ -82,6 +88,7 @@ class RidePreferences {
     String? preferredVehicle,
     String? acPreference,
     String? notes,
+    bool? preferFemaleDriver,
   }) {
     return RidePreferences(
       preferMusic: preferMusic ?? this.preferMusic,
@@ -96,6 +103,7 @@ class RidePreferences {
       preferredVehicle: preferredVehicle ?? this.preferredVehicle,
       acPreference: acPreference ?? this.acPreference,
       notes: notes ?? this.notes,
+      preferFemaleDriver: preferFemaleDriver ?? this.preferFemaleDriver,
     );
   }
 }

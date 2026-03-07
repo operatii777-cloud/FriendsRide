@@ -229,6 +229,23 @@ class _RidePreferencesWidgetState extends State<RidePreferencesWidget> {
               },
             ),
           ),
+
+          const SizedBox(height: 16),
+
+          // Feature: Women-only rides — prefer female driver toggle
+          _buildPreferenceSwitch(
+            'Prefer șofer de gen feminin',
+            _preferences.preferFemaleDriver ?? false,
+            (value) {
+              setState(() {
+                _preferences = _preferences.copyWith(
+                  preferFemaleDriver: value ? true : null,
+                );
+              });
+              widget.onPreferencesChanged(_preferences);
+            },
+            Icons.female,
+          ),
         ],
       ),
     );

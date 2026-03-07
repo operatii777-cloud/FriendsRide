@@ -935,12 +935,17 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
       }
       
       // Execută imediat, nu prin batch pentru a asigura actualizarea instantanee
+      // Feature: Pickup code — generate a 4-digit code for passenger verification
+      // Uses Random.secure() for cryptographic security
+      final secureRandom = math.Random.secure();
+      final pickupCode = (1000 + secureRandom.nextInt(9000)).toString();
       final updateData = {
         'status': 'driver_found',
         'driverId': _uid,
         'acceptedAt': FieldValue.serverTimestamp(),
         'driverAcceptanceStatus': 'accepted',
         'driverAcceptanceUpdatedAt': FieldValue.serverTimestamp(),
+        'pickupCode': pickupCode,
       };
       
       Logger.debug('Updating ride with data: $updateData', tag: 'DRIVER');
@@ -1614,6 +1619,12 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
     });
   }
 
+  Future<Ride?> getRideById(String rideId) async {
+    final doc = await _db.collection('ride_requests').doc(rideId).get();
+    if (!doc.exists) return null;
+    return Ride.fromFirestore(doc);
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> getNearbyAvailableDrivers() {
     return _db.collection('driver_locations').snapshots();
   }
@@ -1652,9 +1663,76 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
           'lastUpdate': Timestamp.now(),
         });
       }
+      // Feature: Driver hours limit — record session start when going online
+      await _db.collection('users').doc(_uid).set({
+        'driverSessionStartedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } else {
       await _db.collection('driver_locations').doc(_uid).delete();
+      // Clear session start time when going offline
+      await _db.collection('users').doc(_uid).set({
+        'driverSessionStartedAt': null,
+      }, SetOptions(merge: true));
     }
+  }
+
+  /// Feature: Wait time fee — marks driver has arrived and starts wait timer.
+  Future<void> markDriverArrived(String rideId) async {
+    if (_uid == null) throw Exception("Driver not authenticated.");
+    await _db.collection('ride_requests').doc(rideId).update({
+      'status': 'arrived',
+      'waitStartedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Feature: Wait time fee — finalizes wait time fee when ride starts.
+  Future<double> finalizeWaitTimeFee(String rideId) async {
+    final rideDoc = await _db.collection('ride_requests').doc(rideId).get();
+    if (!rideDoc.exists) return 0.0;
+
+    final data = rideDoc.data()!;
+    final waitStartedAt = (data['waitStartedAt'] as Timestamp?)?.toDate();
+    if (waitStartedAt == null) return 0.0;
+
+    final fee = PricingService.calculateWaitTimeFee(waitStartedAt);
+    if (fee > 0) {
+      await _db.collection('ride_requests').doc(rideId).update({
+        'waitTimeFee': fee,
+      });
+    }
+    return fee;
+  }
+
+  /// Feature: Driver hours limit — gets how many hours the current driver has been online this session.
+  Future<double> getDriverSessionHours() async {
+    if (_uid == null) return 0.0;
+    final doc = await _db.collection('users').doc(_uid).get();
+    if (!doc.exists) return 0.0;
+    final sessionStart = (doc.data()?['driverSessionStartedAt'] as Timestamp?)?.toDate();
+    if (sessionStart == null) return 0.0;
+    return DateTime.now().difference(sessionStart).inMinutes / 60.0;
+  }
+
+  /// Feature: Selfie verification — uploads selfie and sets status to pending.
+  Future<void> submitSelfieVerification(File selfieFile) async {
+    if (_uid == null) throw Exception("User not authenticated.");
+    final ref = _storage.ref().child('selfie_verification/$_uid/selfie.jpg');
+    await ref.putFile(selfieFile);
+    final url = await ref.getDownloadURL();
+    await _db.collection('users').doc(_uid).set({
+      'selfieVerificationStatus': 'pending',
+      'selfieImageUrl': url,
+      'selfieSubmittedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Feature: Women-only rides — returns true if the given driver has registered
+  /// their gender as female. Used during driver matching when a passenger has
+  /// enabled the `preferFemaleDriver` preference in their ride request.
+  Future<bool> isDriverFemale(String driverId) async {
+    final doc = await _db.collection('users').doc(driverId).get();
+    if (!doc.exists) return false;
+    return doc.data()?['gender'] == 'female';
   }
 
   Future<bool> getDriverAvailability() async {

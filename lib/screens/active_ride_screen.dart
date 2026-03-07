@@ -1714,25 +1714,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
   }
 
   String? _buildLiveLocationUrl() {
-    double? lat;
-    double? lng;
-
-    if (_currentDriverLocation != null) {
-      lat = _currentDriverLocation!.coordinates.lat.toDouble();
-      lng = _currentDriverLocation!.coordinates.lng.toDouble();
-    } else if (_passengerLocation != null) {
-      lat = _passengerLocation!.coordinates.lat.toDouble();
-      lng = _passengerLocation!.coordinates.lng.toDouble();
-    } else if (_destinationLocation != null) {
-      lat = _destinationLocation!.coordinates.lat.toDouble();
-      lng = _destinationLocation!.coordinates.lng.toDouble();
-    }
-
-    if (lat == null || lng == null) {
-      return null;
-    }
-
-    return 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    // Feature: Share trip (live link) — use FriendsRide tracking URL with ride ID
+    // This link allows recipients to follow the real-time progress of the ride
+    return 'https://friendsride.app/track/${widget.rideId}';
   }
 
   String _buildShareMessage(Ride? ride, String? liveUrl) {
@@ -1745,7 +1729,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> with TickerProvider
     }
 
     if (liveUrl != null) {
-      buffer.write('\n🛰️ Poți urmări locația aici: $liveUrl');
+      buffer.write('\n🛰️ Urmărește cursa live: $liveUrl');
     }
 
     buffer.write(
