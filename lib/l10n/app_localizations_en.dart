@@ -3218,4 +3218,443 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get assistantStatusOverlayHelpNote =>
       'Note: The indicator updates automatically when you start or stop voice interaction with AI.';
+
+  @override
+  String get securityAndSafety => 'Security & Safety';
+
+  @override
+  String get changePasswordSubtitle => 'Change your account password';
+
+  @override
+  String get sessions => 'Sessions';
+
+  @override
+  String get logoutAllDevices => 'Log out from all devices';
+
+  @override
+  String get logoutAllDevicesSubtitle => 'Sign out from all connected devices';
+
+  @override
+  String get dangerZone => 'Danger zone';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountSubtitle => 'Permanently delete account and all associated data';
+
+  @override
+  String get confirmLogoutAllDevicesTitle => 'Log out from all devices';
+
+  @override
+  String get confirmLogoutAllDevicesContent => 'You will be logged out from all devices, including the current one. You will need to sign in again.';
+
+  @override
+  String get disconnect => 'Disconnect';
+
+  @override
+  String get permanentDeleteAccount => 'Permanently delete account';
+
+  @override
+  String get attention => 'Warning! This action is irreversible.';
+
+  @override
+  String get willBeDeletedTitle => 'The following will be permanently deleted:';
+
+  @override
+  String get willBeDeletedProfile => '• Your profile';
+
+  @override
+  String get willBeDeletedRideHistory => '• Ride history';
+
+  @override
+  String get willBeDeletedData => '• All associated account data';
+
+  @override
+  String get accountPassword => 'Account password';
+
+  @override
+  String get enterPasswordConfirm => 'Enter your password to confirm.';
+
+  @override
+  String get deleteAccountButton => 'Delete account';
+
+  @override
+  String errorPrefix(Object error) => 'Error: $error';
+
+  @override
+  String get notificationPreferences => 'Notification Preferences';
+
+  @override
+  String get notifRideSection => 'Rides';
+
+  @override
+  String get notifRideNotifications => 'Ride notifications';
+
+  @override
+  String get notifRideNotificationsSubtitle => 'New requests, ride accepted, driver nearby, etc.';
+
+  @override
+  String get notifCommunicationSection => 'Communication';
+
+  @override
+  String get notifChatMessages => 'Chat messages';
+
+  @override
+  String get notifChatMessagesSubtitle => 'Notifications for new messages in conversations';
+
+  @override
+  String get notifMarketingSection => 'Marketing and updates';
+
+  @override
+  String get notifPromoOffers => 'Promotions and offers';
+
+  @override
+  String get notifPromoOffersSubtitle => 'Discounts, promo codes and special offers';
+
+  @override
+  String get notifAppUpdates => 'App updates';
+
+  @override
+  String get notifAppUpdatesSubtitle => 'News and improvements to the app';
+
+  @override
+  String get notifSafetySection => 'Safety';
+
+  @override
+  String get notifSafetyAlerts => 'Safety alerts';
+
+  @override
+  String get notifSafetyAlertsSubtitle => 'Important notifications related to your safety during a ride';
+
+  @override
+  String get notifSavedSuccess => 'Preferences saved successfully.';
+
+  @override
+  String notifLoadError(Object error) => 'Error loading preferences: $error';
+
+  @override
+  String notifSaveError(Object error) => 'Error saving: $error';
+
+  @override
+  String get privacyLocationSection => 'Location';
+
+  @override
+  String get privacyLocationSharing => 'Real-time location sharing';
+
+  @override
+  String get privacyLocationSharingSubtitle => 'Allow sharing your location with the driver during a ride';
+
+  @override
+  String get privacyProfileSection => 'Profile';
+
+  @override
+  String get privacyProfileVisibility => 'Profile visibility for drivers';
+
+  @override
+  String get privacyProfileVisibilitySubtitle => 'Drivers can see your profile (name, photo, rating)';
+
+  @override
+  String get privacyRideHistoryVisible => 'Ride history visible';
+
+  @override
+  String get privacyRideHistoryVisibleSubtitle => 'Allow displaying ride history in your public profile';
+
+  @override
+  String get privacyDataSection => 'Data and analytics';
+
+  @override
+  String get privacyAnalyticsConsent => 'Data for service improvement';
+
+  @override
+  String get privacyAnalyticsConsentSubtitle => 'Help us improve the app by sharing anonymous usage data';
+
+  @override
+  String get privacyGdprNote => 'Your data is processed in accordance with GDPR. You can request data export or deletion from the Security & Safety section.';
+
+  @override
+  String get privacySavedSuccess => 'Privacy settings saved.';
+
+  @override
+  String privacyLoadError(Object error) => 'Error loading settings: $error';
+
+  @override
+  String privacySaveError(Object error) => 'Error saving: $error';
+
+  @override
+  String get adminDocumentReview => 'Driver Document Review';
+
+  @override
+  String get noPendingApplications => 'No pending applications.';
+
+  @override
+  String get unknownApplicant => 'Unknown applicant';
+
+  @override
+  String statusLabel(Object status) => 'Status: $status';
+
+  @override
+  String get missingRequired => 'Missing (required)';
+
+  @override
+  String get missing => 'Missing';
+
+  @override
+  String rejectDocumentTitle(Object name) => 'Reject: $name';
+
+  @override
+  String get rejectReason => 'Rejection reason';
+
+  @override
+  String get rejectionHint => 'e.g. Blurry image, expired document';
+
+  @override
+  String documentApproved(Object name) => '✅ $name approved';
+
+  @override
+  String documentRejected(Object name) => '❌ $name rejected';
+
+  @override
+  String get activateDriver => 'Activate Driver';
+
+  @override
+  String get driverActivatedTitle => 'Driver Activated ✅';
+
+  @override
+  String driverActivatedContent(Object name) => '$name has been activated successfully.';
+
+  @override
+  String get accessCodeLabel => 'Access code:';
+
+  @override
+  String get accessCodeGenerated => 'Generated access code:';
+
+  @override
+  String get sendCodeToDriver => 'Please send this code to the driver.';
+
+  @override
+  String activationError(Object error) => 'Activation error: $error';
+
+  @override
+  String get approveTooltip => 'Approve';
+
+  @override
+  String get rejectTooltip => 'Reject';
+
+  @override
+  String rejectionReasonLabel(Object reason) => 'Reason: $reason';
+
+  @override
+  String get statusSubmitted => 'Submitted';
+
+  @override
+  String get statusUnderReview => 'Under Review';
+
+  @override
+  String get statusApproved => 'Approved';
+
+  @override
+  String get statusActivated => 'Activated';
+
+  @override
+  String get statusRejected => 'Rejected';
+
+  @override
+  String get docStatusApproved => 'Approved';
+
+  @override
+  String get docStatusRejected => 'Rejected';
+
+  @override
+  String get docStatusPending => 'Pending';
+
+  @override
+  String docExpiresOn(Object date) => 'Expires: $date';
+
+  @override
+  String docExpiredLabel(Object date) => 'EXPIRED ($date)';
+
+  @override
+  String docExpiringSoonLabel(Object date) => 'Expiring soon ($date)';
+
+  @override
+  String get bePartnerDriver => 'Become a Partner Driver';
+
+  @override
+  String get applicationProgress => 'Application progress';
+
+  @override
+  String get applicationComplete => 'Application is complete and can be submitted!';
+
+  @override
+  String get applicationIncomplete => 'Complete the information and documents to continue';
+
+  @override
+  String get accountActivated => 'Account Activated 🎉';
+
+  @override
+  String accessCodeGeneratedAt(Object date) => 'Generated at: $date';
+
+  @override
+  String get personalInfoStep => 'Personal Information';
+
+  @override
+  String get vehicleInfoStep => 'Vehicle Information';
+
+  @override
+  String get finalDocumentsStep => 'Final Documents';
+
+  @override
+  String get fullNameLabel => 'Full Name *';
+
+  @override
+  String get ageLabel => 'Age *';
+
+  @override
+  String get carBrandLabel => 'Make *';
+
+  @override
+  String get carModelLabel => 'Model *';
+
+  @override
+  String get carColorLabel => 'Color *';
+
+  @override
+  String get carYearLabel => 'Year *';
+
+  @override
+  String get licensePlateLabel => 'License Plate *';
+
+  @override
+  String get bankAccountLabel => 'Bank Account (IBAN)';
+
+  @override
+  String get importantInfoTitle => 'Important information';
+
+  @override
+  String get applicationConfirmationText => 'By submitting the application, you confirm that:
+• All provided information is accurate
+• You agree to the Terms and Conditions
+• You accept document verification
+• You are at least 21 years old';
+
+  @override
+  String get applicationIncompleteWarning => 'Please complete all required fields and upload the necessary documents before submitting the application.';
+
+  @override
+  String get applicationSubmitSuccess => 'Application submitted successfully for review!';
+
+  @override
+  String applicationLoadError(Object error) => 'Error loading data: $error';
+
+  @override
+  String applicationSaveError(Object error) => 'Error saving data: $error';
+
+  @override
+  String applicationSubmitError(Object error) => 'Error submitting application: $error';
+
+  @override
+  String documentUploadSuccess(Object name) => '$name uploaded successfully!';
+
+  @override
+  String documentDeleteSuccess(Object name) => '$name deleted successfully!';
+
+  @override
+  String documentUploadError(Object error) => 'Error uploading document: $error';
+
+  @override
+  String documentDeleteError(Object error) => 'Error deleting document: $error';
+
+  @override
+  String get selectSourceTitle => 'Select source';
+
+  @override
+  String get selectSourceContent => 'Where would you like to select the image from?';
+
+  @override
+  String get cameraOption => 'Camera';
+
+  @override
+  String get galleryOption => 'Gallery';
+
+  @override
+  String get selectFileTypeTitle => 'Select file type';
+
+  @override
+  String get selectFileTypeContent => 'Would you like to upload an image or a PDF document?';
+
+  @override
+  String get imageOption => 'Image';
+
+  @override
+  String get pdfOption => 'PDF';
+
+  @override
+  String get requiredBadge => 'Required';
+
+  @override
+  String get documentUploadedText => 'Document uploaded successfully';
+
+  @override
+  String get tapToUploadText => 'Tap to upload the document';
+
+  @override
+  String get continueBtn => 'Continue';
+
+  @override
+  String get submitApplication => 'Submit Application';
+
+  @override
+  String get backBtn => 'Back';
+
+  @override
+  String get expiryDateTitle => 'Expiry date';
+
+  @override
+  String expiryDateQuestion(Object name) => 'Would you like to set an expiry date for "$name"?';
+
+  @override
+  String get skipExpiry => 'No, skip';
+
+  @override
+  String get photographOption => 'Take photo';
+
+  @override
+  String get selectFromGallery => 'Select from gallery';
+
+  @override
+  String get viewDocumentOption => 'View';
+
+  @override
+  String get deleteDocumentOption => 'Delete';
+
+  @override
+  String get pdfDocument => 'PDF Document';
+
+  @override
+  String get tapToOpen => 'Tap to open';
+
+  @override
+  String get errorLoadingImage => 'Error loading image';
+
+  @override
+  String get fileTooLarge => 'File is too large (max 10MB)';
+
+  @override
+  String get serviceUnavailable => 'Service temporarily unavailable';
+
+  @override
+  String get connectionError => 'Connection problem. Please check your internet';
+
+  @override
+  String get unexpectedError => 'Unexpected error. Please try again';
+
+  @override
+  String uploadedAt(Object date) => 'Uploaded: $date';
+
+  @override
+  String get selectExpiryDate => 'Select expiry date';
+
+  @override
+  String get yes => 'Yes';
 }

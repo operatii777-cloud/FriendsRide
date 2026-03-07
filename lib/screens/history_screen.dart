@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/screens/ride_details_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
+import 'package:friendsride_app/widgets/favorite_driver_button.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 
@@ -235,6 +236,8 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
                         fontSize: 16
                       )
                     ),
+                    if (!isDriver && ride.driverId != null && ride.driverId!.isNotEmpty)
+                      FavoriteDriverButton(driverId: ride.driverId!),
                     if (!isDriver) // Doar pasagerii pot șterge
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.grey),

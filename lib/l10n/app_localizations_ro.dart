@@ -3261,4 +3261,443 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get assistantStatusOverlayHelpNote =>
       'Notă: Indicatorul se actualizează automat când pornești sau oprești interacțiunea vocală cu AI-ul.';
+
+  @override
+  String get securityAndSafety => 'Siguranță și Securitate';
+
+  @override
+  String get changePasswordSubtitle => 'Modifică parola contului tău';
+
+  @override
+  String get sessions => 'Sesiuni';
+
+  @override
+  String get logoutAllDevices => 'Deconectare de pe toate dispozitivele';
+
+  @override
+  String get logoutAllDevicesSubtitle => 'Ieșire din cont pe toate dispozitivele conectate';
+
+  @override
+  String get dangerZone => 'Zonă periculoasă';
+
+  @override
+  String get deleteAccount => 'Ștergere cont';
+
+  @override
+  String get deleteAccountSubtitle => 'Șterge permanent contul și toate datele asociate';
+
+  @override
+  String get confirmLogoutAllDevicesTitle => 'Deconectare de pe toate dispozitivele';
+
+  @override
+  String get confirmLogoutAllDevicesContent => 'Vei fi deconectat de pe toate dispozitivele, inclusiv cel curent. Va trebui să te autentifici din nou.';
+
+  @override
+  String get disconnect => 'Deconectează';
+
+  @override
+  String get permanentDeleteAccount => 'Ștergere cont permanent';
+
+  @override
+  String get attention => 'Atenție! Această acțiune este ireversibilă.';
+
+  @override
+  String get willBeDeletedTitle => 'Vor fi șterse definitiv:';
+
+  @override
+  String get willBeDeletedProfile => '• Profilul tău';
+
+  @override
+  String get willBeDeletedRideHistory => '• Istoricul curselor';
+
+  @override
+  String get willBeDeletedData => '• Toate datele asociate contului';
+
+  @override
+  String get accountPassword => 'Parola contului';
+
+  @override
+  String get enterPasswordConfirm => 'Introduceți parola pentru confirmare.';
+
+  @override
+  String get deleteAccountButton => 'Ștergere cont';
+
+  @override
+  String errorPrefix(Object error) => 'Eroare: $error';
+
+  @override
+  String get notificationPreferences => 'Preferințe notificări';
+
+  @override
+  String get notifRideSection => 'Curse';
+
+  @override
+  String get notifRideNotifications => 'Notificări curse';
+
+  @override
+  String get notifRideNotificationsSubtitle => 'Solicitări noi, cursă acceptată, șofer în apropiere etc.';
+
+  @override
+  String get notifCommunicationSection => 'Comunicare';
+
+  @override
+  String get notifChatMessages => 'Mesaje chat';
+
+  @override
+  String get notifChatMessagesSubtitle => 'Notificări pentru mesaje noi din conversații';
+
+  @override
+  String get notifMarketingSection => 'Marketing și actualizări';
+
+  @override
+  String get notifPromoOffers => 'Promoții și oferte';
+
+  @override
+  String get notifPromoOffersSubtitle => 'Reduceri, coduri promoționale și oferte speciale';
+
+  @override
+  String get notifAppUpdates => 'Actualizări aplicație';
+
+  @override
+  String get notifAppUpdatesSubtitle => 'Noutăți și îmbunătățiri ale aplicației';
+
+  @override
+  String get notifSafetySection => 'Siguranță';
+
+  @override
+  String get notifSafetyAlerts => 'Alerte de siguranță';
+
+  @override
+  String get notifSafetyAlertsSubtitle => 'Notificări importante legate de siguranța ta în cursă';
+
+  @override
+  String get notifSavedSuccess => 'Preferințe salvate cu succes.';
+
+  @override
+  String notifLoadError(Object error) => 'Eroare la încărcarea preferințelor: $error';
+
+  @override
+  String notifSaveError(Object error) => 'Eroare la salvare: $error';
+
+  @override
+  String get privacyLocationSection => 'Locație';
+
+  @override
+  String get privacyLocationSharing => 'Partajare locație în timp real';
+
+  @override
+  String get privacyLocationSharingSubtitle => 'Permite partajarea locației tale cu șoferul în timpul cursei';
+
+  @override
+  String get privacyProfileSection => 'Profil';
+
+  @override
+  String get privacyProfileVisibility => 'Vizibilitate profil pentru șoferi';
+
+  @override
+  String get privacyProfileVisibilitySubtitle => 'Șoferii pot vedea profilul tău (nume, fotografie, rating)';
+
+  @override
+  String get privacyRideHistoryVisible => 'Istoricul curselor vizibil';
+
+  @override
+  String get privacyRideHistoryVisibleSubtitle => 'Permite afișarea istoricului curselor în profilul tău public';
+
+  @override
+  String get privacyDataSection => 'Date și analiză';
+
+  @override
+  String get privacyAnalyticsConsent => 'Date pentru îmbunătățirea serviciului';
+
+  @override
+  String get privacyAnalyticsConsentSubtitle => 'Ajută-ne să îmbunătățim aplicația prin partajarea datelor de utilizare anonime';
+
+  @override
+  String get privacyGdprNote => 'Datele tale sunt procesate conform GDPR. Poți solicita exportul sau ștergerea datelor din secțiunea Siguranță și Securitate.';
+
+  @override
+  String get privacySavedSuccess => 'Setări de confidențialitate salvate.';
+
+  @override
+  String privacyLoadError(Object error) => 'Eroare la încărcarea setărilor: $error';
+
+  @override
+  String privacySaveError(Object error) => 'Eroare la salvare: $error';
+
+  @override
+  String get adminDocumentReview => 'Verificare Documente Șoferi';
+
+  @override
+  String get noPendingApplications => 'Nu există aplicații în așteptare.';
+
+  @override
+  String get unknownApplicant => 'Aplicant necunoscut';
+
+  @override
+  String statusLabel(Object status) => 'Status: $status';
+
+  @override
+  String get missingRequired => 'Lipsă (obligatoriu)';
+
+  @override
+  String get missing => 'Lipsă';
+
+  @override
+  String rejectDocumentTitle(Object name) => 'Respinge: $name';
+
+  @override
+  String get rejectReason => 'Motiv respingere';
+
+  @override
+  String get rejectionHint => 'ex. Imagine neclară, document expirat';
+
+  @override
+  String documentApproved(Object name) => '✅ $name aprobat';
+
+  @override
+  String documentRejected(Object name) => '❌ $name respins';
+
+  @override
+  String get activateDriver => 'Activează Șofer';
+
+  @override
+  String get driverActivatedTitle => 'Șofer Activat ✅';
+
+  @override
+  String driverActivatedContent(Object name) => '$name a fost activat cu succes.';
+
+  @override
+  String get accessCodeLabel => 'Cod de acces:';
+
+  @override
+  String get accessCodeGenerated => 'Cod de acces generat:';
+
+  @override
+  String get sendCodeToDriver => 'Transmiteți acest cod șoferului.';
+
+  @override
+  String activationError(Object error) => 'Eroare la activare: $error';
+
+  @override
+  String get approveTooltip => 'Aprobă';
+
+  @override
+  String get rejectTooltip => 'Respinge';
+
+  @override
+  String rejectionReasonLabel(Object reason) => 'Motiv: $reason';
+
+  @override
+  String get statusSubmitted => 'Trimis';
+
+  @override
+  String get statusUnderReview => 'În revizuire';
+
+  @override
+  String get statusApproved => 'Aprobat';
+
+  @override
+  String get statusActivated => 'Activat';
+
+  @override
+  String get statusRejected => 'Respins';
+
+  @override
+  String get docStatusApproved => 'Aprobat';
+
+  @override
+  String get docStatusRejected => 'Respins';
+
+  @override
+  String get docStatusPending => 'În așteptare';
+
+  @override
+  String docExpiresOn(Object date) => 'Expiră: $date';
+
+  @override
+  String docExpiredLabel(Object date) => 'EXPIRAT ($date)';
+
+  @override
+  String docExpiringSoonLabel(Object date) => 'Expiră în curând ($date)';
+
+  @override
+  String get bePartnerDriver => 'Devino Șofer Partener';
+
+  @override
+  String get applicationProgress => 'Progres aplicație';
+
+  @override
+  String get applicationComplete => 'Aplicația este completă și poate fi trimisă!';
+
+  @override
+  String get applicationIncomplete => 'Completați informațiile și documentele pentru a continua';
+
+  @override
+  String get accountActivated => 'Cont Activat 🎉';
+
+  @override
+  String accessCodeGeneratedAt(Object date) => 'Generat la: $date';
+
+  @override
+  String get personalInfoStep => 'Informații Personale';
+
+  @override
+  String get vehicleInfoStep => 'Informații Autovehicul';
+
+  @override
+  String get finalDocumentsStep => 'Documente Finale';
+
+  @override
+  String get fullNameLabel => 'Nume Complet *';
+
+  @override
+  String get ageLabel => 'Vârstă *';
+
+  @override
+  String get carBrandLabel => 'Marcă *';
+
+  @override
+  String get carModelLabel => 'Model *';
+
+  @override
+  String get carColorLabel => 'Culoare *';
+
+  @override
+  String get carYearLabel => 'An Fabricație *';
+
+  @override
+  String get licensePlateLabel => 'Număr Înmatriculare *';
+
+  @override
+  String get bankAccountLabel => 'Cont Bancar (IBAN)';
+
+  @override
+  String get importantInfoTitle => 'Informații importante';
+
+  @override
+  String get applicationConfirmationText => 'Prin trimiterea aplicației, confirmați că:
+• Toate informațiile furnizate sunt corecte
+• Sunteți de acord cu Termenii și Condițiile
+• Acceptați verificarea documentelor
+• Aveți cel puțin 21 de ani împliniți';
+
+  @override
+  String get applicationIncompleteWarning => 'Vă rugăm să completați toate câmpurile obligatorii și să încărcați documentele necesare înainte de a trimite aplicația.';
+
+  @override
+  String get applicationSubmitSuccess => 'Aplicația a fost trimisă cu succes pentru verificare!';
+
+  @override
+  String applicationLoadError(Object error) => 'Eroare la încărcarea datelor: $error';
+
+  @override
+  String applicationSaveError(Object error) => 'Eroare la salvarea datelor: $error';
+
+  @override
+  String applicationSubmitError(Object error) => 'Eroare la trimiterea aplicației: $error';
+
+  @override
+  String documentUploadSuccess(Object name) => '$name a fost încărcat cu succes!';
+
+  @override
+  String documentDeleteSuccess(Object name) => '$name a fost șters cu succes!';
+
+  @override
+  String documentUploadError(Object error) => 'Eroare la încărcarea documentului: $error';
+
+  @override
+  String documentDeleteError(Object error) => 'Eroare la ștergerea documentului: $error';
+
+  @override
+  String get selectSourceTitle => 'Selectează sursa';
+
+  @override
+  String get selectSourceContent => 'De unde dorești să selectezi imaginea?';
+
+  @override
+  String get cameraOption => 'Cameră';
+
+  @override
+  String get galleryOption => 'Galerie';
+
+  @override
+  String get selectFileTypeTitle => 'Selectează tipul fișierului';
+
+  @override
+  String get selectFileTypeContent => 'Dorești să încarci o imagine sau un document PDF?';
+
+  @override
+  String get imageOption => 'Imagine';
+
+  @override
+  String get pdfOption => 'PDF';
+
+  @override
+  String get requiredBadge => 'Obligatoriu';
+
+  @override
+  String get documentUploadedText => 'Document încărcat cu succes';
+
+  @override
+  String get tapToUploadText => 'Apasă pentru a încărca documentul';
+
+  @override
+  String get continueBtn => 'Continuă';
+
+  @override
+  String get submitApplication => 'Trimite Aplicația';
+
+  @override
+  String get backBtn => 'Înapoi';
+
+  @override
+  String get expiryDateTitle => 'Dată expirare';
+
+  @override
+  String expiryDateQuestion(Object name) => 'Doriți să setați data de expirare pentru "$name"?';
+
+  @override
+  String get skipExpiry => 'Nu, sari peste';
+
+  @override
+  String get photographOption => 'Fotografiază';
+
+  @override
+  String get selectFromGallery => 'Selectează din galerie';
+
+  @override
+  String get viewDocumentOption => 'Vizualizează';
+
+  @override
+  String get deleteDocumentOption => 'Șterge';
+
+  @override
+  String get pdfDocument => 'Document PDF';
+
+  @override
+  String get tapToOpen => 'Apasă pentru a deschide';
+
+  @override
+  String get errorLoadingImage => 'Eroare la încărcarea imaginii';
+
+  @override
+  String get fileTooLarge => 'Fișierul este prea mare (max 10MB)';
+
+  @override
+  String get serviceUnavailable => 'Serviciul nu este disponibil temporar';
+
+  @override
+  String get connectionError => 'Problemă de conexiune. Verificați internetul';
+
+  @override
+  String get unexpectedError => 'Eroare neașteptată. Încercați din nou';
+
+  @override
+  String uploadedAt(Object date) => 'Încărcat: $date';
+
+  @override
+  String get selectExpiryDate => 'Selectați data de expirare';
+
+  @override
+  String get yes => 'Da';
 }

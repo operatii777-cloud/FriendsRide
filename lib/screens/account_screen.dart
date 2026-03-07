@@ -15,6 +15,8 @@ import 'package:friendsride_app/models/driver_verification_model.dart';
 import 'package:friendsride_app/screens/ride_preferences_screen.dart';
 import 'package:friendsride_app/screens/business_profile_screen.dart';
 import 'package:friendsride_app/screens/selfie_verification_screen.dart';
+import 'package:friendsride_app/screens/notification_preferences_screen.dart';
+import 'package:friendsride_app/screens/privacy_settings_screen.dart';
 import 'package:friendsride_app/utils/logger.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -215,6 +217,22 @@ class _AccountScreenState extends State<AccountScreen> {
                       title: 'Verificare identitate (selfie)',
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (ctx) => const SelfieVerificationScreen()));
+                      },
+                    ),
+
+                    _buildMenuOption(
+                      icon: Icons.notifications_outlined,
+                      title: 'Preferințe notificări',
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (ctx) => const NotificationPreferencesScreen()));
+                      },
+                    ),
+
+                    _buildMenuOption(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Confidențialitate',
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (ctx) => const PrivacySettingsScreen()));
                       },
                     ),
                     

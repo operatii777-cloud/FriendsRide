@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -318,5 +319,102 @@ class DriverApplicationService {
   // Verifică dacă documentul este încărcat
   bool isDocumentUploaded(DriverApplicationData application, DriverDocumentType documentType) {
     return application.documents[documentType]?.isUploaded == true;
+  }
+
+  // ── Admin: aprobă / respinge un document individual ──────────────────────
+
+  Future<void> updateDocumentStatus(
+    String userId,
+    DriverDocumentType docType,
+    DriverDocumentStatus status, {
+    String? reason,
+  }) async {
+    final updates = <String, dynamic>{
+      '${docType.name}_status': status.value,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    };
+    if (reason != null && reason.isNotEmpty) {
+      updates['${docType.name}_rejectionReason'] = reason;
+    } else if (status == DriverDocumentStatus.approved) {
+      updates['${docType.name}_rejectionReason'] = FieldValue.delete();
+    }
+
+    await _firestore
+        .collection('driver_applications')
+        .doc(userId)
+        .update(updates);
+
+    Logger.debug('Document ${docType.name} status updated to ${status.value} for user $userId');
+  }
+
+  // ── Admin: genera și salvează codul de acces ──────────────────────────────
+
+  Future<String> generateAndSendAccessCode(String userId) async {
+    final code = (100000 + Random.secure().nextInt(900000)).toString();
+
+    await _firestore
+        .collection('driver_applications')
+        .doc(userId)
+        .update({
+      'accessCode': code,
+      'accessCodeGeneratedAt': FieldValue.serverTimestamp(),
+      'status': 'activated',
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
+
+    Logger.info('Access code generated for user $userId');
+    return code;
+  }
+
+  // ── Șofer: setează data de expirare pentru un document ───────────────────
+
+  Future<void> setDocumentExpiryDate(
+    DriverDocumentType docType,
+    DateTime expiryDate,
+  ) async {
+    if (_currentUserId == null) throw Exception('Utilizator neautentificat');
+
+    await _firestore
+        .collection('driver_applications')
+        .doc(_currentUserId)
+        .update({
+      '${docType.name}_expiryDate': Timestamp.fromDate(expiryDate),
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
+
+    Logger.debug('Expiry date set for ${docType.name}: $expiryDate');
+  }
+
+  // ── Șofer: documente care expiră în 30 de zile ───────────────────────────
+
+  Future<List<DriverDocumentType>> getDocumentsWithExpiryWarning() async {
+    final application = await getCurrentApplication();
+    if (application == null) return [];
+
+    final now = DateTime.now();
+    final threshold = now.add(const Duration(days: 30));
+    final expiring = <DriverDocumentType>[];
+
+    for (final entry in application.documents.entries) {
+      final expiry = entry.value.expiryDate;
+      if (expiry != null && expiry.isAfter(now) && expiry.isBefore(threshold)) {
+        expiring.add(entry.key);
+      }
+    }
+    return expiring;
+  }
+
+  // ── Șofer: verifică dacă șoferul este blocat din cauza documentelor expirate
+
+  Future<bool> isDriverBlocked() async {
+    final application = await getCurrentApplication();
+    if (application == null) return false;
+
+    final requiredDocs = DriverDocumentType.values.where((d) => d.isRequired);
+    for (final docType in requiredDocs) {
+      final doc = application.documents[docType];
+      if (doc != null && doc.isExpired) return true;
+    }
+    return false;
   }
 }

@@ -4,6 +4,7 @@ import 'package:friendsride_app/models/ride_model.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:friendsride_app/screens/help_screen.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
+import 'package:friendsride_app/widgets/favorite_driver_button.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
@@ -168,6 +169,19 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
                           _buildDetailRow(l10n.totalPaid, '${widget.ride.totalCost.toStringAsFixed(2)} ${l10n.ron}', isTotal: true),
                           const Divider(height: 24),
                           _buildDetailRow(l10n.ratingGiven, widget.ride.passengerRating != null ? '${widget.ride.passengerRating?.toStringAsFixed(1)} ★' : l10n.noRatingGiven),
+                          if (widget.ride.driverId != null && widget.ride.driverId!.isNotEmpty) ...[
+                            const Divider(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Șofer preferat',
+                                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                                ),
+                                FavoriteDriverButton(driverId: widget.ride.driverId!),
+                              ],
+                            ),
+                          ],
                         ],
                       );
                     },

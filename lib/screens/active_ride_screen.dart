@@ -56,6 +56,7 @@ import 'package:friendsride_app/services/email_receipt_service.dart';
 import 'package:friendsride_app/services/driver_incentives_service.dart';
 import 'package:friendsride_app/services/loyalty_program_service.dart';
 import 'package:friendsride_app/widgets/cancellation_policy_widget.dart';
+import 'package:friendsride_app/widgets/voice/active_ride_voice_panel.dart';
 import 'package:friendsride_app/widgets/rate_passenger_widget.dart';
 import 'package:friendsride_app/widgets/real_time_eta_widget.dart';
 import 'package:friendsride_app/widgets/turn_by_turn_navigation_widget.dart';
@@ -2845,7 +2846,47 @@ if (newStaticAnnotations.isNotEmpty) {
 
   Future<void> _handleCancelRide(String rideId, Ride ride) async {
     if (!mounted) return;
-    
+
+    // Check if a 5 RON cancellation fee applies (driver assigned > 3 min ago)
+    final feeApplicable = await _firestoreService.getCancellationFeeApplicable(rideId);
+
+    if (!mounted) return;
+
+    if (feeApplicable && _currentUserId != ride.driverId) {
+      // Show fee warning dialog before the normal cancellation flow
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Taxă de anulare'),
+          content: const Text(
+            'Vei fi taxat cu 5 RON dacă anulezi acum. Ești sigur?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Nu'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Da, anulează', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      // Record the cancellation fee on the ride document before cancelling
+      try {
+        await _firestoreService.updateRideFields(rideId, {'cancellationFee': 5.0});
+      } catch (e) {
+        // Non-fatal — proceed with cancellation anyway
+      }
+    }
+
+    if (!mounted) return;
+
     // ✅ ÎMBUNĂTĂȚIT: Folosește CancellationPolicyDialog
     await showDialog<bool>(
       context: context,
@@ -3299,6 +3340,18 @@ if (newStaticAnnotations.isNotEmpty) {
                   left: 16,
                   right: 16,
                   child: RideDestinationEntranceChips(onEntrySelected: _onSelectDestinationEntrance),
+                ),
+
+              // Voice assistant panel for passenger: call driver, cancel, share location.
+              if (!isDriver)
+                Positioned(
+                  bottom: 200,
+                  right: 0,
+                  child: ActiveRideVoicePanel(
+                    onCallDriver: () => _callNumber(_otherUserPhone),
+                    onCancelRide: () => _handleCancelRide(widget.rideId, ride),
+                    onShareLocation: _openSafetyShareSheet,
+                  ),
                 ),
 
 

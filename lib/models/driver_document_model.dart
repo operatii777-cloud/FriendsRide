@@ -1,3 +1,31 @@
+enum DriverDocumentStatus {
+  pending,
+  approved,
+  rejected;
+
+  static DriverDocumentStatus fromString(String? value) {
+    switch (value) {
+      case 'approved':
+        return DriverDocumentStatus.approved;
+      case 'rejected':
+        return DriverDocumentStatus.rejected;
+      default:
+        return DriverDocumentStatus.pending;
+    }
+  }
+
+  String get value {
+    switch (this) {
+      case DriverDocumentStatus.pending:
+        return 'pending';
+      case DriverDocumentStatus.approved:
+        return 'approved';
+      case DriverDocumentStatus.rejected:
+        return 'rejected';
+    }
+  }
+}
+
 enum DriverDocumentType {
   profilePhoto,
   idCard,
@@ -116,6 +144,9 @@ class DriverDocument {
   final DateTime? uploadedAt;
   final String? fileName;
   final bool isUploaded;
+  final DriverDocumentStatus status;
+  final String? rejectionReason;
+  final DateTime? expiryDate;
 
   DriverDocument({
     required this.type,
@@ -123,19 +154,25 @@ class DriverDocument {
     this.uploadedAt,
     this.fileName,
     this.isUploaded = false,
+    this.status = DriverDocumentStatus.pending,
+    this.rejectionReason,
+    this.expiryDate,
   });
 
   factory DriverDocument.fromFirestore(DriverDocumentType type, Map<String, dynamic>? data) {
     if (data == null) {
       return DriverDocument(type: type);
     }
-    
+
     return DriverDocument(
       type: type,
       url: data[type.firestoreField],
       uploadedAt: data['${type.firestoreField}_uploadedAt']?.toDate(),
       fileName: data['${type.firestoreField}_fileName'],
       isUploaded: data[type.firestoreField] != null,
+      status: DriverDocumentStatus.fromString(data['${type.name}_status'] as String?),
+      rejectionReason: data['${type.name}_rejectionReason'] as String?,
+      expiryDate: (data['${type.name}_expiryDate'] as dynamic)?.toDate(),
     );
   }
 
@@ -144,6 +181,9 @@ class DriverDocument {
     DateTime? uploadedAt,
     String? fileName,
     bool? isUploaded,
+    DriverDocumentStatus? status,
+    String? rejectionReason,
+    DateTime? expiryDate,
   }) {
     return DriverDocument(
       type: type,
@@ -151,7 +191,21 @@ class DriverDocument {
       uploadedAt: uploadedAt ?? this.uploadedAt,
       fileName: fileName ?? this.fileName,
       isUploaded: isUploaded ?? this.isUploaded,
+      status: status ?? this.status,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      expiryDate: expiryDate ?? this.expiryDate,
     );
+  }
+
+  bool get isExpired {
+    if (expiryDate == null) return false;
+    return expiryDate!.isBefore(DateTime.now());
+  }
+
+  bool get isExpiringSoon {
+    if (expiryDate == null) return false;
+    final thirtyDaysFromNow = DateTime.now().add(const Duration(days: 30));
+    return !isExpired && expiryDate!.isBefore(thirtyDaysFromNow);
   }
 }
 
@@ -166,7 +220,9 @@ class DriverApplicationData {
   final String? bankAccount;
   final Map<DriverDocumentType, DriverDocument> documents;
   final DateTime? submittedAt;
-  final String status; // 'draft', 'submitted', 'under_review', 'approved', 'rejected'
+  final String status; // 'draft'|'submitted'|'under_review'|'approved'|'rejected'|'activated'
+  final String? accessCode;
+  final DateTime? accessCodeGeneratedAt;
 
   DriverApplicationData({
     this.fullName,
@@ -180,6 +236,8 @@ class DriverApplicationData {
     this.documents = const {},
     this.submittedAt,
     this.status = 'draft',
+    this.accessCode,
+    this.accessCodeGeneratedAt,
   });
 
   factory DriverApplicationData.fromFirestore(Map<String, dynamic> data) {
@@ -201,6 +259,8 @@ class DriverApplicationData {
       documents: documents,
       submittedAt: data['submittedAt']?.toDate(),
       status: data['status'] ?? 'draft',
+      accessCode: data['accessCode'] as String?,
+      accessCodeGeneratedAt: (data['accessCodeGeneratedAt'] as dynamic)?.toDate(),
     );
   }
 
@@ -227,6 +287,13 @@ class DriverApplicationData {
         data[docType.firestoreField] = document.url;
         data['${docType.firestoreField}_uploadedAt'] = document.uploadedAt;
         data['${docType.firestoreField}_fileName'] = document.fileName;
+        data['${docType.name}_status'] = document.status.value;
+        if (document.rejectionReason != null) {
+          data['${docType.name}_rejectionReason'] = document.rejectionReason;
+        }
+        if (document.expiryDate != null) {
+          data['${docType.name}_expiryDate'] = document.expiryDate;
+        }
       }
     }
 
