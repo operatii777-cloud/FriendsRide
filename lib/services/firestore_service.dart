@@ -720,9 +720,25 @@ _pendingUpdates.addAll(updates.map((e) => e as Map<String, dynamic>));
         }
       }
       
-      if (availableDrivers.isNotEmpty) {
+      // ✅ Women-only matching: filter by gender when passenger prefers a female driver
+      List<Map<String, dynamic>> filteredDrivers = availableDrivers;
+      if (ride.ridePreferences?.preferFemaleDriver == true) {
+        final genderChecks = await Future.wait(
+          availableDrivers.map((d) => isDriverFemale(d['driverId'] as String)),
+        );
+        filteredDrivers = [
+          for (var i = 0; i < availableDrivers.length; i++)
+            if (genderChecks[i]) availableDrivers[i],
+        ];
+        Logger.info(
+          'Women-only filter: ${filteredDrivers.length}/${availableDrivers.length} drivers qualify',
+          tag: 'DriverMatching',
+        );
+      }
+
+      if (filteredDrivers.isNotEmpty) {
         // ✅ BATCH OFFERS: Select top 3 drivers and create batch offer
-        final topDrivers = await _selectTopDriversForBatch(availableDrivers, ride, count: 3);
+        final topDrivers = await _selectTopDriversForBatch(filteredDrivers, ride, count: 3);
         if (topDrivers.isNotEmpty) {
           // Get the best driver for single assignment (backward compatibility)
           final best = topDrivers.first;

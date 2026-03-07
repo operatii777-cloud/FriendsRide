@@ -194,6 +194,17 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
+                                keyboardType: TextInputType.number,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return null;
+                                  final trimmed = v.trim();
+                                  if (!RegExp(r'^\d+$').hasMatch(trimmed) ||
+                                      trimmed.length < 2 ||
+                                      trimmed.length > 10) {
+                                    return 'CIF invalid (2-10 cifre)';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 12),
                               TextFormField(

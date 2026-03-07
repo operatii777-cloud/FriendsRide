@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:friendsride_app/screens/admin/admin_selfie_review_screen.dart';
 import 'package:friendsride_app/services/analytics_service.dart';
 import 'package:friendsride_app/theme/app_text_styles.dart';
 import 'package:share_plus/share_plus.dart';
@@ -79,6 +80,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       appBar: AppBar(
         title: const Text('Business Intelligence Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.face),
+            tooltip: 'Verificare Selfie',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AdminSelfieReviewScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadAnalytics,
