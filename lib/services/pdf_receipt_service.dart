@@ -6,6 +6,7 @@ import 'package:friendsride_app/delivery/models/delivery_status.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:friendsride_app/utils/logger.dart';
 
 class PdfReceiptService {
   Future<Uint8List> generateReceipt(Ride ride) async {
@@ -73,7 +74,7 @@ class PdfReceiptService {
 
       return pdf.save();
     } catch (e) {
-              debugPrint('❌ Error generating receipt: $e');
+              Logger.error('Error generating receipt: $e', error: e);
       rethrow;
     }
   }
@@ -363,7 +364,7 @@ class PdfReceiptService {
 
       return pdf.save();
     } catch (e) {
-              debugPrint('❌ Error generating monthly report: $e');
+              Logger.error('Error generating monthly report: $e', error: e);
       rethrow;
     }
   }
@@ -649,7 +650,7 @@ class PdfReceiptService {
 
       return pdf.save();
     } catch (e) {
-              debugPrint('❌ Error generating daily driver report: $e');
+              Logger.error('Error generating daily driver report: $e', error: e);
       rethrow;
     }
   }
@@ -899,7 +900,7 @@ class PdfReceiptService {
 
       return pdf.save();
     } catch (e) {
-      debugPrint('❌ Error generating delivery order receipt: $e');
+      Logger.error('Error generating delivery order receipt: $e', error: e);
       rethrow;
     }
   }

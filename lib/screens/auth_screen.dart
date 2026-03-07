@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:friendsride_app/main.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/services/social_auth_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -136,7 +137,7 @@ if (mounted) {
         );
       }
     } catch (e) {
-      debugPrint('Error: $e');
+      Logger.error('Error: $e', error: e);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -175,7 +176,7 @@ if (mounted) {
     });
 
     try {
-      debugPrint('Attempting to send password reset email to: ${_email.trim()}');
+      Logger.debug('Attempting to send password reset email to: ${_email.trim()}');
       
       await _auth.sendPasswordResetEmail(
         email: _email.trim(),
@@ -188,7 +189,7 @@ if (mounted) {
         ),
       );
       
-      debugPrint('Password reset email sent successfully to: ${_email.trim()}');
+      Logger.debug('Password reset email sent successfully to: ${_email.trim()}');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -208,7 +209,7 @@ if (mounted) {
         );
       }
     } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuthException in password reset: ${e.code} - ${e.message}');
+      Logger.debug('FirebaseAuthException in password reset: ${e.code} - ${e.message}');
       
       String message = 'A apărut o eroare la trimiterea email-ului de resetare.';
       if (e.code == 'user-not-found') {
@@ -231,7 +232,7 @@ if (mounted) {
         );
       }
     } catch (e) {
-      debugPrint('General error in password reset: $e');
+      Logger.error('General error in password reset: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

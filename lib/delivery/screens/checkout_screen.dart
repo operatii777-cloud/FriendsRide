@@ -11,6 +11,7 @@ import '../services/delivery_service.dart';
 import '../services/cart_service.dart';
 import 'delivery_tracking_screen.dart';
 import 'my_orders_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Screen pentru checkout și plată
 class CheckoutScreen extends StatefulWidget {
@@ -88,7 +89,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         );
       } catch (e) {
-        debugPrint('Error getting user location: $e');
+        Logger.error('Error getting user location: $e', error: e);
       }
 
       // Create delivery address
@@ -365,7 +366,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error generating PDF: $e');
+      Logger.error('Error generating PDF: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

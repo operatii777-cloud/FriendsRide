@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:async';
+import 'package:friendsride_app/utils/logger.dart';
 
 class TtsService {
   static final TtsService _instance = TtsService._internal();
@@ -50,22 +51,22 @@ class TtsService {
       
       // Setează callback-uri
       _flutterTts.setStartHandler(() {
-        debugPrint("TTS Started");
+        Logger.info("TTS Started");
       });
       
       _flutterTts.setCompletionHandler(() {
-        debugPrint("TTS Completed");
+        Logger.info("TTS Completed");
       });
       
       _flutterTts.setErrorHandler((msg) {
-        debugPrint("TTS Error: $msg");
+        Logger.error("TTS Error: $msg");
       });
       
       _isInitialized = true;
-      debugPrint("TTS Service initialized with language: $_currentLanguage");
+      Logger.info("TTS Service initialized with language: $_currentLanguage");
       
     } catch (e) {
-      debugPrint("TTS initialization error: $e");
+      Logger.error("TTS initialization error: $e", error: e);
     }
   }
 
@@ -88,9 +89,9 @@ class TtsService {
       try {
         _lastSpokenText = text;
         await _flutterTts.speak(text);
-        debugPrint("TTS Speaking: $text");
+        Logger.debug("TTS Speaking: $text");
       } catch (e) {
-        debugPrint("TTS Speak error: $e");
+        Logger.error("TTS Speak error: $e", error: e);
       }
     });
   }
@@ -100,7 +101,7 @@ class TtsService {
       _speakDebounceTimer?.cancel();
       await _flutterTts.stop();
     } catch (e) {
-      debugPrint("TTS Stop error: $e");
+      Logger.error("TTS Stop error: $e", error: e);
     }
   }
 
@@ -108,7 +109,7 @@ class TtsService {
     try {
       await _flutterTts.pause();
     } catch (e) {
-      debugPrint("TTS Pause error: $e");
+      Logger.error("TTS Pause error: $e", error: e);
     }
   }
 
@@ -119,9 +120,9 @@ class TtsService {
     _currentLanguage = language;
     try {
       await _flutterTts.setLanguage(_currentLanguage);
-      debugPrint("TTS Language changed to: $_currentLanguage");
+      Logger.debug("TTS Language changed to: $_currentLanguage");
     } catch (e) {
-      debugPrint("TTS Language change error: $e");
+      Logger.error("TTS Language change error: $e", error: e);
     }
   }
 
@@ -131,7 +132,7 @@ class TtsService {
     try {
       await _flutterTts.setSpeechRate(_speechRate);
     } catch (e) {
-      debugPrint("TTS Speech rate error: $e");
+      Logger.error("TTS Speech rate error: $e", error: e);
     }
   }
 
@@ -141,7 +142,7 @@ class TtsService {
     try {
       await _flutterTts.setVolume(_volume);
     } catch (e) {
-      debugPrint("TTS Volume error: $e");
+      Logger.error("TTS Volume error: $e", error: e);
     }
   }
 
@@ -151,7 +152,7 @@ class TtsService {
     try {
       await _flutterTts.setPitch(_pitch);
     } catch (e) {
-      debugPrint("TTS Pitch error: $e");
+      Logger.error("TTS Pitch error: $e", error: e);
     }
   }
 
@@ -161,7 +162,7 @@ class TtsService {
       final languages = await _flutterTts.getLanguages;
       return languages.contains(language);
     } catch (e) {
-      debugPrint("TTS Language check error: $e");
+      Logger.error("TTS Language check error: $e", error: e);
       return false;
     }
   }
@@ -172,7 +173,7 @@ class TtsService {
       final languages = await _flutterTts.getLanguages;
       return List<String>.from(languages);
     } catch (e) {
-      debugPrint("TTS Get languages error: $e");
+      Logger.error("TTS Get languages error: $e", error: e);
       return [];
     }
   }
@@ -183,7 +184,7 @@ class TtsService {
       final voices = await _flutterTts.getVoices;
       return List<Map<String, String>>.from(voices);
     } catch (e) {
-      debugPrint("TTS Get voices error: $e");
+      Logger.error("TTS Get voices error: $e", error: e);
       return [];
     }
   }
@@ -193,7 +194,7 @@ class TtsService {
     try {
       await _flutterTts.setVoice(voice);
     } catch (e) {
-      debugPrint("TTS Set voice error: $e");
+      Logger.error("TTS Set voice error: $e", error: e);
     }
   }
 
@@ -211,7 +212,7 @@ class TtsService {
       // Returnăm false ca fallback
       return false;
     } catch (e) {
-      debugPrint("TTS isSpeaking error: $e");
+      Logger.error("TTS isSpeaking error: $e", error: e);
       return false;
     }
   }

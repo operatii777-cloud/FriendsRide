@@ -1,5 +1,6 @@
 // IMPLEMENTARE ENVIRONMENT CONFIGURATION - FIX SECURITY VULNERABILITIES
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class Environment {
   // OpenAI Configuration
@@ -48,30 +49,30 @@ class Environment {
     if (isDevelopment) {
       // În development, doar Mapbox trebuie să fie valid
       if (mapboxPublicToken.isEmpty || !mapboxPublicToken.startsWith('pk.eyJ1')) {
-        debugPrint('⚠️ DEVELOPMENT MODE: Mapbox token invalid - maps will not work!');
-        debugPrint('📋 To fix: Replace mapboxPublicToken with your real Mapbox token');
-        debugPrint('🌐 Get token from: https://account.mapbox.com/access-tokens/');
+        Logger.warning('DEVELOPMENT MODE: Mapbox token invalid - maps will not work!');
+        Logger.debug('To fix: Replace mapboxPublicToken with your real Mapbox token');
+        Logger.debug('Get token from: https://account.mapbox.com/access-tokens/');
       } else {
-        debugPrint('✅ Development mode: Mapbox token configured correctly');
+        Logger.info('Development mode: Mapbox token configured correctly');
       }
       
       // Pentru OpenAI și Firebase, doar warning în development
       if (openaiApiKey.contains('PLACEHOLDER')) {
-        debugPrint('⚠️ DEVELOPMENT MODE: OpenAI API key is placeholder');
-        debugPrint('📋 Set OPENAI_API_KEY for full functionality');
+        Logger.warning('DEVELOPMENT MODE: OpenAI API key is placeholder');
+        Logger.debug('Set OPENAI_API_KEY for full functionality');
       }
       
       // Validare pentru Gemini în development
       if (geminiApiKey.contains('PLACEHOLDER') || geminiApiKey.isEmpty) {
-        debugPrint('⚠️ DEVELOPMENT MODE: Gemini API key is placeholder');
-        debugPrint('📋 Set GEMINI_API_KEY for AI voice functionality');
+        Logger.warning('DEVELOPMENT MODE: Gemini API key is placeholder');
+        Logger.debug('Set GEMINI_API_KEY for AI voice functionality');
       } else {
-        debugPrint('✅ Development mode: Gemini API key configured correctly');
+        Logger.info('Development mode: Gemini API key configured correctly');
       }
       
       if (firebaseApiKey.contains('PLACEHOLDER')) {
-        debugPrint('⚠️ DEVELOPMENT MODE: Firebase API key is placeholder');
-        debugPrint('📋 Set FIREBASE_API_KEY for full functionality');
+        Logger.warning('DEVELOPMENT MODE: Firebase API key is placeholder');
+        Logger.debug('Set FIREBASE_API_KEY for full functionality');
       }
       
       return; // Nu arunca excepție în development
@@ -143,19 +144,6 @@ ${missingTokens.map((token) => '$token=your_value_here').join('\n')}
   static void printConfigurationStatus() {
     if (!isDevelopment) return;
     
-    debugPrint('''
-🔧 ENVIRONMENT CONFIGURATION STATUS
-
-Environment: ${isProduction ? 'PRODUCTION' : isTest ? 'TEST' : 'DEVELOPMENT'}
-
-OpenAI API Key: ${openaiApiKey.isNotEmpty ? '✅ Configured' : '❌ Missing'}
-Gemini API Key: ${geminiApiKey.isNotEmpty ? '✅ Configured' : '❌ Missing'}
-Mapbox Public Token: ${mapboxPublicToken.isNotEmpty ? '✅ Configured' : '❌ Missing'}
-Firebase API Key: ${firebaseApiKey.isNotEmpty ? '✅ Configured' : '❌ Missing'}
-Firebase Project ID: ${firebaseProjectId.isNotEmpty ? '✅ Configured' : '❌ Missing'}
-Sentry DSN: ${sentryDsn.isNotEmpty ? '✅ Configured' : '❌ Missing'}
-
-Overall Status: ${isFullyConfigured ? '✅ READY' : '❌ NOT READY'}
-    ''');
+    Logger.debug('');
   }
 }

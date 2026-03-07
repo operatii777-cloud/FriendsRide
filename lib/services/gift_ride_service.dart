@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/gift_ride_model.dart';
 import 'package:uuid/uuid.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Serviciu pentru trimiterea și revendicarea curselor cadou
 class GiftRideService {
@@ -46,10 +47,10 @@ class GiftRideService {
       );
 
       await _db.collection('gift_rides').doc(id).set(gift.toMap());
-      debugPrint('✅ [GIFT_RIDE] Gift ride sent: $id (code: $code)');
+      Logger.info('Gift ride sent: $id (code: $code)', tag: 'GIFT_RIDE');
       return gift;
     } catch (e) {
-      debugPrint('⚠️ [GIFT_RIDE] Error sending gift ride: $e');
+      Logger.error('Error sending gift ride: $e', tag: 'GIFT_RIDE', error: e);
       return null;
     }
   }
@@ -65,7 +66,7 @@ class GiftRideService {
           .get();
 
       if (snapshot.docs.isEmpty) {
-        debugPrint('⚠️ [GIFT_RIDE] Code not found or already used: $code');
+        Logger.warning('Code not found or already used: $code', tag: 'GIFT_RIDE');
         return null;
       }
 
@@ -73,7 +74,7 @@ class GiftRideService {
       final gift = GiftRide.fromMap(doc.data());
 
       if (!gift.isValid) {
-        debugPrint('⚠️ [GIFT_RIDE] Gift ride expired: ${gift.id}');
+        Logger.warning('Gift ride expired: ${gift.id}', tag: 'GIFT_RIDE');
         await _db.collection('gift_rides').doc(gift.id).update({
           'status': GiftRideStatus.expired.name,
         });
@@ -86,14 +87,14 @@ class GiftRideService {
         'claimedByUserId': userId,
       });
 
-      debugPrint('✅ [GIFT_RIDE] Gift ride claimed: ${gift.id} by $userId');
+      Logger.info('Gift ride claimed: ${gift.id} by $userId', tag: 'GIFT_RIDE');
       return gift.copyWith(
         status: GiftRideStatus.claimed,
         claimedAt: Timestamp.now(),
         claimedByUserId: userId,
       );
     } catch (e) {
-      debugPrint('⚠️ [GIFT_RIDE] Error claiming gift ride: $e');
+      Logger.error('Error claiming gift ride: $e', tag: 'GIFT_RIDE', error: e);
       return null;
     }
   }
@@ -111,7 +112,7 @@ class GiftRideService {
           .map((doc) => GiftRide.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      debugPrint('⚠️ [GIFT_RIDE] Error getting sent gifts: $e');
+      Logger.error('Error getting sent gifts: $e', tag: 'GIFT_RIDE', error: e);
       return [];
     }
   }
@@ -131,7 +132,7 @@ class GiftRideService {
           .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
-      debugPrint('⚠️ [GIFT_RIDE] Error getting received gifts: $e');
+      Logger.error('Error getting received gifts: $e', tag: 'GIFT_RIDE', error: e);
       return [];
     }
   }
@@ -153,10 +154,10 @@ class GiftRideService {
         'status': GiftRideStatus.cancelled.name,
       });
 
-      debugPrint('✅ [GIFT_RIDE] Gift ride cancelled: $giftId');
+      Logger.info('Gift ride cancelled: $giftId', tag: 'GIFT_RIDE');
       return true;
     } catch (e) {
-      debugPrint('⚠️ [GIFT_RIDE] Error cancelling gift ride: $e');
+      Logger.error('Error cancelling gift ride: $e', tag: 'GIFT_RIDE', error: e);
       return false;
     }
   }

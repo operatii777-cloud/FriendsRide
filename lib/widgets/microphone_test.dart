@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class MicrophoneTest extends StatefulWidget {
   const MicrophoneTest({super.key});
@@ -26,12 +27,12 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
     try {
       // Check current permission status
       var micPermission = await Permission.microphone.status;
-      debugPrint('🎤 Current permission status: $micPermission');
+      Logger.debug('Current permission status: $micPermission');
       
       // Request microphone permission if not granted
       if (!micPermission.isGranted) {
         micPermission = await Permission.microphone.request();
-        debugPrint('🎤 Permission after request: $micPermission');
+        Logger.debug('Permission after request: $micPermission');
       }
       
       // Handle different permission states
@@ -57,16 +58,16 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
       }
 
       // Initialize Speech-to-Text with detailed debugging
-      debugPrint('🎤 Attempting to initialize Speech-to-Text...');
+      Logger.debug('Attempting to initialize Speech-to-Text...');
       final available = await _speechToText.initialize(
         onError: (error) {
-          debugPrint('❌ Speech error: ${error.errorMsg}, permanent: ${error.permanent}');
+          Logger.error('Speech error: ${error.errorMsg}, permanent: ${error.permanent}');
           setState(() {
             _status = '❌ Speech error: ${error.errorMsg}\nPermanent: ${error.permanent}';
           });
         },
         onStatus: (status) {
-          debugPrint('🎤 Speech status: $status');
+          Logger.debug('Speech status: $status');
           setState(() {
             _status = '🎤 Status: $status';
           });
@@ -74,14 +75,14 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
         debugLogging: true,
       );
 
-      debugPrint('🎤 Speech-to-Text available: $available');
+      Logger.debug('Speech-to-Text available: $available');
       
       // More detailed status
       if (available) {
         final locales = await _speechToText.locales();
-        debugPrint('🎤 Available locales: ${locales.length}');
+        Logger.debug('Available locales: ${locales.length}');
         for (var locale in locales) {
-          debugPrint('🎤 Locale: ${locale.localeId} - ${locale.name}');
+          Logger.debug('Locale: ${locale.localeId} - ${locale.name}');
         }
         
         setState(() {
@@ -95,7 +96,7 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Speech initialization error: $e');
+      Logger.error('Speech initialization error: $e', error: e);
       setState(() {
         _status = '❌ Error: $e';
       });
@@ -125,7 +126,7 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
               _status = '✅ Final result: ${result.recognizedWords}';
             }
           });
-          debugPrint('🎤 Result: ${result.recognizedWords}');
+          Logger.debug('Result: ${result.recognizedWords}');
         },
         listenFor: Duration(seconds: 10),
         pauseFor: Duration(seconds: 3),
@@ -135,7 +136,7 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
         localeId: 'ro_RO',
       );
     } catch (e) {
-      debugPrint('❌ Listen error: $e');
+      Logger.error('Listen error: $e', error: e);
       setState(() {
         _status = '❌ Listen error: $e';
         _isListening = false;
@@ -151,7 +152,7 @@ class _MicrophoneTestState extends State<MicrophoneTest> {
         _status = '🛑 Stopped listening';
       });
     } catch (e) {
-      debugPrint('❌ Stop error: $e');
+      Logger.error('Stop error: $e', error: e);
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/services/pdf_receipt_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Serviciu pentru trimiterea automată a receipt-urilor pe email (Uber-like)
 class EmailReceiptService {
@@ -17,7 +18,7 @@ class EmailReceiptService {
     required bool isDriver,
   }) async {
     try {
-      debugPrint('📧 [EMAIL] Starting receipt email for ride: $rideId');
+      Logger.debug('Starting receipt email for ride: $rideId', tag: 'EMAIL');
 
       // Generează PDF receipt
       final pdfBytes = await _pdfService.generateReceipt(ride);
@@ -35,8 +36,8 @@ class EmailReceiptService {
 
       // Note: Email sending will be implemented via Cloud Function in future update
       // For now, only log
-      debugPrint('📧 [EMAIL] Receipt email prepared for: $recipientEmail');
-      debugPrint('📧 [EMAIL] PDF size: ${pdfBytes.length} bytes');
+      Logger.debug('Receipt email prepared for: $recipientEmail', tag: 'EMAIL');
+      Logger.debug('PDF size: ${pdfBytes.length} bytes', tag: 'EMAIL');
       
       // Cloud Function ar trebui să fie apelată aici:
       // await FirebaseFunctions.instance.httpsCallable('sendReceiptEmail').call({
@@ -47,7 +48,7 @@ class EmailReceiptService {
       // });
 
     } catch (e) {
-      debugPrint('⚠️ [EMAIL] Error sending receipt email: $e');
+      Logger.error('Error sending receipt email: $e', tag: 'EMAIL', error: e);
       rethrow;
     }
   }
@@ -71,7 +72,7 @@ class EmailReceiptService {
       
       return null;
     } catch (e) {
-      debugPrint('⚠️ [EMAIL] Error getting user email: $e');
+      Logger.error('Error getting user email: $e', tag: 'EMAIL', error: e);
       return null;
     }
   }
@@ -81,7 +82,7 @@ class EmailReceiptService {
     try {
       final passengerEmail = await getUserEmail(ride.passengerId);
       if (passengerEmail == null) {
-        debugPrint('⚠️ [EMAIL] Passenger email not found for ride: $rideId');
+        Logger.warning('Passenger email not found for ride: $rideId', tag: 'EMAIL');
         return;
       }
 
@@ -92,9 +93,9 @@ class EmailReceiptService {
         isDriver: false,
       );
 
-      debugPrint('✅ [EMAIL] Passenger receipt sent to: $passengerEmail');
+      Logger.info('Passenger receipt sent to: $passengerEmail', tag: 'EMAIL');
     } catch (e) {
-      debugPrint('⚠️ [EMAIL] Error sending passenger receipt: $e');
+      Logger.error('Error sending passenger receipt: $e', tag: 'EMAIL', error: e);
     }
   }
 
@@ -102,13 +103,13 @@ class EmailReceiptService {
   Future<void> sendDriverReceipt(String rideId, Ride ride) async {
     try {
       if (ride.driverId == null) {
-        debugPrint('⚠️ [EMAIL] No driver ID for ride: $rideId');
+        Logger.warning('No driver ID for ride: $rideId', tag: 'EMAIL');
         return;
       }
 
       final driverEmail = await getUserEmail(ride.driverId!);
       if (driverEmail == null) {
-        debugPrint('⚠️ [EMAIL] Driver email not found for ride: $rideId');
+        Logger.warning('Driver email not found for ride: $rideId', tag: 'EMAIL');
         return;
       }
 
@@ -119,9 +120,9 @@ class EmailReceiptService {
         isDriver: true,
       );
 
-      debugPrint('✅ [EMAIL] Driver receipt sent to: $driverEmail');
+      Logger.info('Driver receipt sent to: $driverEmail', tag: 'EMAIL');
     } catch (e) {
-      debugPrint('⚠️ [EMAIL] Error sending driver receipt: $e');
+      Logger.error('Error sending driver receipt: $e', tag: 'EMAIL', error: e);
     }
   }
 
@@ -132,9 +133,9 @@ class EmailReceiptService {
         sendPassengerReceipt(rideId, ride),
         sendDriverReceipt(rideId, ride),
       ]);
-      debugPrint('✅ [EMAIL] All receipts sent for ride: $rideId');
+      Logger.info('All receipts sent for ride: $rideId', tag: 'EMAIL');
     } catch (e) {
-      debugPrint('⚠️ [EMAIL] Error sending receipts: $e');
+      Logger.error('Error sending receipts: $e', tag: 'EMAIL', error: e);
     }
   }
 }

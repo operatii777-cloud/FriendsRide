@@ -13,6 +13,7 @@ import '../../models/ride_model.dart';
 import '../../models/voice_models.dart';
 import '../../widgets/address_confirmation_screen.dart';
 import '../../screens/searching_for_driver_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// ✅ Helper: Obține limba curentă din SharedPreferences
 Future<String> _getCurrentLanguageCode() async {
@@ -21,7 +22,7 @@ Future<String> _getCurrentLanguageCode() async {
     final code = prefs.getString('locale');
     return code ?? 'ro'; // Default română
   } catch (e) {
-    debugPrint('🎤 [VOICE_CONTROLLER] Error getting language: $e');
+    Logger.error('Error getting language: $e', tag: 'VOICE_CONTROLLER', error: e);
     return 'ro'; // Default română
   }
 }
@@ -80,11 +81,11 @@ class PassengerVoiceController extends ChangeNotifier {
   /// 🚀 Inițializează controller-ul
   Future<void> initialize() async {
     if (_isInitialized) {
-      debugPrint('🎤 [VOICE_CONTROLLER] Already initialized, skipping.');
+      Logger.info('Already initialized, skipping.', tag: 'VOICE_CONTROLLER');
       return;
     }
     try {
-      debugPrint('🎤 [VOICE_CONTROLLER] Initializing...');
+      Logger.debug('Initializing...', tag: 'VOICE_CONTROLLER');
       
       // ✅ Inițializează serviciile
       _geminiEngine = GeminiVoiceEngine();
@@ -118,38 +119,38 @@ class PassengerVoiceController extends ChangeNotifier {
         
         // ✅ Callback-uri implementate pentru acțiuni în UI
         onFillAddressInUI: (pickup, destination, {pickupLat, pickupLng, destLat, destLng}) {
-          debugPrint('🎤 [VOICE_CONTROLLER] Filling address in UI: $pickup → $destination');
+          Logger.debug('Filling address in UI: $pickup → $destination', tag: 'VOICE_CONTROLLER');
           _pickupAddressForUI = pickup;
           _destinationAddressForUI = destination;
           // ✅ FIX: Dacă coordonatele sunt disponibile, le salvăm pentru a le folosi mai târziu
           if (destLat != null && destLng != null) {
-            debugPrint('🎤 [VOICE_CONTROLLER] ✅ Destination coordinates received: $destLat, $destLng');
+            Logger.info('Destination coordinates received: $destLat, $destLng', tag: 'VOICE_CONTROLLER');
           }
           notifyListeners(); // UI-ul se reconstruiește cu noile adrese
         },
         
         onSelectRideOptionInUI: (category) {
-          debugPrint('🎤 [VOICE_CONTROLLER] Selecting ride option: $category');
+          Logger.debug('Selecting ride option: $category', tag: 'VOICE_CONTROLLER');
           _selectedCategoryForUI = category;
           _showRideConfirmation = true;
           notifyListeners(); // UI-ul afișează confirmarea
         },
         
         onPressConfirmButtonInUI: () {
-          debugPrint('🎤 [VOICE_CONTROLLER] Pressing confirm button');
+          Logger.debug('Pressing confirm button', tag: 'VOICE_CONTROLLER');
           _showRideConfirmation = false;
           _showSearchingDriver = true;
           notifyListeners(); // UI-ul navighează la căutarea șoferilor
         },
         
         onNavigateToScreen: (screen) {
-          debugPrint('🎤 [VOICE_CONTROLLER] Navigating to screen: ${screen.runtimeType}');
+          Logger.debug('Navigating to screen: ${screen.runtimeType}', tag: 'VOICE_CONTROLLER');
           // ✅ Folosește navigator-ul global pentru navigare
           _navigateToScreen(screen);
         },
         
         onCreateRideRequest: (rideRequest) async {
-          debugPrint('🎤 [VOICE_CONTROLLER] Creating ride request in Firebase');
+          Logger.debug('Creating ride request in Firebase', tag: 'VOICE_CONTROLLER');
           // ✅ ÎMBUNĂTĂȚIT: Creează efectiv solicitarea în Firebase cu validări complete
           // Convertim Map<String, dynamic> la RideRequest
           
@@ -201,7 +202,7 @@ class PassengerVoiceController extends ChangeNotifier {
         },
         
         onDriverResponse: (driverId, accepted) {
-          debugPrint('🎤 [VOICE_CONTROLLER] Driver response: $driverId, accepted: $accepted');
+          Logger.debug('Driver response: $driverId, accepted: $accepted', tag: 'VOICE_CONTROLLER');
           // ✅ Gestionează răspunsul șoferului
           if (accepted) {
             _showSearchingDriver = false;
@@ -212,7 +213,7 @@ class PassengerVoiceController extends ChangeNotifier {
         },
         
         onCloseAI: () {
-          debugPrint('🎤 [VOICE_CONTROLLER] Closing AI');
+          Logger.debug('Closing AI', tag: 'VOICE_CONTROLLER');
           // ✅ Închide AI-ul și resetează stările
           _resetVoiceStates();
           notifyListeners();
@@ -221,10 +222,10 @@ class PassengerVoiceController extends ChangeNotifier {
       
       await _rideFlowManager.initialize();
       
-      debugPrint('🎤 [VOICE_CONTROLLER] ✅ Initialized successfully');
+      Logger.info('Initialized successfully', tag: 'VOICE_CONTROLLER');
       _isInitialized = true;
     } catch (e) {
-      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'VOICE_CONTROLLER', error: e);
       rethrow;
     }
   }
@@ -240,10 +241,10 @@ class PassengerVoiceController extends ChangeNotifier {
   /// 🎤 Procesează input-ul vocal
   Future<void> processVoiceInput(String userInput) async {
     try {
-      debugPrint('🎤 [VOICE_CONTROLLER] Processing voice input: $userInput');
+      Logger.debug('Processing voice input: $userInput', tag: 'VOICE_CONTROLLER');
       await _rideFlowManager.processVoiceInput(userInput);
     } catch (e) {
-      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Voice processing error: $e');
+      Logger.error('Voice processing error: $e', tag: 'VOICE_CONTROLLER', error: e);
     }
   }
 
@@ -277,7 +278,7 @@ class PassengerVoiceController extends ChangeNotifier {
     if (_wakeWordEnabled) return;
     final initialized = await _advancedVoiceProcessor.initialize();
     if (!initialized) {
-      debugPrint('🎤 [VOICE_CONTROLLER] Wake word initialization failed');
+      Logger.error('Wake word initialization failed', tag: 'VOICE_CONTROLLER');
       return;
     }
     _wakeWordSubscription ??= _advancedVoiceProcessor.wakeWordEvents.listen(_handleWakeWordDetected);
@@ -326,7 +327,7 @@ class PassengerVoiceController extends ChangeNotifier {
   }
 
   Future<void> _handleWakeWordDetected(WakeWordEvent event) async {
-    debugPrint('🎤 [VOICE_CONTROLLER] Wake word detected: ${event.text}');
+    Logger.debug('Wake word detected: ${event.text}', tag: 'VOICE_CONTROLLER');
     if (!_wakeWordEnabled) return;
     await _voiceOrchestrator.stopListening();
     
@@ -375,10 +376,10 @@ class PassengerVoiceController extends ChangeNotifier {
   /// 🎯 Gestionează confirmarea adreselor din UI
   Future<void> handleAddressConfirmation() async {
     try {
-      debugPrint('🎤 [VOICE_CONTROLLER] Handling address confirmation from UI');
+      Logger.debug('Handling address confirmation from UI', tag: 'VOICE_CONTROLLER');
       await _rideFlowManager.handleAddressConfirmation();
     } catch (e) {
-      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Address confirmation error: $e');
+      Logger.error('Address confirmation error: $e', tag: 'VOICE_CONTROLLER', error: e);
     }
   }
 
@@ -388,13 +389,13 @@ class PassengerVoiceController extends ChangeNotifier {
   /// 🚗 Gestionează confirmarea cursei din UI
   Future<void> handleRideConfirmation() async {
     try {
-      debugPrint('🎤 [VOICE_CONTROLLER] Handling ride confirmation from UI');
+      Logger.debug('Handling ride confirmation from UI', tag: 'VOICE_CONTROLLER');
       // Aici se va apela logica pentru confirmarea cursei
       _showRideConfirmation = false;
       _showSearchingDriver = true;
       notifyListeners();
     } catch (e) {
-      debugPrint('🎤 [VOICE_CONTROLLER] ❌ Ride confirmation error: $e');
+      Logger.error('Ride confirmation error: $e', tag: 'VOICE_CONTROLLER', error: e);
     }
   }
 

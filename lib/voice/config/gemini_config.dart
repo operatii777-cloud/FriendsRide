@@ -3,6 +3,7 @@
 // Caracteristici: Management centralizat al API keys, Configurații pentru diferite medii, Securitate și validare, Fallback pentru development
 
 import 'package:friendsride_app/config/environment.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class GeminiConfig {
   // 🎯 API Configuration
@@ -121,6 +122,6 @@ FORMATUL RĂSPUNSULUI:
   /// 🧹 Cleanup și reset
   static void reset() {
     // 🎯 Aici se pot reseta configurările dacă e necesar
-    // debugPrint('🧠 [GEMINI_CONFIG] Configuration reset');
+    // Logger.debug('Configuration reset', tag: 'GEMINI_CONFIG');
   }
 }

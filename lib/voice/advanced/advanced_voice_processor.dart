@@ -15,6 +15,7 @@ import '../../services/ai_location_service.dart';
 
 import '../../models/simple_location.dart';
 import '../../models/voice_models.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 
@@ -106,7 +107,7 @@ class AdvancedVoiceProcessor {
       // Request permissions
       final micPermission = await Permission.microphone.request();
       if (micPermission != PermissionStatus.granted) {
-        debugPrint('Microphone permission denied');
+        Logger.debug('Microphone permission denied');
         return false;
       }
 
@@ -119,7 +120,7 @@ class AdvancedVoiceProcessor {
       );
 
       if (!speechAvailable) {
-        debugPrint('Speech recognition not available');
+        Logger.debug('Speech recognition not available');
         return false;
       }
 
@@ -138,7 +139,7 @@ class AdvancedVoiceProcessor {
       _startPeriodicCleanup();
       return true;
     } catch (e) {
-      debugPrint('Failed to initialize advanced voice processor: $e');
+      Logger.error('Failed to initialize advanced voice processor: $e', error: e);
       return false;
     }
   }
@@ -169,7 +170,7 @@ class AdvancedVoiceProcessor {
         data: {'timestamp': DateTime.now()},
       ));
     } catch (e) {
-      debugPrint('Failed to start "salut" detection: $e');
+      Logger.error('Failed to start "salut" detection: $e', error: e);
       _isListening = false;
     }
   }
@@ -200,7 +201,7 @@ class AdvancedVoiceProcessor {
         data: {'timestamp': DateTime.now()},
       ));
     } catch (e) {
-      debugPrint('Failed to start continuous listening: $e');
+      Logger.error('Failed to start continuous listening: $e', error: e);
       _isContinuousMode = false;
       _isListening = false;
     }
@@ -224,7 +225,7 @@ class AdvancedVoiceProcessor {
         data: {'timestamp': DateTime.now()},
       ));
     } catch (e) {
-      debugPrint('Failed to stop listening: $e');
+      Logger.error('Failed to stop listening: $e', error: e);
     }
   }
 
@@ -258,7 +259,7 @@ class AdvancedVoiceProcessor {
         },
       ));
     } catch (e) {
-      debugPrint('Failed to speak text: $e');
+      Logger.error('Failed to speak text: $e', error: e);
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
         data: {
@@ -326,10 +327,10 @@ class AdvancedVoiceProcessor {
         }
       } else {
         // Handle low confidence results
-        debugPrint('Low confidence "salut" detection result: $text (confidence: $confidence)');
+        Logger.debug('Low confidence "salut" detection result: $text (confidence: $confidence)');
       }
     } catch (e) {
-              debugPrint('Error processing "salut" detection result: $e');
+              Logger.error('Error processing "salut" detection result: $e', error: e);
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
         data: {
@@ -403,7 +404,7 @@ class AdvancedVoiceProcessor {
           );
         } else {
           // Handle low confidence results
-          debugPrint('Low confidence continuous result: $text (confidence: $confidence)');
+          Logger.debug('Low confidence continuous result: $text (confidence: $confidence)');
         }
         
         // Reset silence timer
@@ -421,7 +422,7 @@ class AdvancedVoiceProcessor {
         });
       }
     } catch (e) {
-      debugPrint('Error processing continuous result: $e');
+      Logger.error('Error processing continuous result: $e', error: e);
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
         data: {
@@ -434,7 +435,7 @@ class AdvancedVoiceProcessor {
 
   /// Handle speech recognition errors
   void _onSpeechError(dynamic error) {
-    debugPrint('Speech recognition error: $error');
+    Logger.error('Speech recognition error: $error', error: error);
     
           _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
@@ -457,7 +458,7 @@ class AdvancedVoiceProcessor {
 
   /// Handle speech recognition status changes
   void _onSpeechStatus(String status) {
-    debugPrint('Speech recognition status: $status');
+    Logger.debug('Speech recognition status: $status');
     
           _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.system,
@@ -631,7 +632,7 @@ class AdvancedVoiceProcessor {
         },
       );
     } catch (e) {
-      debugPrint('Error processing speech intent: $e');
+      Logger.error('Error processing speech intent: $e', error: e);
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
         data: {
@@ -679,7 +680,7 @@ class AdvancedVoiceProcessor {
     /// Handle ride booking intent
   Future<void> _handleRideBookingIntent(String text, double confidence) async {
     try {
-      debugPrint('Processing ride booking intent: $text (confidence: $confidence)');
+      Logger.debug('Processing ride booking intent: $text (confidence: $confidence)');
       
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.userInteraction,
@@ -709,7 +710,7 @@ class AdvancedVoiceProcessor {
         try {
           await _firestoreService.createRideRequest(rideRequest);
         } catch (e) {
-          debugPrint('Failed to create ride request: $e');
+          Logger.error('Failed to create ride request: $e', error: e);
           // Continue with local success message
         }
         
@@ -730,7 +731,7 @@ class AdvancedVoiceProcessor {
         await _requestDestinationClarification();
       }
     } catch (e) {
-      debugPrint('Ride booking integration failed: $e');
+      Logger.error('Ride booking integration failed: $e', error: e);
       await _announceBookingFailed('System error occurred');
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
@@ -760,7 +761,7 @@ class AdvancedVoiceProcessor {
       
       return response.toString();
     } catch (e) {
-      debugPrint('Destination extraction failed: $e');
+      Logger.error('Destination extraction failed: $e', error: e);
       // Fallback to simple keyword extraction
       final words = text.toLowerCase().split(' ');
       if (words.contains('to') && words.indexOf('to') < words.length - 1) {
@@ -780,7 +781,7 @@ class AdvancedVoiceProcessor {
         longitude: 26.1025,
       );
     } catch (e) {
-      debugPrint('Location service failed: $e');
+      Logger.error('Location service failed: $e', error: e);
       // Return default location
       return SimpleLocation(
         latitude: 44.4268, // Bucharest coordinates
@@ -807,7 +808,7 @@ class AdvancedVoiceProcessor {
   /// Handle navigation intent
   Future<void> _handleNavigationIntent(String text, double confidence) async {
     try {
-      debugPrint('Processing navigation intent: $text (confidence: $confidence)');
+      Logger.debug('Processing navigation intent: $text (confidence: $confidence)');
       
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.userInteraction,
@@ -855,7 +856,7 @@ class AdvancedVoiceProcessor {
              eta = {'estimatedTime': Duration(minutes: 15)}; // Fallback
            }
          } catch (e) {
-           debugPrint('ETA calculation failed: $e');
+           Logger.error('ETA calculation failed: $e', error: e);
            eta = {'estimatedTime': Duration(minutes: 15)}; // Fallback
          }
          await _announceETA(eta);
@@ -874,7 +875,7 @@ class AdvancedVoiceProcessor {
           final destinationCoordinates = await _extractDestinationCoordinates(destination);
           
           if (destinationCoordinates == null) {
-            debugPrint('❌ Could not extract coordinates for destination: $destination');
+            Logger.error('Could not extract coordinates for destination: $destination');
             await _requestDestinationClarification();
             return;
           }
@@ -899,7 +900,7 @@ class AdvancedVoiceProcessor {
         },
       );
     } catch (e) {
-      debugPrint('Navigation service integration failed: $e');
+      Logger.error('Navigation service integration failed: $e', error: e);
       await _flutterTts.speak('Unable to process navigation request');
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
@@ -944,7 +945,7 @@ class AdvancedVoiceProcessor {
   /// Handle cancellation intent
   Future<void> _handleCancellationIntent(String text, double confidence) async {
     try {
-      debugPrint('Processing cancellation intent: $text (confidence: $confidence)');
+      Logger.debug('Processing cancellation intent: $text (confidence: $confidence)');
       
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.userInteraction,
@@ -971,7 +972,7 @@ class AdvancedVoiceProcessor {
         await _requestCancellationClarification();
       }
     } catch (e) {
-      debugPrint('Cancellation service integration failed: $e');
+      Logger.error('Cancellation service integration failed: $e', error: e);
       await _flutterTts.speak('Unable to process cancellation request');
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
@@ -995,7 +996,7 @@ class AdvancedVoiceProcessor {
          try {
            await _firestoreService.cancelRide(currentRide.id);
          } catch (e) {
-           debugPrint('Failed to cancel ride: $e');
+           Logger.error('Failed to cancel ride: $e', error: e);
            // Continue with local success message
          }
         
@@ -1018,7 +1019,7 @@ class AdvancedVoiceProcessor {
         await _flutterTts.speak('No active ride found to cancel');
       }
     } catch (e) {
-      debugPrint('Error cancelling current ride: $e');
+      Logger.error('Error cancelling current ride: $e', error: e);
       await _flutterTts.speak('Unable to cancel your ride');
     }
   }
@@ -1034,7 +1035,7 @@ class AdvancedVoiceProcessor {
          try {
            await _firestoreService.cancelRide(pendingRequests.first.id);
          } catch (e) {
-           debugPrint('Failed to cancel pending request: $e');
+           Logger.error('Failed to cancel pending request: $e', error: e);
            // Continue with local success message
          }
         
@@ -1054,7 +1055,7 @@ class AdvancedVoiceProcessor {
         await _flutterTts.speak('No pending ride requests found');
       }
     } catch (e) {
-      debugPrint('Error cancelling pending request: $e');
+      Logger.error('Error cancelling pending request: $e', error: e);
       await _flutterTts.speak('Unable to cancel pending request');
     }
   }
@@ -1085,7 +1086,7 @@ class AdvancedVoiceProcessor {
   /// Pass complex queries to conversational AI engine
   Future<void> _passToConversationalEngine(String text, double confidence) async {
     try {
-      debugPrint('Passing to conversational AI: $text (confidence: $confidence)');
+      Logger.debug('Passing to conversational AI: $text (confidence: $confidence)');
       
       // Process with existing ConversationalAIEngine
       final response = await _conversationalEngine.processUserInput(
@@ -1109,7 +1110,7 @@ class AdvancedVoiceProcessor {
         await _flutterTts.speak(response.toString());
       }
     } catch (e) {
-      debugPrint('Error processing with conversational AI: $e');
+      Logger.error('Error processing with conversational AI: $e', error: e);
       _voiceEventController.add(VoiceEvent(
         type: VoiceEventType.error,
         data: {
@@ -1125,7 +1126,7 @@ class AdvancedVoiceProcessor {
 
   /// ✅ RESET STARE CURSA: Curăță toate variabilele de stare pentru a permite o nouă căutare
   void resetRideState() {
-    debugPrint('🔄 AdvancedVoiceProcessor: Resetting ride state for new search...');
+    Logger.debug('AdvancedVoiceProcessor: Resetting ride state for new search...');
     
     // Reset processing state
     _isListening = false;
@@ -1146,7 +1147,7 @@ class AdvancedVoiceProcessor {
     // Reset analytics
     _voiceAnalytics.resetSession();
     
-    debugPrint('✅ AdvancedVoiceProcessor: Ride state reset completed');
+    Logger.info('AdvancedVoiceProcessor: Ride state reset completed');
   }
 
   // *** NOU: Metoda pentru crearea ride request cu date reale ***
@@ -1183,11 +1184,11 @@ class AdvancedVoiceProcessor {
         status: 'pending',
       );
       
-      debugPrint('✅ Ride request created with real data: User ID: $userId, Price: $estimatedPrice');
+      Logger.info('Ride request created with real data: User ID: $userId, Price: $estimatedPrice');
       return rideRequest;
       
     } catch (e) {
-      debugPrint('❌ Error creating ride request with real data: $e');
+      Logger.error('Error creating ride request with real data: $e', error: e);
       // Fallback cu date minime
       return RideRequest(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -1213,7 +1214,7 @@ class AdvancedVoiceProcessor {
       final destinationCoordinates = await _extractDestinationCoordinates(destination);
       
       if (destinationCoordinates == null) {
-        debugPrint('❌ Could not extract coordinates for destination: $destination');
+        Logger.error('Could not extract coordinates for destination: $destination');
         // Returnează preț fallback dacă nu putem calcula distanța
         return 25.0;
       }
@@ -1238,11 +1239,11 @@ class AdvancedVoiceProcessor {
       final calculatedPrice = basePrice + (distanceKm * pricePerKm) + (estimatedMinutes * pricePerMinute);
       final finalPrice = calculatedPrice > minimumPrice ? calculatedPrice : minimumPrice;
       
-      debugPrint('✅ Real price calculated: Distance: ${distanceKm.toStringAsFixed(2)}km, Time: ${estimatedMinutes}min, Price: ${finalPrice.toStringAsFixed(2)} RON');
+      Logger.info('Real price calculated: Distance: ${distanceKm.toStringAsFixed(2)}km, Time: ${estimatedMinutes}min, Price: ${finalPrice.toStringAsFixed(2)} RON');
       return finalPrice;
       
     } catch (e) {
-      debugPrint('❌ Error calculating real price: $e');
+      Logger.error('Error calculating real price: $e', error: e);
       return _calculateFallbackPrice();
     }
   }
@@ -1250,7 +1251,7 @@ class AdvancedVoiceProcessor {
   // *** NOU: Metoda pentru calcularea prețului fallback ***
   double _calculateFallbackPrice() {
     const double fallbackPrice = 25.0; // Preț fix pentru cazuri de eroare
-    debugPrint('⚠️ Using fallback price: $fallbackPrice RON');
+    Logger.warning('Using fallback price: $fallbackPrice RON');
     return fallbackPrice;
   }
   
@@ -1283,15 +1284,15 @@ class AdvancedVoiceProcessor {
       // Note: Will be integrated with GeocodingService for real geocoding in future update
       // For now, returns null if coordinates cannot be found
       
-      debugPrint('🔍 Extracting coordinates for destination: $destination');
+      Logger.debug('Extracting coordinates for destination: $destination');
       
       // ❌ NU FOLOSIM COORDONATE DEFAULT
       // Utilizatorul trebuie să specifice o adresă validă
-      debugPrint('⚠️ Geocoding not implemented yet for destination: $destination');
+      Logger.warning('Geocoding not implemented yet for destination: $destination');
       return null;
       
     } catch (e) {
-      debugPrint('❌ Error extracting destination coordinates: $e');
+      Logger.error('Error extracting destination coordinates: $e', error: e);
       // ❌ NU RETURNĂM COORDONATE DEFAULT
       return null;
     }

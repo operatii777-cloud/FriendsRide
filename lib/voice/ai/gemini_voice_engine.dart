@@ -1,11 +1,11 @@
 import 'dart:convert';
-// import 'dart:isolate'; // Necesar pentru procesarea în background
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/gemini_config.dart';
 import '../../utils/input_validator.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// ✅ Helper: Obține limba curentă din SharedPreferences
 Future<String> _getCurrentLanguageCode() async {
@@ -14,7 +14,7 @@ Future<String> _getCurrentLanguageCode() async {
     final code = prefs.getString('locale');
     return code ?? 'ro'; // Default română
   } catch (e) {
-    debugPrint('🧠 [GEMINI_VOICE] Error getting language: $e');
+    Logger.error('Error getting language: $e', tag: 'GEMINI_VOICE', error: e);
     return 'ro'; // Default română
   }
 }
@@ -37,7 +37,7 @@ class GeminiVoiceEngine {
   /// 🚀 Inițializează engine-ul Gemini
   Future<void> initialize() async {
     try {
-      debugPrint('🧠 [GEMINI_VOICE] Initializing...');
+      Logger.debug('Initializing...', tag: 'GEMINI_VOICE');
       
       // 🎯 Verific configurația
       if (!GeminiConfig.isValid) {
@@ -49,9 +49,9 @@ class GeminiVoiceEngine {
       _model = GenerativeModel(model: 'gemini-pro', apiKey: apiKey);
       _chat = _model!.startChat();
       
-      debugPrint('🧠 [GEMINI_VOICE] ✅ Initialized successfully');
+      Logger.info('Initialized successfully', tag: 'GEMINI_VOICE');
     } catch (e) {
-      debugPrint('🧠 [GEMINI_VOICE] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'GEMINI_VOICE', error: e);
       rethrow;
     }
   }
@@ -65,7 +65,7 @@ class GeminiVoiceEngine {
   /// 🎤 Procesează input-ul vocal EXACT ca Gemini Voice
   Future<GeminiVoiceResponse> processVoiceInput(String userInput, VoiceContext context, {String? languageCode}) async {
     try {
-      debugPrint('🧠 [GEMINI_VOICE] Processing: "$userInput"');
+      Logger.debug('Processing: "$userInput"', tag: 'GEMINI_VOICE');
 
       // ✅ NOU: Obțin limba curentă dacă nu este specificată
       final currentLanguage = languageCode ?? await _getCurrentLanguageCode();
@@ -73,12 +73,12 @@ class GeminiVoiceEngine {
       // Încearcă procesarea locală inteligentă
       final localResponse = await _processLocalCommand(userInput, context: context, languageCode: currentLanguage);
       if (localResponse != null) {
-        debugPrint('🧠 [GEMINI_VOICE] ✅ Local processing successful!');
+        Logger.info('Local processing successful!', tag: 'GEMINI_VOICE');
         return localResponse;
       }
 
       if (!GeminiConfig.isValid) {
-        debugPrint('🧠 [GEMINI_VOICE] ⚠️ Gemini config invalid, using fallback');
+        Logger.warning('Gemini config invalid, using fallback', tag: 'GEMINI_VOICE');
         return await _createFallbackResponse(userInput, 'Gemini configuration invalid');
       }
 
@@ -102,9 +102,9 @@ class GeminiVoiceEngine {
           _updateConversationContext(userInput, parsedResponse);
           return parsedResponse;
         }
-        debugPrint('🧠 [GEMINI_VOICE] ⚠️ Empty chat response, falling back to HTTP API');
+        Logger.warning('Empty chat response, falling back to HTTP API', tag: 'GEMINI_VOICE');
       } catch (e) {
-        debugPrint('🧠 [GEMINI_VOICE] ❌ Chat API error: $e');
+        Logger.error('Chat API error: $e', tag: 'GEMINI_VOICE', error: e);
       }
 
       // 2️⃣ Fallback la API HTTP cu retry
@@ -112,7 +112,7 @@ class GeminiVoiceEngine {
         final apiResponse = await _callGeminiAPIWithRetry(prompt);
         final extractedText = _extractTextFromHttpResponse(apiResponse);
         if (extractedText.isEmpty) {
-          debugPrint('🧠 [GEMINI_VOICE] ⚠️ Empty HTTP response payload');
+          Logger.warning('Empty HTTP response payload', tag: 'GEMINI_VOICE');
           return await _createFallbackResponse(userInput, 'Empty response from Gemini');
         }
         final cleanedResponse = _cleanGeminiResponse(extractedText);
@@ -120,14 +120,14 @@ class GeminiVoiceEngine {
         _updateConversationContext(userInput, parsedResponse);
         return parsedResponse;
       } catch (e) {
-        debugPrint('🧠 [GEMINI_VOICE] ❌ HTTP API error: $e');
+        Logger.error('HTTP API error: $e', tag: 'GEMINI_VOICE', error: e);
       }
 
       // Fallback generic dacă toate încercările eșuează
       return await _createFallbackResponse(userInput, 'No specific command detected');
 
     } catch (e) {
-      debugPrint('🧠 [GEMINI_VOICE] ❌ Local processing error: $e');
+      Logger.error('Local processing error: $e', tag: 'GEMINI_VOICE', error: e);
       return await _createFallbackResponse(userInput, e.toString());
     }
   }
@@ -294,16 +294,16 @@ YOUR RESPONSE (JSON):
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        debugPrint('🧠 [GEMINI_VOICE] API call attempt $attempt/$maxRetries');
+        Logger.debug('API call attempt $attempt/$maxRetries', tag: 'GEMINI_VOICE');
         
         final response = await _callGeminiAPI(prompt)
             .timeout(Duration(milliseconds: timeout));
         
-        debugPrint('🧠 [GEMINI_VOICE] ✅ API call successful on attempt $attempt');
+        Logger.info('API call successful on attempt $attempt', tag: 'GEMINI_VOICE');
         return response;
         
       } catch (e) {
-        debugPrint('🧠 [GEMINI_VOICE] ❌ API call attempt $attempt failed: $e');
+        Logger.error('API call attempt $attempt failed: $e', tag: 'GEMINI_VOICE', error: e);
         
         if (attempt == maxRetries) {
           throw Exception('Gemini API failed after $maxRetries attempts: $e');
@@ -321,12 +321,12 @@ YOUR RESPONSE (JSON):
   Future<String> _callGeminiAPI(String prompt) async {
     // 🎯 Verific configurația
     if (!GeminiConfig.isValid) {
-      debugPrint('🧠 [GEMINI_VOICE] ⚠️ Gemini API Key invalid - falling back to local processing');
+      Logger.warning('Gemini API Key invalid - falling back to local processing', tag: 'GEMINI_VOICE');
       throw Exception(GeminiConfig.configurationErrorMessage);
     }
     
     final url = Uri.parse(GeminiConfig.fullUrl);
-    debugPrint('🧠 [GEMINI_VOICE] 📡 Calling Gemini API: ${url.toString().replaceAll(RegExp(r'key=.*'), 'key=***')}');
+    Logger.debug('Calling Gemini API: ${url.toString().replaceAll(RegExp(r'key=.*'), 'key=***')}', tag: 'GEMINI_VOICE');
     
     final response = await http.post(
       url,
@@ -351,15 +351,15 @@ YOUR RESPONSE (JSON):
       return response.body;
     } else {
       // 🔍 Debug info pentru erori
-      debugPrint('🧠 [GEMINI_VOICE] ❌ API Error ${response.statusCode}');
-      debugPrint('🧠 [GEMINI_VOICE] Response body: ${response.body}');
+      Logger.error('API Error ${response.statusCode}', tag: 'GEMINI_VOICE');
+      Logger.debug('Response body: ${response.body}', tag: 'GEMINI_VOICE');
       
       if (response.statusCode == 404) {
-        debugPrint('🧠 [GEMINI_VOICE] ℹ️ 404 Error - Possible causes:');
-        debugPrint('   - Invalid API key');
-        debugPrint('   - Model name incorrect');
-        debugPrint('   - API endpoint changed');
-        debugPrint('   ✅ Falling back to local processing');
+        Logger.error('404 Error - Possible causes:', tag: 'GEMINI_VOICE');
+        Logger.debug('- Invalid API key');
+        Logger.debug('- Model name incorrect');
+        Logger.debug('- API endpoint changed');
+        Logger.info('Falling back to local processing');
       }
       
       throw Exception('Gemini API error: ${response.statusCode}');
@@ -372,10 +372,10 @@ YOUR RESPONSE (JSON):
   /// Returnează un Map cu 'address' (adresa clarificată) și opțional 'latitude' și 'longitude' (dacă Gemini AI le poate oferi)
   Future<Map<String, dynamic>?> clarifyAddressForGeocoding(String originalAddress) async {
     try {
-      debugPrint('🧠 [GEMINI_GEOCODE] Clarifying address with Gemini AI: $originalAddress');
+      Logger.debug('Clarifying address with Gemini AI: $originalAddress', tag: 'GEMINI_GEOCODE');
       
       if (!GeminiConfig.isValid) {
-        debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Gemini config invalid');
+        Logger.warning('Gemini config invalid', tag: 'GEMINI_GEOCODE');
         return null;
       }
       
@@ -416,13 +416,13 @@ Răspuns JSON:
         final apiResponse = await _callGeminiAPIWithRetry(prompt);
         extractedText = _extractTextFromHttpResponse(apiResponse);
       } catch (e) {
-        debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Gemini API failed, trying fallback: $e');
+        Logger.error('Gemini API failed, trying fallback: $e', tag: 'GEMINI_GEOCODE', error: e);
         // ✅ FALLBACK: Dacă API-ul eșuează, încearcă să clarifice adresa local
         return _fallbackClarifyAddress(originalAddress);
       }
       
       if (extractedText.isEmpty) {
-        debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Empty response from Gemini, trying fallback');
+        Logger.warning('Empty response from Gemini, trying fallback', tag: 'GEMINI_GEOCODE');
         // ✅ FALLBACK: Dacă răspunsul este gol, încearcă clarificare locală
         return _fallbackClarifyAddress(originalAddress);
       }
@@ -439,13 +439,13 @@ Răspuns JSON:
         final longitude = jsonResponse['longitude'] as num?;
         
         if (clarifiedAddress == null || clarifiedAddress.isEmpty) {
-          debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ No address in response');
+          Logger.warning('No address in response', tag: 'GEMINI_GEOCODE');
           return null;
         }
         
         // Verifică dacă adresa clarificată este diferită de originală
         if (clarifiedAddress.toLowerCase() == originalAddress.toLowerCase()) {
-          debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Clarified address is same as original');
+          Logger.warning('Clarified address is same as original', tag: 'GEMINI_GEOCODE');
           return null;
         }
         
@@ -457,7 +457,7 @@ Răspuns JSON:
             lowerAddress.contains('specificați') ||
             lowerAddress.contains('altă destinație') ||
             lowerAddress.length < 5) {
-          debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Gemini AI returned invalid response: $clarifiedAddress');
+          Logger.warning('Gemini AI returned invalid response: $clarifiedAddress', tag: 'GEMINI_GEOCODE');
           return null;
         }
         
@@ -474,18 +474,18 @@ Răspuns JSON:
           if (lat >= 43.5 && lat <= 48.5 && lon >= 20.0 && lon <= 30.0) {
             result['latitude'] = lat;
             result['longitude'] = lon;
-            debugPrint('🧠 [GEMINI_GEOCODE] ✅ Gemini AI provided coordinates: $lat, $lon');
+            Logger.info('Gemini AI provided coordinates: $lat, $lon', tag: 'GEMINI_GEOCODE');
           } else {
-            debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Invalid coordinates from Gemini AI: $lat, $lon');
+            Logger.warning('Invalid coordinates from Gemini AI: $lat, $lon', tag: 'GEMINI_GEOCODE');
           }
         }
         
-        debugPrint('🧠 [GEMINI_GEOCODE] ✅ Gemini AI clarified address: $clarifiedAddress');
+        Logger.info('Gemini AI clarified address: $clarifiedAddress', tag: 'GEMINI_GEOCODE');
         return result;
         
       } catch (e) {
         // Dacă nu e JSON valid, încearcă să extragă doar adresa din text
-        debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Could not parse JSON, trying to extract address from text: $e');
+        Logger.warning('Could not parse JSON, trying to extract address from text: $e', tag: 'GEMINI_GEOCODE');
         
         String clarifiedAddress = cleanedResponse.trim();
         
@@ -511,22 +511,22 @@ Răspuns JSON:
             lowerAddress.contains('specificați') ||
             lowerAddress.contains('altă destinație') ||
             lowerAddress.length < 5) {
-          debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Gemini AI returned invalid response: $clarifiedAddress');
+          Logger.warning('Gemini AI returned invalid response: $clarifiedAddress', tag: 'GEMINI_GEOCODE');
           return null;
         }
         
         // Verifică dacă adresa clarificată este diferită de originală
         if (clarifiedAddress.toLowerCase() == originalAddress.toLowerCase()) {
-          debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Clarified address is same as original');
+          Logger.warning('Clarified address is same as original', tag: 'GEMINI_GEOCODE');
           return null;
         }
         
-        debugPrint('🧠 [GEMINI_GEOCODE] ✅ Gemini AI clarified address (text only): $clarifiedAddress');
+        Logger.info('Gemini AI clarified address (text only): $clarifiedAddress', tag: 'GEMINI_GEOCODE');
         return {'address': clarifiedAddress};
       }
       
     } catch (e) {
-      debugPrint('🧠 [GEMINI_GEOCODE] ❌ Error clarifying address: $e');
+      Logger.error('Error clarifying address: $e', tag: 'GEMINI_GEOCODE', error: e);
       // ✅ FALLBACK: Dacă toate încercările eșuează, încearcă clarificare locală
       return _fallbackClarifyAddress(originalAddress);
     }
@@ -535,7 +535,7 @@ Răspuns JSON:
   /// 🔄 FALLBACK: Clarifică adresa local (fără API) când Gemini API eșuează
   Map<String, dynamic>? _fallbackClarifyAddress(String originalAddress) {
     try {
-      debugPrint('🧠 [GEMINI_GEOCODE] 🔄 Using fallback local address clarification');
+      Logger.warning('Using fallback local address clarification', tag: 'GEMINI_GEOCODE');
       
       // Normalizează adresa
       String clarified = originalAddress.trim();
@@ -564,15 +564,15 @@ Răspuns JSON:
       
       // Verifică dacă adresa clarificată este diferită de originală
       if (clarified.toLowerCase() == originalAddress.toLowerCase()) {
-        debugPrint('🧠 [GEMINI_GEOCODE] ⚠️ Fallback clarification same as original');
+        Logger.warning('Fallback clarification same as original', tag: 'GEMINI_GEOCODE');
         return null;
       }
       
-      debugPrint('🧠 [GEMINI_GEOCODE] ✅ Fallback clarified address: $clarified');
+      Logger.warning('Fallback clarified address: $clarified', tag: 'GEMINI_GEOCODE');
       return {'address': clarified};
       
     } catch (e) {
-      debugPrint('🧠 [GEMINI_GEOCODE] ❌ Fallback clarification error: $e');
+      Logger.error('Fallback clarification error: $e', tag: 'GEMINI_GEOCODE', error: e);
       return null;
     }
   }
@@ -589,7 +589,7 @@ Răspuns JSON:
       return GeminiVoiceResponse.fromJson(parsedData);
       
     } catch (e) {
-      debugPrint('🧠 [GEMINI_VOICE] ❌ Response parsing error: $e');
+      Logger.error('Response parsing error: $e', tag: 'GEMINI_VOICE', error: e);
       return await _createFallbackResponse('', 'Response parsing failed');
     }
   }
@@ -639,7 +639,7 @@ Răspuns JSON:
   
   /// 🆘 Răspuns de fallback când Gemini eșuează - cu procesare locală inteligentă
   Future<GeminiVoiceResponse> _createFallbackResponse(String userInput, String error) async {
-    debugPrint('🧠 [GEMINI_VOICE] Using local fallback processing for: "$userInput"');
+    Logger.warning('Using local fallback processing for: "$userInput"', tag: 'GEMINI_VOICE');
     
     // 🎯 Procesare locală inteligentă pentru comenzile comune
     final localResponse = await _processLocalCommand(userInput, context: null);
@@ -682,7 +682,7 @@ Răspuns JSON:
     // 🎯 PRIORITATE 2: Detectez confirmări
     final confirmations = ['da', 'confirm', 'corect', 'bine', 'perfect', 'ok', 'okay', 'sigur', 'continuă', 'merge'];
     if (confirmations.any((conf) => input == conf || input.startsWith('$conf ') || input.endsWith(' $conf'))) {
-      debugPrint('🧠 [GEMINI_VOICE] ✅ Local processing: Positive confirmation detected');
+      Logger.info('Local processing: Positive confirmation detected', tag: 'GEMINI_VOICE');
       // ✅ FIX: Dacă starea este awaitingDriverAcceptance, returnează driver_acceptance
       if (isAwaitingDriverAcceptance) {
         return GeminiVoiceResponse(
@@ -940,7 +940,7 @@ Răspuns JSON:
     // 🔍 Caut destinația în input
     for (final entry in destinations.entries) {
       if (input.contains(entry.key)) {
-        debugPrint('🧠 [GEMINI_VOICE] ✅ Local processing: Found known destination "${entry.value}"');
+        Logger.info('Local processing: Found known destination "${entry.value}"', tag: 'GEMINI_VOICE');
         return GeminiVoiceResponse(
           type: 'destination_confirmed',
           message: 'Perfect! Am înțeles că doriți să mergeți la ${entry.value}.',
@@ -982,7 +982,7 @@ Răspuns JSON:
         }
       }
       
-      debugPrint('🧠 [GEMINI_VOICE] ✅ Local processing: Treating "$cleanedDestination" as destination');
+      Logger.info('Local processing: Treating "$cleanedDestination" as destination', tag: 'GEMINI_VOICE');
       return GeminiVoiceResponse(
         type: 'destination_confirmed',
         message: 'Perfect! Am înțeles că doriți să mergeți la $cleanedDestination.',
@@ -999,11 +999,11 @@ Răspuns JSON:
   /// 🛑 Oprește procesarea
   Future<void> stop() async {
     try {
-      debugPrint('🧠 [GEMINI_VOICE] Stopping...');
+      Logger.debug('Stopping...', tag: 'GEMINI_VOICE');
       _conversationContext.clear();
-      debugPrint('🧠 [GEMINI_VOICE] ✅ Stopped successfully');
+      Logger.info('Stopped successfully', tag: 'GEMINI_VOICE');
     } catch (e) {
-      debugPrint('🧠 [GEMINI_VOICE] ❌ Stop error: $e');
+      Logger.error('Stop error: $e', tag: 'GEMINI_VOICE', error: e);
     }
   }
   
@@ -1042,19 +1042,19 @@ Răspuns JSON:
   /// 🎤 Pornește ascultarea (delegat către VoiceOrchestrator)
   Future<void> startListening() async {
     // Această funcționalitate este gestionată de VoiceOrchestrator
-    debugPrint('🧠 [GEMINI_VOICE] Start listening delegated to VoiceOrchestrator');
+    Logger.info('Start listening delegated to VoiceOrchestrator', tag: 'GEMINI_VOICE');
   }
   
   /// 🛑 Oprește ascultarea (delegat către VoiceOrchestrator)
   Future<void> stopListening() async {
     // Această funcționalitate este gestionată de VoiceOrchestrator
-    debugPrint('🧠 [GEMINI_VOICE] Stop listening delegated to VoiceOrchestrator');
+    Logger.info('Stop listening delegated to VoiceOrchestrator', tag: 'GEMINI_VOICE');
   }
   
   /// 🗣️ Vorbește textul (delegat către TTS)
   Future<void> speak(String text) async {
     // Această funcționalitate este gestionată de NaturalVoiceSynthesizer
-    debugPrint('🧠 [GEMINI_VOICE] Speak delegated to TTS: $text');
+    Logger.debug('Speak delegated to TTS: $text', tag: 'GEMINI_VOICE');
   }
 }
 

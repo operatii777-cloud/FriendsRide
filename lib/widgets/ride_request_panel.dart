@@ -9,12 +9,12 @@ import 'package:friendsride_app/screens/searching_for_driver_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/services/pricing_service.dart';
 import 'package:friendsride_app/services/routing_service.dart';
-// import 'package:friendsride_app/services/eta_service.dart'; // Eliminat
 import 'package:friendsride_app/widgets/address_input_view.dart';
 import 'package:friendsride_app/widgets/ride_confirmation_view.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 enum PanelState { addressInput, rideConfirmation }
 
@@ -73,7 +73,7 @@ class RideRequestPanelState extends State<RideRequestPanel> {
   void resetPanel() {
     if (!mounted) return;
     
-    debugPrint('🔄 RideRequestPanel: Resetting panel state');
+    Logger.debug('RideRequestPanel: Resetting panel state');
     
     setState(() {
       _panelState = PanelState.addressInput;
@@ -94,7 +94,7 @@ class RideRequestPanelState extends State<RideRequestPanel> {
     // Curățăm ruta din MapScreen
     widget.onRouteCalculated(null);
     
-    debugPrint('✅ RideRequestPanel: Reset completed');
+    Logger.info('RideRequestPanel: Reset completed');
   }
 
   // ✅ NOU: Metodă pentru setarea destinației din exterior (POI selection)
@@ -103,11 +103,11 @@ class RideRequestPanelState extends State<RideRequestPanel> {
     required double latitude,
     required double longitude,
   }) {
-    debugPrint('🎯 RideRequestPanel: Setting destination from POI: $address');
-    debugPrint('🎯 RideRequestPanel: Destination coordinates: $latitude, $longitude');
+    Logger.info('RideRequestPanel: Setting destination from POI: $address');
+    Logger.info('RideRequestPanel: Destination coordinates: $latitude, $longitude');
     
     if (!mounted) {
-      debugPrint('🚨 RideRequestPanel: Cannot set destination - widget not mounted');
+      Logger.error('RideRequestPanel: Cannot set destination - widget not mounted');
       return;
     }
     
@@ -115,22 +115,22 @@ class RideRequestPanelState extends State<RideRequestPanel> {
       setState(() {
         _destinationAddress = address;
         _endPoint = Point(coordinates: Position(longitude, latitude));
-        debugPrint('🎯 RideRequestPanel: Destination state updated successfully');
+        Logger.info('RideRequestPanel: Destination state updated successfully');
       });
       
       // Recalculează ruta dacă ai și pickup
       if (_startPoint != null) {
-        debugPrint('🎯 RideRequestPanel: Recalculating route with new destination...');
+        Logger.info('RideRequestPanel: Recalculating route with new destination...');
         _onDestinationSelected(_startPoint!, _endPoint!, _startAddress, _destinationAddress);
       } else {
-        debugPrint('🎯 RideRequestPanel: No pickup point yet - waiting for pickup');
+        Logger.info('RideRequestPanel: No pickup point yet - waiting for pickup');
       }
       
-      debugPrint('✅ RideRequestPanel: Destination set successfully');
+      Logger.info('RideRequestPanel: Destination set successfully');
       
     } catch (e) {
-      debugPrint('🚨 RideRequestPanel: Error setting destination: $e');
-      debugPrint('🚨 Stack trace: ${StackTrace.current}');
+      Logger.error('RideRequestPanel: Error setting destination: $e', error: e);
+      Logger.error('Stack trace: ${StackTrace.current}');
     }
   }
   
@@ -140,11 +140,11 @@ class RideRequestPanelState extends State<RideRequestPanel> {
     required double latitude,
     required double longitude,
   }) {
-    debugPrint('🚀 RideRequestPanel: Setting pickup from POI: $address');
-    debugPrint('🚀 RideRequestPanel: Pickup coordinates: $latitude, $longitude');
+    Logger.info('RideRequestPanel: Setting pickup from POI: $address');
+    Logger.info('RideRequestPanel: Pickup coordinates: $latitude, $longitude');
     
     if (!mounted) {
-      debugPrint('🚨 RideRequestPanel: Cannot set pickup - widget not mounted');
+      Logger.error('RideRequestPanel: Cannot set pickup - widget not mounted');
       return;
     }
     
@@ -152,22 +152,22 @@ class RideRequestPanelState extends State<RideRequestPanel> {
       setState(() {
         _startAddress = address;
         _startPoint = Point(coordinates: Position(longitude, latitude));
-        debugPrint('🚀 RideRequestPanel: Pickup state updated successfully');
+        Logger.info('RideRequestPanel: Pickup state updated successfully');
       });
       
       // Recalculează ruta dacă ai și destinația
       if (_endPoint != null) {
-        debugPrint('🚀 RideRequestPanel: Recalculating route with new pickup...');
+        Logger.info('RideRequestPanel: Recalculating route with new pickup...');
         _onDestinationSelected(_startPoint!, _endPoint!, _startAddress, _destinationAddress);
       } else {
-        debugPrint('🚀 RideRequestPanel: No destination yet - waiting for destination');
+        Logger.info('RideRequestPanel: No destination yet - waiting for destination');
       }
       
-      debugPrint('✅ RideRequestPanel: Pickup set successfully');
+      Logger.info('RideRequestPanel: Pickup set successfully');
       
     } catch (e) {
-      debugPrint('🚨 RideRequestPanel: Error setting pickup: $e');
-      debugPrint('🚨 Stack trace: ${StackTrace.current}');
+      Logger.error('RideRequestPanel: Error setting pickup: $e', error: e);
+      Logger.error('Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -203,7 +203,7 @@ class RideRequestPanelState extends State<RideRequestPanel> {
       _stops.add(stop);
     });
     
-    debugPrint('🎯 Added stop: ${stop.address}. Total stops: ${_stops.length}');
+    Logger.info('Added stop: ${stop.address}. Total stops: ${_stops.length}');
     
     // Recalculăm ruta doar dacă avem și destinația setată
     if (_endPoint != null) {
@@ -234,7 +234,7 @@ class RideRequestPanelState extends State<RideRequestPanel> {
         _stops.removeAt(index);
       });
       
-      debugPrint('🗑️ Removed stop: ${removedStop.address}. Remaining stops: ${_stops.length}');
+      Logger.debug('Removed stop: ${removedStop.address}. Remaining stops: ${_stops.length}');
       
       // Recalculăm ruta doar dacă avem destinația
       if (_endPoint != null) {
@@ -264,13 +264,13 @@ class RideRequestPanelState extends State<RideRequestPanel> {
       // Adăugăm opririle în ordinea corectă
       for (var stop in _stops) {
         waypoints.add(Point(coordinates: Position(stop.longitude, stop.latitude)));
-        debugPrint('🗺️ Added stop waypoint: ${stop.address} at ${stop.latitude}, ${stop.longitude}');
+        Logger.debug('Added stop waypoint: ${stop.address} at ${stop.latitude}, ${stop.longitude}');
       }
       
       // Adăugăm destinația
       waypoints.add(_endPoint!);
       
-      debugPrint('🗺️ Recalculating route with ${waypoints.length} waypoints (${_stops.length} stops)');
+      Logger.debug('Recalculating route with ${waypoints.length} waypoints (${_stops.length} stops)');
       
       final routeData = await _routingService.getRoute(waypoints);
       if (!mounted) return;
@@ -298,10 +298,10 @@ class RideRequestPanelState extends State<RideRequestPanel> {
 
       await _calculateEtaForAllCategories();
       
-      debugPrint('✅ Route recalculated successfully with ${_stops.length} stops');
+      Logger.info('Route recalculated successfully with ${_stops.length} stops');
       
     } catch (e) {
-      debugPrint('❌ Error recalculating route with stops: $e');
+      Logger.error('Error recalculating route with stops: $e', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -345,12 +345,12 @@ class RideRequestPanelState extends State<RideRequestPanel> {
       // Adăugăm opririle existente
       for (var stop in _stops) {
         waypoints.add(Point(coordinates: Position(stop.longitude, stop.latitude)));
-        debugPrint('🗺️ Including existing stop: ${stop.address}');
+        Logger.debug('Including existing stop: ${stop.address}');
       }
       
       waypoints.add(endPoint);
       
-      debugPrint('🗺️ Calculating route with ${waypoints.length} waypoints including ${_stops.length} stops');
+      Logger.debug('Calculating route with ${waypoints.length} waypoints including ${_stops.length} stops');
       
       final routeData = await _routingService.getRoute(waypoints);
       if (!mounted) return;
@@ -451,7 +451,7 @@ class RideRequestPanelState extends State<RideRequestPanel> {
       return;
     }
     
-    debugPrint('🎯 [RIDE] Creating ride for user: $userId with ${_stops.length} stops');
+    Logger.info('Creating ride for user: $userId with ${_stops.length} stops', tag: 'RIDE');
     setState(() { _isLoading = true; });
     
     final ride = Ride(
@@ -479,11 +479,11 @@ class RideRequestPanelState extends State<RideRequestPanel> {
     );
 
     // ADĂUGAT: Debug pentru a verifica opririle
-    debugPrint('🎯 [RIDE] Ride stops: ${ride.stops}');
+    Logger.info('Ride stops: ${ride.stops}', tag: 'RIDE');
 
-    debugPrint('🎯 [RIDE] Calling requestRide...');
+    Logger.info('Calling requestRide...', tag: 'RIDE');
     final rideId = await _firestoreService.requestRide(ride);
-    debugPrint('🎯 [RIDE] Ride created with ID: $rideId');
+    Logger.info('Ride created with ID: $rideId', tag: 'RIDE');
     if (!mounted) return;
 
     setState(() { _isLoading = false; });

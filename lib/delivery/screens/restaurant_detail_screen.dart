@@ -12,6 +12,7 @@ import '../services/cart_service.dart';
 import '../scripts/sync_menu_to_firestore_and_cache.dart';
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Screen pentru detalii restaurant și meniu
 class RestaurantDetailScreen extends StatefulWidget {
@@ -43,28 +44,28 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
   Future<void> _loadMenu() async {
     setState(() => _isLoading = true);
-    debugPrint('🔍 [RESTAURANT_DETAIL] Loading menu for restaurant: ${widget.restaurant.id}');
-    debugPrint('🔍 [RESTAURANT_DETAIL] WebhookUrl: ${widget.restaurant.webhookUrl}');
+    Logger.debug('Loading menu for restaurant: ${widget.restaurant.id}', tag: 'RESTAURANT_DETAIL');
+    Logger.debug('WebhookUrl: ${widget.restaurant.webhookUrl}', tag: 'RESTAURANT_DETAIL');
 
     try {
       final menu = await _restaurantService.getMenu(widget.restaurant.id);
-      debugPrint('🔍 [RESTAURANT_DETAIL] Menu loaded: ${menu.length} products');
+      Logger.info('Menu loaded: ${menu.length} products', tag: 'RESTAURANT_DETAIL');
 
       // Dacă meniul este gol și restaurantul are webhookUrl configurat, sincronizează automat
       if (menu.isEmpty && 
           widget.restaurant.webhookUrl != null && 
           widget.restaurant.webhookUrl!.isNotEmpty) {
-        debugPrint('🔍 [RESTAURANT_DETAIL] Menu is empty, attempting auto-sync from Restaurant App v3...');
+        Logger.debug('Menu is empty, attempting auto-sync from Restaurant App v3...', tag: 'RESTAURANT_DETAIL');
         // Folosește scriptul de sincronizare care salvează direct în Firestore și cache
         try {
           await syncMenuToFirestoreAndCache(
             restaurantId: widget.restaurant.id,
             webhookUrl: widget.restaurant.webhookUrl!,
           );
-          debugPrint('🔍 [RESTAURANT_DETAIL] Sync completed, reloading menu from cache...');
+          Logger.info('Sync completed, reloading menu from cache...', tag: 'RESTAURANT_DETAIL');
           // Reîncarcă meniul din cache (va fi disponibil imediat)
           final syncedMenu = await _restaurantService.getMenu(widget.restaurant.id, forceRefresh: false);
-          debugPrint('🔍 [RESTAURANT_DETAIL] Synced menu loaded: ${syncedMenu.length} products');
+          Logger.info('Synced menu loaded: ${syncedMenu.length} products', tag: 'RESTAURANT_DETAIL');
         
           // Group by category
           final menuByCategory = <String, List<Product>>{};
@@ -87,7 +88,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
           }
           return;
         } catch (e) {
-          debugPrint('❌ [RESTAURANT_DETAIL] Error during auto-sync: $e');
+          Logger.error('Error during auto-sync: $e', tag: 'RESTAURANT_DETAIL', error: e);
           // Continuă cu încărcarea normală dacă sincronizarea eșuează
         }
       }
@@ -329,10 +330,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
   /// Sincronizează meniurile din Restaurant App v3 către FriendsRide
   Future<void> _syncMenuFromRestaurantAppV3({bool silent = false}) async {
-    debugPrint('🔄 [SYNC_MENU] Starting menu sync from Restaurant App v3');
+    Logger.debug('Starting menu sync from Restaurant App v3', tag: 'SYNC_MENU');
     
     if (widget.restaurant.webhookUrl == null || widget.restaurant.webhookUrl!.isEmpty) {
-      debugPrint('❌ [SYNC_MENU] WebhookUrl is not configured');
+      Logger.error('WebhookUrl is not configured', tag: 'SYNC_MENU');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -354,9 +355,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       // Normalizează URL-ul pentru a funcționa atât pe emulator cât și pe device fizic
       final normalizedUrl = await _normalizeWebhookUrl(widget.restaurant.webhookUrl!);
       final menuUrl = Uri.parse('$normalizedUrl/api/menu/all?lang=ro');
-      debugPrint('🔄 [SYNC_MENU] Fetching from: $menuUrl');
+      Logger.debug('Fetching from: $menuUrl', tag: 'SYNC_MENU');
       final response = await http.get(menuUrl).timeout(const Duration(seconds: 30));
-      debugPrint('🔄 [SYNC_MENU] Response status: ${response.statusCode}');
+      Logger.debug('Response status: ${response.statusCode}', tag: 'SYNC_MENU');
       
       if (response.statusCode != 200) {
         if (mounted) {
@@ -371,18 +372,18 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       }
 
       final menuData = jsonDecode(response.body);
-      debugPrint('🔄 [SYNC_MENU] Response body type: ${menuData.runtimeType}');
-      debugPrint('🔄 [SYNC_MENU] Response keys: ${menuData is Map ? menuData.keys.toList() : 'N/A'}');
+      Logger.debug('Response body type: ${menuData.runtimeType}', tag: 'SYNC_MENU');
+      Logger.debug('Response keys: ${menuData is Map ? menuData.keys.toList() : 'N/A'}', tag: 'SYNC_MENU');
       
       // Răspunsul de la server este: {"message":"...", "data":[...]}
       final products = menuData is List 
           ? menuData 
           : (menuData['data'] as List<dynamic>? ?? menuData['menu'] as List<dynamic>? ?? []);
       
-      debugPrint('🔄 [SYNC_MENU] Extracted products count: ${products.length}');
+      Logger.debug('Extracted products count: ${products.length}', tag: 'SYNC_MENU');
       
       if (products.isEmpty) {
-        debugPrint('⚠️ [SYNC_MENU] No products found in response');
+        Logger.warning('No products found in response', tag: 'SYNC_MENU');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -398,7 +399,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       int syncedCount = 0;
       int errorCount = 0;
 
-      debugPrint('🔄 [SYNC_MENU] Processing ${products.length} products...');
+      Logger.debug('Processing ${products.length} products...', tag: 'SYNC_MENU');
 
       for (final productData in products) {
         try {
@@ -407,7 +408,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               ? productId 
               : firestore.collection('products').doc().id;
           
-          debugPrint('🔄 [SYNC_MENU] Syncing product: ${productData['name'] ?? 'Unknown'} (ID: $firestoreProductId)');
+          Logger.debug('Syncing product: ${productData['name'] ?? 'Unknown'} (ID: $firestoreProductId)', tag: 'SYNC_MENU');
           
           final product = {
             'restaurantId': widget.restaurant.id,
@@ -426,17 +427,17 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
           await firestore.collection('products').doc(firestoreProductId).set(product);
           syncedCount++;
-          debugPrint('✅ [SYNC_MENU] Product synced: ${productData['name'] ?? 'Unknown'}');
+          Logger.info('Product synced: ${productData['name'] ?? 'Unknown'}', tag: 'SYNC_MENU');
         } catch (e, stackTrace) {
           errorCount++;
-          debugPrint('❌ [SYNC_MENU] Error syncing product ${productData['name'] ?? 'Unknown'}: $e');
-          debugPrint('❌ [SYNC_MENU] Stack trace: $stackTrace');
-          debugPrint('❌ [SYNC_MENU] Product data keys: ${productData is Map ? productData.keys.toList() : 'N/A'}');
+          Logger.error('Error syncing product ${productData['name'] ?? 'Unknown'}: $e', tag: 'SYNC_MENU', error: e);
+          Logger.error('Stack trace: $stackTrace', tag: 'SYNC_MENU');
+          Logger.error('Product data keys: ${productData is Map ? productData.keys.toList() : 'N/A'}', tag: 'SYNC_MENU');
           // Continuă cu următorul produs
         }
       }
 
-      debugPrint('✅ [SYNC_MENU] Sync completed: $syncedCount successful, $errorCount errors');
+      Logger.info('Sync completed: $syncedCount successful, $errorCount errors', tag: 'SYNC_MENU');
 
       if (mounted) {
         if (syncedCount > 0) {
@@ -464,7 +465,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         }
       }
     } on http.ClientException catch (e) {
-      debugPrint('❌ [SYNC_MENU] HTTP Client Exception: $e');
+      Logger.error('HTTP Client Exception: $e', tag: 'SYNC_MENU', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -475,8 +476,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         );
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ [SYNC_MENU] General error: $e');
-      debugPrint('❌ [SYNC_MENU] Stack trace: $stackTrace');
+      Logger.error('General error: $e', tag: 'SYNC_MENU', error: e);
+      Logger.error('Stack trace: $stackTrace', tag: 'SYNC_MENU');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -655,7 +656,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             
             // Dacă există host configurat, folosește-l
             if (configuredHost != null && configuredHost.isNotEmpty) {
-              debugPrint('✅ [NORMALIZE_URL] Using configured host: $configuredHost');
+              Logger.info('Using configured host: $configuredHost', tag: 'NORMALIZE_URL');
               // Dacă webhookUrl este localhost sau 10.0.2.2, înlocuiește doar host-ul
               final uri = Uri.tryParse(webhookUrl);
               if (uri != null) {
@@ -673,8 +674,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             // Dacă nu există host configurat, folosește IP-ul default
             // NOTĂ: Utilizatorul poate configura URL-ul în DeliverySettingsScreen
             const defaultPcIp = '192.168.50.238'; // IP-ul PC-ului detectat
-            debugPrint('⚠️ [NORMALIZE_URL] No configured host found, using default: $defaultPcIp');
-            debugPrint('💡 [NORMALIZE_URL] Configure URL in Delivery Settings for mobile data usage');
+            Logger.warning('No configured host found, using default: $defaultPcIp', tag: 'NORMALIZE_URL');
+            Logger.debug('Configure URL in Delivery Settings for mobile data usage', tag: 'NORMALIZE_URL');
             return webhookUrl
                 .replaceAll('localhost', defaultPcIp)
                 .replaceAll('127.0.0.1', defaultPcIp)
@@ -686,7 +687,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 .replaceAll('127.0.0.1', '10.0.2.2');
           }
         } catch (e) {
-          debugPrint('⚠️ [NORMALIZE_URL] Error detecting device type: $e');
+          Logger.error('Error detecting device type: $e', tag: 'NORMALIZE_URL', error: e);
           // Fallback: presupunem că este emulator
           return webhookUrl
               .replaceAll('localhost', '10.0.2.2')

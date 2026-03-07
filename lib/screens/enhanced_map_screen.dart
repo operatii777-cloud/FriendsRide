@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../voice/states/voice_interaction_states.dart';
 import '../voice/passenger/passenger_voice_controller_adapter.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 class EnhancedMapScreen extends StatefulWidget {
@@ -717,7 +718,7 @@ class _EnhancedMapScreenState extends State<EnhancedMapScreen>
       child: GestureDetector(
         // *** CRUCIAL: Tap pe tot overlay-ul pentru a închide ***
         onTap: () {
-          debugPrint('🎤 DEBUG: Overlay tapped - forțează închiderea');
+          Logger.debug('DEBUG: Overlay tapped - forțează închiderea');
           voiceController.stopVoiceInteraction();
         },
         behavior: HitTestBehavior.opaque,
@@ -759,7 +760,7 @@ class _EnhancedMapScreenState extends State<EnhancedMapScreen>
                       // *** BUTON X PENTRU ÎNCHIDERE ***
                       IconButton(
                         onPressed: () {
-                          debugPrint('🎤 DEBUG: X button pressed');
+                          Logger.debug('DEBUG: X button pressed');
                           voiceController.stopVoiceInteraction();
                         },
                         icon: Icon(Icons.close),
@@ -975,7 +976,7 @@ class _EnhancedMapScreenState extends State<EnhancedMapScreen>
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              debugPrint('🎤 DEBUG: Cancel button pressed');
+              Logger.debug('DEBUG: Cancel button pressed');
               voiceController.stopVoiceInteraction();
             },
             style: ElevatedButton.styleFrom(
@@ -1000,7 +1001,7 @@ class _EnhancedMapScreenState extends State<EnhancedMapScreen>
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              debugPrint('🎤 DEBUG: Restart button pressed');
+              Logger.debug('DEBUG: Restart button pressed');
               voiceController.reset();
               voiceController.startVoiceInteraction();
             },

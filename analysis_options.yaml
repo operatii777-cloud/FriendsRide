@@ -21,8 +21,8 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # Disable avoid_print for test files (they use print for output)
-    avoid_print: false
+    # Treat debugPrint/print as warning to prevent reintroduction in production
+    avoid_print: true
     # Disable dangling_library_doc_comments for test files
     dangling_library_doc_comments: false
     # Disable other info-level rules that are not critical

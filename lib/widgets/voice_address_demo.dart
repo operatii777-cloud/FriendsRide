@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:friendsride_app/widgets/voice_address_input_field.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🎯 VoiceAddressDemo - Demonstrație completă a funcționalității de input vocal pentru adrese
 /// 
@@ -100,9 +101,9 @@ class _VoiceAddressDemoState extends State<VoiceAddressDemo> {
     _showSuccessMessage('✅ $fieldName validat: $address');
     
     // Debug info
-    debugPrint('🎯 $fieldName validated:');
-    debugPrint('   Address: $address');
-    debugPrint('   Coordinates: ${coordinates.coordinates.lat}, ${coordinates.coordinates.lng}');
+    Logger.info('$fieldName validated:');
+    Logger.debug('Address: $address');
+    Logger.debug('Coordinates: ${coordinates.coordinates.lat}, ${coordinates.coordinates.lng}');
   }
 
   /// ❌ Gestionează validarea eșuată a unei adrese

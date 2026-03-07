@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../states/voice_interaction_states.dart';
 import '../core/voice_orchestrator.dart';
 import 'passenger_voice_controller.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🎯 Adapter pentru PassengerVoiceController - face AI-ul compatibil cu UI-ul existent
 /// 
@@ -54,7 +55,7 @@ class PassengerVoiceControllerAdapter extends ChangeNotifier {
   
   void finalizeRideBooking() {
     // 🎯 Implementare pentru finalizarea cursei
-    debugPrint('🎤 [ADAPTER] Finalize ride booking');
+    Logger.debug('Finalize ride booking', tag: 'ADAPTER');
   }
   
   Future<void> waitForUserConfirmation() async {
@@ -64,7 +65,7 @@ class PassengerVoiceControllerAdapter extends ChangeNotifier {
   
   void setProcessingState(VoiceProcessingState state) {
     // 🎯 Starea este gestionată de controller-ul vocal
-    debugPrint('🎤 [ADAPTER] Set processing state: $state');
+    Logger.debug('Set processing state: $state', tag: 'ADAPTER');
   }
   
   Future<void> updateContextAndProcess(String userInput) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class AudioService {
   static final AudioService _instance = AudioService._internal();
@@ -17,21 +18,21 @@ class AudioService {
     try {
       // ✅ FIX: Verifică dacă fișierul audio există
       await _audioPlayer.play(AssetSource('sounds/message_sound.wav'));
-      debugPrint('🔊 Playing message received sound successfully');
+      Logger.debug('Playing message received sound successfully');
       
       // ✅ BONUS: Vibrație pentru feedback haptic
       HapticFeedback.mediumImpact();
     } catch (e) {
-      debugPrint('⚠️ Error playing message sound: $e');
+      Logger.error('Error playing message sound: $e', error: e);
       // ✅ FALLBACK: Vibrație pentru feedback haptic
       HapticFeedback.mediumImpact();
       
       // ✅ BONUS: Încearcă și sunetul de sistem
       try {
         SystemSound.play(SystemSoundType.alert);
-        debugPrint('🔊 Fallback to system notification sound');
+        Logger.warning('Fallback to system notification sound');
       } catch (e2) {
-        debugPrint('⚠️ Even system sound failed: $e2');
+        Logger.error('Even system sound failed: $e2');
       }
     }
   }
@@ -44,21 +45,21 @@ class AudioService {
     try {
       // ✅ FIX: Verifică dacă fișierul audio există
       await _audioPlayer.play(AssetSource('sounds/message_sound.wav'));
-      debugPrint('🚗 Playing ride request sound successfully');
+      Logger.debug('Playing ride request sound successfully');
       
       // ✅ BONUS: Vibrație pentru feedback haptic
       HapticFeedback.heavyImpact();
     } catch (e) {
-      debugPrint('⚠️ Error playing ride request sound: $e');
+      Logger.error('Error playing ride request sound: $e', error: e);
       // ✅ FALLBACK: Vibrație mai puternică pentru a atrage atenția
       HapticFeedback.heavyImpact();
       
       // ✅ BONUS: Încearcă și sunetul de sistem
       try {
         SystemSound.play(SystemSoundType.alert);
-        debugPrint('🔊 Fallback to system notification sound');
+        Logger.warning('Fallback to system notification sound');
       } catch (e2) {
-        debugPrint('⚠️ Even system sound failed: $e2');
+        Logger.error('Even system sound failed: $e2');
       }
     }
   }
@@ -69,9 +70,9 @@ class AudioService {
     
     try {
       SystemSound.play(SystemSoundType.alert);
-      debugPrint('🔊 Playing incoming call sound (system default)');
+      Logger.debug('Playing incoming call sound (system default)');
     } catch (e) {
-      debugPrint('⚠️ Error playing call sound: $e');
+      Logger.error('Error playing call sound: $e', error: e);
       HapticFeedback.mediumImpact();
     }
   }
@@ -82,9 +83,9 @@ class AudioService {
     
     try {
       await _audioPlayer.stop();
-      debugPrint('🔇 Stopped all audio playback');
+      Logger.debug('Stopped all audio playback');
     } catch (e) {
-      debugPrint('⚠️ Error stopping audio: $e');
+      Logger.error('Error stopping audio: $e', error: e);
     }
   }
 
@@ -94,9 +95,9 @@ class AudioService {
     
     try {
       await _audioPlayer.setVolume(volume.clamp(0.0, 1.0));
-      debugPrint('🔊 Audio volume set to: ${(volume * 100).round()}%');
+      Logger.debug('Audio volume set to: ${(volume * 100).round()}%');
     } catch (e) {
-      debugPrint('⚠️ Error setting volume: $e');
+      Logger.error('Error setting volume: $e', error: e);
     }
   }
 
@@ -106,6 +107,6 @@ class AudioService {
     
     _isDisposed = true;
     _audioPlayer.dispose();
-    debugPrint('🧹 AudioService disposed');
+    Logger.debug('AudioService disposed');
   }
 }

@@ -14,6 +14,7 @@ import 'package:friendsride_app/services/optimized_geocoding_service.dart' as op
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:geocoding/geocoding.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class AddressInputView extends StatefulWidget {
   final ScrollController scrollController;
@@ -336,7 +337,7 @@ class _AddressInputViewState extends State<AddressInputView> {
   }
 
   Future<void> _selectAddress(String address, {Point? point}) async {
-    debugPrint('Selecting address: $address, isStop: $_activeStopIndex');
+    Logger.debug('Selecting address: $address, isStop: $_activeStopIndex');
     
     if (_activeStopIndex != null) {
       await _selectStopAddress(_activeStopIndex!, address, point: point);
@@ -351,18 +352,18 @@ class _AddressInputViewState extends State<AddressInputView> {
       try {
         if (point != null) {
           _endPoint = point;
-          debugPrint('End point set from parameter');
+          Logger.debug('End point set from parameter');
         } else {
           setState(() => _isLoadingSuggestions = true);
           List<Location> locations = await locationFromAddress(address);
           if (locations.isEmpty) throw Exception("Adresa nu a putut fi găsită pe hartă.");
           _endPoint = Point(coordinates: Position(locations.first.longitude, locations.first.latitude));
-          debugPrint('End point geocoded');
+          Logger.debug('End point geocoded');
           setState(() => _isLoadingSuggestions = false);
         }
         
       } catch (e) {
-        debugPrint('Error setting destination: $e');
+        Logger.error('Error setting destination: $e', error: e);
         if (mounted) {
           setState(() => _isLoadingSuggestions = false);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -448,9 +449,9 @@ class _AddressInputViewState extends State<AddressInputView> {
   }
 
   void _confirmAddresses() async {
-    debugPrint('Confirming manually entered addresses');
-    debugPrint('Start: ${_startAddressController.text} - Point: $_startPoint');
-    debugPrint('Destination: ${_destinationAddressController.text} - Point: $_endPoint');
+    Logger.debug('Confirming manually entered addresses');
+    Logger.debug('Start: ${_startAddressController.text} - Point: $_startPoint');
+    Logger.debug('Destination: ${_destinationAddressController.text} - Point: $_endPoint');
     
     if (!_canConfirmAddresses()) {
       if (_endPoint == null && _destinationAddressController.text.isNotEmpty) {
@@ -459,11 +460,11 @@ class _AddressInputViewState extends State<AddressInputView> {
           List<Location> locations = await locationFromAddress(_destinationAddressController.text);
           if (locations.isNotEmpty) {
             _endPoint = Point(coordinates: Position(locations.first.longitude, locations.first.latitude));
-            debugPrint('Destination geocoded on confirm: $_endPoint');
+            Logger.debug('Destination geocoded on confirm: $_endPoint');
           }
           setState(() => _isLoadingSuggestions = false);
         } catch (e) {
-          debugPrint('Failed to geocode destination on confirm: $e');
+          Logger.error('Failed to geocode destination on confirm: $e', error: e);
           if (mounted) {
             setState(() => _isLoadingSuggestions = false);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -476,7 +477,7 @@ class _AddressInputViewState extends State<AddressInputView> {
           return;
         }
       } else {
-        debugPrint('Cannot confirm - missing data');
+        Logger.debug('Cannot confirm - missing data');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -490,14 +491,14 @@ class _AddressInputViewState extends State<AddressInputView> {
     }
     
     if (_startPoint != null && _endPoint != null) {
-      debugPrint('Calling onDestinationSelected with confirmed addresses');
+      Logger.debug('Calling onDestinationSelected with confirmed addresses');
       widget.onDestinationSelected(
         _startPoint!, 
         _endPoint!, 
         _startAddressController.text, 
         _destinationAddressController.text
       );
-      debugPrint('Manual confirmation completed - should trigger ride options');
+      Logger.info('Manual confirmation completed - should trigger ride options');
     }
   }
   @override

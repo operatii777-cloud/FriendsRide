@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Widget pentru GIF picker folosind Giphy API
 class GifPickerWidget extends StatefulWidget {
@@ -73,7 +74,7 @@ class _GifPickerWidgetState extends State<GifPickerWidget> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading GIFs: $e');
+      Logger.error('Error loading GIFs: $e', error: e);
       setState(() {
         _gifs = _getDemoGifs();
         _isLoading = false;
@@ -124,7 +125,7 @@ class _GifPickerWidgetState extends State<GifPickerWidget> {
         });
       }
     } catch (e) {
-      debugPrint('Error searching GIFs: $e');
+      Logger.error('Error searching GIFs: $e', error: e);
       setState(() {
         _gifs = _getDemoGifs();
         _isLoading = false;

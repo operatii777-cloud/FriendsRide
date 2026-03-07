@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 
@@ -136,21 +137,21 @@ class NavigationService {
       // Extract route data from Mapbox response
       final routes = routeData['routes'] as List<dynamic>?;
       if (routes == null || routes.isEmpty) {
-        debugPrint('No routes found in Mapbox response');
+        Logger.debug('No routes found in Mapbox response');
         return steps;
       }
       
       final route = routes.first as Map<String, dynamic>;
       final legs = route['legs'] as List<dynamic>?;
       if (legs == null || legs.isEmpty) {
-        debugPrint('No legs found in route');
+        Logger.debug('No legs found in route');
         return steps;
       }
       
       final leg = legs.first as Map<String, dynamic>;
       final stepsData = leg['steps'] as List<dynamic>?;
       if (stepsData == null) {
-        debugPrint('No steps found in leg');
+        Logger.debug('No steps found in leg');
         return steps;
       }
       
@@ -209,11 +210,11 @@ class NavigationService {
         steps.add(step);
       }
       
-      debugPrint('✅ Parsed ${steps.length} navigation steps from Mapbox route');
+      Logger.info('Parsed ${steps.length} navigation steps from Mapbox route');
       return steps;
       
     } catch (e) {
-      debugPrint('❌ Error parsing Mapbox route: $e');
+      Logger.error('Error parsing Mapbox route: $e', error: e);
       return [];
     }
   }
@@ -222,7 +223,7 @@ class NavigationService {
   void setNavigationSteps(List<NavigationStep> steps) {
     try {
       if (steps.isEmpty) {
-        debugPrint('⚠️ No navigation steps to set');
+        Logger.warning('No navigation steps to set');
         return;
       }
       
@@ -261,17 +262,17 @@ class NavigationService {
         });
       }
       
-      debugPrint('✅ Navigation steps set: ${steps.length} steps, ${(totalDistance / 1000).toStringAsFixed(2)}km, ${(totalDuration / 60).toStringAsFixed(1)}min');
+      Logger.info('Navigation steps set: ${steps.length} steps, ${(totalDistance / 1000).toStringAsFixed(2)}km, ${(totalDuration / 60).toStringAsFixed(1)}min');
       
     } catch (e) {
-      debugPrint('❌ Error setting navigation steps: $e');
+      Logger.error('Error setting navigation steps: $e', error: e);
     }
   }
 
   /// Start navigation with route data
   Future<void> startNavigation(Map<String, dynamic> routeData) async {
     try {
-      debugPrint('🚀 Starting navigation with route data...');
+      Logger.info('Starting navigation with route data...');
       
       // Parse route data to get navigation steps
       final steps = parseMapboxRoute(routeData);
@@ -301,10 +302,10 @@ class NavigationService {
         });
       }
       
-      debugPrint('✅ Navigation started successfully with ${steps.length} steps');
+      Logger.info('Navigation started successfully with ${steps.length} steps');
       
     } catch (e) {
-      debugPrint('❌ Error starting navigation: $e');
+      Logger.error('Error starting navigation: $e', error: e);
       _isNavigating = false;
       rethrow;
     }
@@ -351,7 +352,7 @@ class NavigationService {
       }
       
     } catch (e) {
-      debugPrint('❌ Error updating navigation progress: $e');
+      Logger.error('Error updating navigation progress: $e', error: e);
     }
   }
 
@@ -390,7 +391,7 @@ class NavigationService {
       });
     }
     
-    debugPrint('🔄 Advanced to step ${_currentStepIndex + 1}: ${nextStep.instruction}');
+    Logger.debug('Advanced to step ${_currentStepIndex + 1}: ${nextStep.instruction}');
   }
 
   /// Complete navigation journey
@@ -411,7 +412,7 @@ class NavigationService {
       });
     }
     
-    debugPrint('🎯 Navigation completed successfully');
+    Logger.info('Navigation completed successfully');
   }
 
   /// Stop navigation
@@ -428,7 +429,7 @@ class NavigationService {
       });
     }
     
-    debugPrint('⏹️ Navigation stopped');
+    Logger.debug('⏹ Navigation stopped');
   }
 
   /// Get current navigation status

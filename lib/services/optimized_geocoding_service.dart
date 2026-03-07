@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🚀 Serviciu de geocoding optimizat pentru performanță maximă
 /// Implementează cache inteligent, debouncing și multiple surse de date
@@ -44,7 +45,7 @@ class OptimizedGeocodingService {
           stopwatch.stop();
           _totalResponseTime += stopwatch.elapsedMilliseconds;
           
-          debugPrint('🚀 [OPTIMIZED_GEOCODING] Cache hit: ${stopwatch.elapsedMilliseconds}ms');
+          Logger.info('Cache hit: ${stopwatch.elapsedMilliseconds}ms', tag: 'OPTIMIZED_GEOCODING');
           return cacheEntry.suggestions.take(maxResults).toList();
         } else {
           // Cache expirat, șterge-l
@@ -73,14 +74,14 @@ class OptimizedGeocodingService {
       stopwatch.stop();
       _totalResponseTime += stopwatch.elapsedMilliseconds;
       
-      debugPrint('🚀 [OPTIMIZED_GEOCODING] Search completed: ${stopwatch.elapsedMilliseconds}ms - ${limitedResults.length} results');
+      Logger.info('Search completed: ${stopwatch.elapsedMilliseconds}ms - ${limitedResults.length} results', tag: 'OPTIMIZED_GEOCODING');
       
       return limitedResults;
 
     } catch (e) {
       stopwatch.stop();
       _totalResponseTime += stopwatch.elapsedMilliseconds;
-      debugPrint('❌ [OPTIMIZED_GEOCODING] Error: $e');
+      Logger.error('Error: $e', tag: 'OPTIMIZED_GEOCODING', error: e);
       return [];
     }
   }
@@ -116,7 +117,7 @@ class OptimizedGeocodingService {
 
       return _deduplicateResults(allResults);
     } catch (e) {
-      debugPrint('⚠️ [OPTIMIZED_GEOCODING] Multi-source search error: $e');
+      Logger.error('Multi-source search error: $e', tag: 'OPTIMIZED_GEOCODING', error: e);
       return [];
     }
   }
@@ -168,7 +169,7 @@ class OptimizedGeocodingService {
 
       return [];
     } catch (e) {
-      debugPrint('⚠️ [OPTIMIZED_GEOCODING] Nominatim optimized error: $e');
+      Logger.error('Nominatim optimized error: $e', tag: 'OPTIMIZED_GEOCODING', error: e);
       return [];
     }
   }
@@ -197,7 +198,7 @@ class OptimizedGeocodingService {
 
       return [];
     } catch (e) {
-      debugPrint('⚠️ [OPTIMIZED_GEOCODING] Nominatim standard error: $e');
+      Logger.error('Nominatim standard error: $e', tag: 'OPTIMIZED_GEOCODING', error: e);
       return [];
     }
   }
@@ -490,7 +491,7 @@ class OptimizedGeocodingService {
   /// 🧹 Curăță cache-ul expirat
   void cleanExpiredCache() {
     _cache.removeWhere((key, entry) => entry.isExpired);
-    debugPrint('🧹 [OPTIMIZED_GEOCODING] Cleaned expired cache entries');
+    Logger.debug('Cleaned expired cache entries', tag: 'OPTIMIZED_GEOCODING');
   }
 
   /// 🗑️ Șterge tot cache-ul
@@ -498,7 +499,7 @@ class OptimizedGeocodingService {
     _cache.clear();
     _cacheHits = 0;
     _cacheMisses = 0;
-    debugPrint('🗑️ [OPTIMIZED_GEOCODING] Cache cleared');
+    Logger.debug('Cache cleared', tag: 'OPTIMIZED_GEOCODING');
   }
 }
 

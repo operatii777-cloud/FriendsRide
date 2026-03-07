@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class TestModeHelper {
   static const bool _isTestMode = bool.fromEnvironment('TEST_MODE', defaultValue: false);
@@ -51,13 +52,13 @@ class TestModeHelper {
   /// Autentificare rapidă cu cont de test
   static Future<UserCredential?> quickLogin(String accountType) async {
     if (!isTestMode) {
-      debugPrint('⚠️ Test mode is disabled. Set TEST_MODE=true to enable.');
+      Logger.warning('Test mode is disabled. Set TEST_MODE=true to enable.');
       return null;
     }
     
     final account = testAccounts[accountType];
     if (account == null) {
-      debugPrint('❌ Invalid account type: $accountType');
+      Logger.error('Invalid account type: $accountType');
       return null;
     }
     
@@ -70,11 +71,11 @@ class TestModeHelper {
           email: account['email']!,
           password: account['password']!,
         );
-        debugPrint('✅ Quick login successful: ${account['email']}');
+        Logger.info('Quick login successful: ${account['email']}');
         return credential;
       } catch (e) {
         // Dacă contul nu există, îl creează
-        debugPrint('📝 Account does not exist, creating...');
+        Logger.debug('Account does not exist, creating...');
         final credential = await auth.createUserWithEmailAndPassword(
           email: account['email']!,
           password: account['password']!,
@@ -83,11 +84,11 @@ class TestModeHelper {
         // Creează profilul utilizatorului
         await _createTestUserProfile(credential.user!.uid, account);
         
-        debugPrint('✅ Test account created and logged in: ${account['email']}');
+        Logger.info('Test account created and logged in: ${account['email']}');
         return credential;
       }
     } catch (e) {
-      debugPrint('❌ Quick login error: $e');
+      Logger.error('Quick login error: $e', error: e);
       return null;
     }
   }
@@ -103,9 +104,9 @@ class TestModeHelper {
         'createdAt': FieldValue.serverTimestamp(),
         'isTestAccount': true,
       });
-      debugPrint('✅ Test user profile created');
+      Logger.info('Test user profile created');
     } catch (e) {
-      debugPrint('❌ Error creating test user profile: $e');
+      Logger.error('Error creating test user profile: $e', error: e);
     }
   }
   
@@ -115,7 +116,7 @@ class TestModeHelper {
     String? driverId,
   }) async {
     if (!isTestMode) {
-      debugPrint('⚠️ Test mode is disabled');
+      Logger.warning('Test mode is disabled');
       return null;
     }
     
@@ -138,10 +139,10 @@ class TestModeHelper {
           .collection('rides')
           .add(rideData);
       
-      debugPrint('✅ Test ride created: ${docRef.id}');
+      Logger.info('Test ride created: ${docRef.id}');
       return docRef.id;
     } catch (e) {
-      debugPrint('❌ Error creating test ride: $e');
+      Logger.error('Error creating test ride: $e', error: e);
       return null;
     }
   }
@@ -154,7 +155,7 @@ class TestModeHelper {
     int steps = 10,
   }) async {
     if (!isTestMode) {
-      debugPrint('⚠️ Test mode is disabled');
+      Logger.warning('Test mode is disabled');
       return;
     }
     
@@ -183,13 +184,13 @@ class TestModeHelper {
           'timestamp': FieldValue.serverTimestamp(),
         });
         
-        debugPrint('📍 Driver position updated: $currentLat, $currentLng');
+        Logger.debug('Driver position updated: $currentLat, $currentLng');
         await Future.delayed(Duration(milliseconds: 500));
       }
       
-      debugPrint('✅ Driver movement simulation completed');
+      Logger.info('Driver movement simulation completed');
     } catch (e) {
-      debugPrint('❌ Error simulating driver movement: $e');
+      Logger.error('Error simulating driver movement: $e', error: e);
     }
   }
   

@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/models/chat_message_model.dart';
 import 'package:friendsride_app/theme/app_colors.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Widget pentru butonul de înregistrare voice message
 class VoiceRecordButton extends StatefulWidget {
@@ -92,7 +93,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Error starting recording: $e');
+      Logger.error('Error starting recording: $e', error: e);
       if (mounted) {
         widget.onError?.call();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,7 +117,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
     });
 
     if (path == null || path.isEmpty) {
-      debugPrint('❌ No audio file recorded');
+      Logger.error('No audio file recorded');
       return;
     }
 
@@ -128,7 +129,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
           await file.delete();
         }
       } catch (e) {
-        debugPrint('❌ Error deleting cancelled recording: $e');
+        Logger.error('Error deleting cancelled recording: $e', error: e);
       }
       return;
     }
@@ -187,7 +188,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
       try {
         await file.delete();
       } catch (e) {
-        debugPrint('⚠️ Error deleting local file: $e');
+        Logger.error('Error deleting local file: $e', error: e);
       }
 
       if (mounted) {
@@ -201,7 +202,7 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error uploading voice message: $e');
+      Logger.error('Error uploading voice message: $e', error: e);
       if (mounted) {
         widget.onError?.call();
         ScaffoldMessenger.of(context).showSnackBar(

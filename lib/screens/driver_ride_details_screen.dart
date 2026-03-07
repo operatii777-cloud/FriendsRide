@@ -11,6 +11,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class DriverRideDetailsScreen extends StatefulWidget {
   final Ride ride;
@@ -87,7 +88,7 @@ class _DriverRideDetailsScreenState extends State<DriverRideDetailsScreen> {
               (Route<dynamic> route) => false,
             );
           } catch (e) {
-            debugPrint('⚠️ Error during navigation: $e');
+            Logger.error('Error during navigation: $e', error: e);
             // Fallback: navigare simplă
             try {
               Navigator.of(context).popUntil((route) => route.isFirst);
@@ -161,7 +162,7 @@ class _DriverRideDetailsScreenState extends State<DriverRideDetailsScreen> {
         }
       }
     } catch (e) {
-      debugPrint("Eroare la geocodare în RideDetailsScreen: $e");
+      Logger.debug("Eroare la geocodare în RideDetailsScreen: $e");
     }
   }
 

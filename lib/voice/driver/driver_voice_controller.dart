@@ -8,6 +8,7 @@ import '../../models/support_ticket_model.dart';
 import '../../services/firestore_service.dart';
 import '../core/voice_orchestrator.dart';
 import '../states/voice_interaction_states.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class DriverVoiceController extends ChangeNotifier {
   DriverVoiceController({
@@ -61,9 +62,9 @@ class DriverVoiceController extends ChangeNotifier {
       await _voice.initialize();
       _setupVoiceCallbacks();
       _isInitialized = true;
-      debugPrint('✅ Driver voice system initialized');
+      Logger.info('Driver voice system initialized');
     } catch (e) {
-      debugPrint('❌ Driver voice system failed to initialize: $e');
+      Logger.error('Driver voice system failed to initialize: $e', error: e);
     }
   }
 
@@ -84,21 +85,21 @@ class DriverVoiceController extends ChangeNotifier {
     });
 
     _voice.setSpeechErrorCallback((error) {
-      debugPrint('❌ Driver speech error: $error');
+      Logger.error('Driver speech error: $error', error: error);
       _handleSpeechError(error);
     });
   }
 
   // Handle speech errors with recovery
   void _handleSpeechError(String error) {
-    debugPrint('❌ Driver speech error: $error');
+    Logger.error('Driver speech error: $error', error: error);
     // Auto-recovery for common errors
     if (error.contains('permission') || error.contains('microphone')) {
-      debugPrint('🔧 Attempting to recover from permission error...');
+      Logger.error('Attempting to recover from permission error...');
       // Request permission again
       _voice.initialize();
     } else if (error.contains('network') || error.contains('connection')) {
-      debugPrint('🔧 Attempting to recover from network error...');
+      Logger.error('Attempting to recover from network error...');
       // Wait and retry
       Future.delayed(Duration(seconds: 2), () {
         if (_state == DriverVoiceState.waitingForDecision) {
@@ -106,7 +107,7 @@ class DriverVoiceController extends ChangeNotifier {
         }
       });
     } else {
-      debugPrint('🔧 Generic error recovery...');
+      Logger.error('Generic error recovery...');
       // Generic recovery
       Future.delayed(Duration(seconds: 1), () {
         if (_state == DriverVoiceState.waitingForDecision) {
@@ -121,7 +122,7 @@ class DriverVoiceController extends ChangeNotifier {
     try {
       await _firestoreService.updateRideFields(_currentRequest!.id, data);
     } catch (e) {
-      debugPrint('❌ [DRIVER_VOICE] Failed to update ride fields: $e');
+      Logger.error('Failed to update ride fields: $e', tag: 'DRIVER_VOICE', error: e);
     }
   }
 
@@ -141,7 +142,7 @@ class DriverVoiceController extends ChangeNotifier {
     try {
       await _firestoreService.updateDriverAcceptanceStatus(_currentRequest!.id, status);
     } catch (e) {
-      debugPrint('❌ [DRIVER_VOICE] Failed to update driver acceptance status: $e');
+      Logger.error('Failed to update driver acceptance status: $e', tag: 'DRIVER_VOICE', error: e);
     }
   }
 
@@ -161,7 +162,7 @@ class DriverVoiceController extends ChangeNotifier {
       );
       await _firestoreService.submitSupportTicket(ticket);
     } catch (e) {
-      debugPrint('❌ [DRIVER_VOICE] Failed to submit support ticket: $e');
+      Logger.error('Failed to submit support ticket: $e', tag: 'DRIVER_VOICE', error: e);
     }
   }
 
@@ -175,7 +176,7 @@ class DriverVoiceController extends ChangeNotifier {
     if (_currentRequest != null &&
         _currentRequest!.id == request.id &&
         _state != DriverVoiceState.idle) {
-      debugPrint('🎤 [DRIVER_VOICE] Ride ${request.id} already announced, skipping duplicate.');
+      Logger.debug('Ride ${request.id} already announced, skipping duplicate.', tag: 'DRIVER_VOICE');
       return;
     }
     _currentRequest = request;
@@ -192,7 +193,7 @@ class DriverVoiceController extends ChangeNotifier {
       await _waitForDriverDecision();
       
     } catch (e) {
-      debugPrint('Driver voice call error: $e');
+      Logger.error('Driver voice call error: $e', error: e);
       _setState(DriverVoiceState.idle);
     }
   }
@@ -249,7 +250,7 @@ class DriverVoiceController extends ChangeNotifier {
   Future<void> acceptRide() async {
     // 🚗 FIX: Protecție împotriva apăsărilor multiple
     if (_isProcessingAccept) {
-      debugPrint('🚗 [DRIVER_VOICE] Already processing accept request, ignoring duplicate call');
+      Logger.debug('Already processing accept request, ignoring duplicate call', tag: 'DRIVER_VOICE');
       return;
     }
     if (_currentRequest == null) return;
@@ -298,7 +299,7 @@ class DriverVoiceController extends ChangeNotifier {
   Future<void> rejectRide() async {
     // 🚗 FIX: Protecție împotriva apăsărilor multiple
     if (_isProcessingReject) {
-      debugPrint('🚗 [DRIVER_VOICE] Already processing reject request, ignoring duplicate call');
+      Logger.debug('Already processing reject request, ignoring duplicate call', tag: 'DRIVER_VOICE');
       return;
     }
     if (_currentRequest == null) return;
@@ -447,7 +448,7 @@ class DriverVoiceController extends ChangeNotifier {
           note: emergency,
         );
       } catch (e) {
-        debugPrint('❌ [DRIVER_VOICE] Failed to log emergency: $e');
+        Logger.error('Failed to log emergency: $e', tag: 'DRIVER_VOICE', error: e);
       }
     }
     
@@ -468,7 +469,7 @@ class DriverVoiceController extends ChangeNotifier {
           message: 'Ride ${_currentRequest!.id}: $safety',
         );
       } catch (e) {
-        debugPrint('❌ [DRIVER_VOICE] Failed to log safety command: $e');
+        Logger.error('Failed to log safety command: $e', tag: 'DRIVER_VOICE', error: e);
       }
     }
   }
@@ -543,7 +544,7 @@ class DriverVoiceController extends ChangeNotifier {
         await _firestoreService.sendChatMessage(_currentRequest!.id, message);
         await _voice.speak("Mesajul a fost trimis: '$message'");
       } catch (e) {
-        debugPrint('❌ [DRIVER_VOICE] Failed to send chat message: $e');
+        Logger.error('Failed to send chat message: $e', tag: 'DRIVER_VOICE', error: e);
         await _voice.speak("Nu am reușit să trimit mesajul. Încercați din nou.");
       }
     } else {
@@ -570,7 +571,7 @@ class DriverVoiceController extends ChangeNotifier {
           "Am întâmpinat o problemă: $problem. Vă contactez imediat.",
         );
       } catch (e) {
-        debugPrint('❌ [DRIVER_VOICE] Failed to log driver problem: $e');
+        Logger.error('Failed to log driver problem: $e', tag: 'DRIVER_VOICE', error: e);
       }
     }
   }
@@ -671,7 +672,7 @@ class DriverVoiceController extends ChangeNotifier {
           message: 'Ride ${_currentRequest!.id}: șoferul nu a răspuns la verificarea vocală.',
         );
       } catch (e) {
-        debugPrint('❌ [DRIVER_VOICE] Failed to log inactivity: $e');
+        Logger.error('Failed to log inactivity: $e', tag: 'DRIVER_VOICE', error: e);
       }
     }
   }

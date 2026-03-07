@@ -7,6 +7,7 @@ import '../services/restaurant_service.dart';
 import '../services/restaurant_onboarding_service.dart';
 import '../scripts/sync_menu_to_firestore_and_cache.dart';
 import 'restaurant_detail_screen.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Screen pentru listarea restaurante disponibile
 class RestaurantListScreen extends StatefulWidget {
@@ -68,7 +69,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error getting user location: $e');
+      Logger.error('Error getting user location: $e', error: e);
     }
   }
 

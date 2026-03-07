@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 // IMPLEMENTARE ROBUST HTTP CLIENT - PERFORMANCE OPTIMIZATION
 class RobustHttpClient {
@@ -43,7 +44,7 @@ class RobustHttpClient {
     // Start cache cleanup timer
     _startCacheCleanupTimer();
     
-    debugPrint('✅ Robust HTTP Client initialized successfully');
+    Logger.info('Robust HTTP Client initialized successfully');
   }
   
   void _initializeConnectionPools() {
@@ -276,7 +277,7 @@ class RobustHttpClient {
   /// Clears cache
   void clearCache() {
     _cache.clear();
-    debugPrint('🔄 HTTP Client cache cleared');
+    Logger.debug('HTTP Client cache cleared');
   }
   
   /// Disposes resources
@@ -291,7 +292,7 @@ class RobustHttpClient {
     _cache.clear();
     _connectionPools.clear();
     
-    debugPrint('🔄 Robust HTTP Client disposed');
+    Logger.debug('Robust HTTP Client disposed');
   }
 }
 

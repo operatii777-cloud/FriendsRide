@@ -4,6 +4,7 @@ import 'package:friendsride_app/screens/vouchers_screen.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -86,7 +87,7 @@ class _WalletScreenState extends State<WalletScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading wallet data: $e');
+      Logger.error('Error loading wallet data: $e', error: e);
       if (mounted) {
         setState(() {
           // Set defaults on error

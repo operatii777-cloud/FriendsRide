@@ -7,6 +7,7 @@ import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/screens/active_ride_screen.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/screens/ride_summary_screen.dart'; 
+import 'package:friendsride_app/utils/logger.dart';
 
 class SearchingForDriverScreen extends StatefulWidget {
   final String rideId;
@@ -57,8 +58,8 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
   @override
   void initState() {
     super.initState();
-    debugPrint('🔍 SearchingForDriverScreen created with rideId: ${widget.rideId}');
-    debugPrint('🔍 SearchingForDriverScreen initState');
+    Logger.info('SearchingForDriverScreen created with rideId: ${widget.rideId}');
+    Logger.debug('SearchingForDriverScreen initState');
     
     _initializeAnimations();
     _startMonitoringRideStatus();
@@ -126,9 +127,9 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
   }
 
   void _startMonitoringRideStatus() {
-    debugPrint('🔍 [SEARCHING] Starting ride status monitoring for ride: ${widget.rideId}');
+    Logger.debug('Starting ride status monitoring for ride: ${widget.rideId}', tag: 'SEARCHING');
     _rideSubscription = _firestoreService.getRideStream(widget.rideId).listen((ride) async {
-      debugPrint('🔍 [SEARCHING] Ride status updated to: ${ride.status} for ride: ${ride.id}');
+      Logger.debug('Ride status updated to: ${ride.status} for ride: ${ride.id}', tag: 'SEARCHING');
 
       if (!mounted) {
         _rideSubscription?.cancel();
@@ -151,13 +152,13 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
           break;
 
         case 'driver_found':
-          debugPrint('🎯 [SEARCHING] Driver found for ride ${ride.id} - Driver ID: ${ride.driverId}');
+          Logger.info('Driver found for ride ${ride.id} - Driver ID: ${ride.driverId}', tag: 'SEARCHING');
           _searchTimeoutTimer?.cancel();
           _stopSearchAnimations();
           
           if (_confirmationTimeoutTimer == null || !_confirmationTimeoutTimer!.isActive) {
             _confirmationTimeoutTimer = Timer(const Duration(minutes: 2), _handleConfirmationTimeout);
-            debugPrint('⏰ [SEARCHING] Confirmation timer started - 2 minutes');
+            Logger.info('Confirmation timer started - 2 minutes', tag: 'SEARCHING');
           }
 
           setState(() {
@@ -166,7 +167,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
             _foundDriverId = ride.driverId;
           });
           
-          debugPrint('✅ [SEARCHING] UI updated - Driver found message displayed');
+          Logger.info('UI updated - Driver found message displayed', tag: 'SEARCHING');
 
           _slideController.forward();
 
@@ -241,7 +242,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
           break;
       }
     }, onError: (error) {
-      debugPrint('Error listening to ride stream: $error');
+      Logger.error('Error listening to ride stream: $error', error: error);
       if (mounted) {
         setState(() {
           _statusMessage = 'Eroare la monitorizarea cursei.';
@@ -264,7 +265,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
 
   @override
   void dispose() {
-    debugPrint('🧹 SearchingForDriverScreen dispose - cleaning up');
+    Logger.debug('SearchingForDriverScreen dispose - cleaning up');
     
     // ✅ DEFENSIVE PROGRAMMING: Cancel toate operațiunile active
     _rideSubscription?.cancel();
@@ -288,7 +289,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
     if (!mounted || !_isSearching) return;
     
     try {
-      debugPrint('⏰ Search timeout triggered - updating ride status');
+      Logger.warning('⏰ Search timeout triggered - updating ride status');
       
       // ✅ TIMEOUT PROTECTION pentru Firestore operation
       final currentRide = await _firestoreService.getRideStream(widget.rideId)
@@ -302,10 +303,10 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
         await _firestoreService.updateRideStatus(widget.rideId, 'expired')
             .timeout(Duration(seconds: 10));
         
-        debugPrint('✅ Ride status updated to expired');
+        Logger.info('Ride status updated to expired');
       }
     } catch (e) {
-      debugPrint('🚨 Error handling search timeout: $e');
+      Logger.error('Error handling search timeout: $e', error: e);
       // Nu facem nimic la eroare - doar log
     }
   }
@@ -315,7 +316,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
     if (!mounted) return;
     
     try {
-      debugPrint('⏰ [TIMEOUT] Confirmation timeout triggered after 2 minutes - declining driver');
+      Logger.warning('Confirmation timeout triggered after 2 minutes - declining driver', tag: 'TIMEOUT');
       
       // ✅ TIMEOUT PROTECTION pentru Firestore operation
       final currentRide = await _firestoreService.getRideStream(widget.rideId)
@@ -325,17 +326,17 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
       if (!mounted) return;
       
       if (currentRide.status == 'driver_found') {
-        debugPrint('⏰ [TIMEOUT] Ride still in driver_found status - declining driver automatically');
+        Logger.warning('Ride still in driver_found status - declining driver automatically', tag: 'TIMEOUT');
         // ✅ TIMEOUT PROTECTION pentru decline operation
         await _firestoreService.passengerDeclineDriver(widget.rideId)
             .timeout(Duration(seconds: 10));
         
-        debugPrint('✅ [TIMEOUT] Driver declined due to timeout - resuming search');
+        Logger.warning('Driver declined due to timeout - resuming search', tag: 'TIMEOUT');
       } else {
-        debugPrint('⏰ [TIMEOUT] Ride status changed to ${currentRide.status} - no action needed');
+        Logger.warning('Ride status changed to ${currentRide.status} - no action needed', tag: 'TIMEOUT');
       }
     } catch (e) {
-      debugPrint('🚨 [TIMEOUT] Error handling confirmation timeout: $e');
+      Logger.error('Error handling confirmation timeout: $e', tag: 'TIMEOUT', error: e);
       // Nu facem nimic la eroare - doar log
     }
   }
@@ -344,7 +345,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
   void _confirmDriver() async {
     if (_foundDriverId != null && mounted) {
       try {
-        debugPrint('✅ Passenger confirming ride ${widget.rideId}');
+        Logger.info('Passenger confirming ride ${widget.rideId}');
         
         // Cancel confirmation timeout
         _confirmationTimeoutTimer?.cancel();
@@ -353,9 +354,9 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
         await _firestoreService.passengerConfirmDriver(widget.rideId)
             .timeout(Duration(seconds: 10));
         
-        debugPrint('✅ Driver confirmed successfully');
+        Logger.info('Driver confirmed successfully');
       } catch (e) {
-        debugPrint('🚨 Error confirming driver: $e');
+        Logger.error('Error confirming driver: $e', error: e);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -373,7 +374,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
   void _declineDriver() async {
     if (_foundDriverId != null && mounted) {
       try {
-        debugPrint('❌ Passenger declining driver for ride ${widget.rideId}');
+        Logger.error('Passenger declining driver for ride ${widget.rideId}');
         
         // Cancel confirmation timeout
         _confirmationTimeoutTimer?.cancel();
@@ -394,9 +395,9 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
           _startSearchAnimations();
         }
         
-        debugPrint('✅ Driver declined successfully');
+        Logger.info('Driver declined successfully');
       } catch (e) {
-        debugPrint('🚨 Error declining driver: $e');
+        Logger.error('Error declining driver: $e', error: e);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -420,7 +421,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
       // 2. LOCK
       _isOperationInProgress = true;
       
-      debugPrint('🚫 User pressed cancel - starting cleanup...');
+      Logger.debug('User pressed cancel - starting cleanup...');
       
       // 3. TIMEOUT PROTECTION pentru Firestore operation
       await _firestoreService.cancelRide(widget.rideId)
@@ -436,7 +437,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
       // 5. Stop toate animațiile
       _stopSearchAnimations();
       
-      debugPrint('🚫 Cancel completed - navigating to MapScreen');
+      Logger.info('Cancel completed - navigating to MapScreen');
       
       // 6. Safe navigation cu pushAndRemoveUntil pentru clean stack
       if (mounted) {
@@ -447,7 +448,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
       }
       
     } catch (e) {
-      debugPrint('🚨 Error cancelling search: $e');
+      Logger.error('Error cancelling search: $e', error: e);
       
       // 7. ERROR HANDLING - Fallback navigation chiar și la eroare
       if (mounted) {
@@ -516,7 +517,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
         // ✅ PREVENIRE: Prevent multiple taps
         if (_isOperationInProgress) return;
         
-        debugPrint('🚫 Cancel button pressed - starting operation...');
+        Logger.debug('Cancel button pressed - starting operation...');
         
         // ✅ DEFENSIVE PROGRAMMING: Set loading state
         setState(() {
@@ -851,7 +852,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
         const SizedBox(height: 24.0),
         ElevatedButton.icon(
           onPressed: () async {
-            debugPrint('🔄 User pressed back to map from error state');
+            Logger.error('User pressed back to map from error state');
             
             // ✅ DEFENSIVE PROGRAMMING: Safe navigation cu cleanup
             try {
@@ -869,7 +870,7 @@ class _SearchingForDriverScreenState extends State<SearchingForDriverScreen>
                 );
               }
             } catch (e) {
-              debugPrint('🚨 Error navigating back: $e');
+              Logger.error('Error navigating back: $e', error: e);
               // Fallback navigation
               if (mounted) {
                 Navigator.of(context).pushAndRemoveUntil(

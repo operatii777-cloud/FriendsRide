@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// Provider pentru gestionarea stării șoferului
 /// Extrage logica de driver din map_screen.dart
@@ -34,7 +35,7 @@ class DriverStateProvider extends ChangeNotifier {
   Future<void> initializeDriverState(String? userId) async {
     if (userId == null) return;
 
-    debugPrint('🚗 Initializing driver state...');
+    Logger.debug('Initializing driver state...');
 
     try {
       // Încarcă profilul șoferului
@@ -43,9 +44,9 @@ class DriverStateProvider extends ChangeNotifier {
       // Inițializează listening-ul pentru ride-uri
       _initializeDriverRideSystem();
       
-      debugPrint('✅ Driver state initialized');
+      Logger.info('Driver state initialized');
     } catch (e) {
-      debugPrint('⚠️ Error initializing driver state: $e');
+      Logger.error('Error initializing driver state: $e', error: e);
     }
   }
 
@@ -57,12 +58,12 @@ class DriverStateProvider extends ChangeNotifier {
         if (snapshot.exists) {
           _driverProfile = snapshot.data();
           _driverCategory = _getCategoryFromProfile(_driverProfile!);
-          debugPrint('✅ Driver profile loaded: ${_driverProfile?['displayName']}');
+          Logger.info('Driver profile loaded: ${_driverProfile?['displayName']}');
           notifyListeners();
         }
       });
     } catch (e) {
-      debugPrint('⚠️ Error loading driver profile: $e');
+      Logger.error('Error loading driver profile: $e', error: e);
     }
   }
 
@@ -80,11 +81,11 @@ class DriverStateProvider extends ChangeNotifier {
   /// Inițializează sistemul de ascultare pentru ride-uri
   void _initializeDriverRideSystem() {
     if (_driverCategory == null) {
-      debugPrint('⚠️ Cannot start ride system - no driver category');
+      Logger.warning('Cannot start ride system - no driver category');
       return;
     }
 
-    debugPrint('🎧 Starting ride listening system for category: ${_driverCategory!.name}');
+    Logger.info('Starting ride listening system for category: ${_driverCategory!.name}');
     
     _pendingRidesSubscription?.cancel();
     _pendingRidesSubscription = _firestoreService
@@ -100,7 +101,7 @@ class DriverStateProvider extends ChangeNotifier {
       _showRideOffer(rides.first);
     }
     
-    debugPrint('📋 Received ${rides.length} pending rides');
+    Logger.debug('Received ${rides.length} pending rides');
     notifyListeners();
   }
 
@@ -109,7 +110,7 @@ class DriverStateProvider extends ChangeNotifier {
     _currentRideOffer = ride;
     _remainingSeconds = 30;
     
-    debugPrint('🔔 New ride offer: ${ride.id}');
+    Logger.info('New ride offer: ${ride.id}');
     
     _rideOfferTimer?.cancel();
     _rideOfferTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -127,11 +128,11 @@ class DriverStateProvider extends ChangeNotifier {
   /// Toggle driver availability
   Future<void> toggleDriverAvailability(bool value) async {
     if (_driverProfile == null) {
-      debugPrint('⚠️ Cannot toggle availability - no driver profile');
+      Logger.warning('Cannot toggle availability - no driver profile');
       return;
     }
 
-    debugPrint('🚗 Toggling driver availability to: $value');
+    Logger.debug('Toggling driver availability to: $value');
 
     try {
       if (value) {
@@ -150,9 +151,9 @@ class DriverStateProvider extends ChangeNotifier {
       _isDriverAvailable = value;
       notifyListeners();
       
-      debugPrint('✅ Driver availability updated to: $value');
+      Logger.info('Driver availability updated to: $value');
     } catch (e) {
-      debugPrint('⚠️ Error updating driver availability: $e');
+      Logger.error('Error updating driver availability: $e', error: e);
       // Revert state on error
       _isDriverAvailable = !value;
       notifyListeners();
@@ -165,14 +166,14 @@ class DriverStateProvider extends ChangeNotifier {
     if (_currentRideOffer == null) return;
 
     final ride = _currentRideOffer!;
-    debugPrint('✅ Accepting ride offer: ${ride.id}');
+    Logger.info('Accepting ride offer: ${ride.id}');
 
     try {
       await _firestoreService.acceptRide(ride.id);
       _clearCurrentRideOffer();
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ Error accepting ride: $e');
+      Logger.error('Error accepting ride: $e', error: e);
       rethrow;
     }
   }
@@ -185,7 +186,7 @@ class DriverStateProvider extends ChangeNotifier {
   void _declineRideOffer() {
     if (_currentRideOffer == null) return;
 
-    debugPrint('❌ Declining ride offer: ${_currentRideOffer!.id}');
+    Logger.error('Declining ride offer: ${_currentRideOffer!.id}');
     _clearCurrentRideOffer();
     
     // Caută următoarea cursă disponibilă
@@ -211,13 +212,13 @@ class DriverStateProvider extends ChangeNotifier {
     _pendingRidesSubscription = null;
     _clearCurrentRideOffer();
     _pendingRides.clear();
-    debugPrint('🔇 Stopped listening for rides');
+    Logger.info('Stopped listening for rides');
   }
 
   /// Cleanup la dispose
   @override
   void dispose() {
-    debugPrint('🧹 Disposing DriverStateProvider');
+    Logger.debug('Disposing DriverStateProvider');
     
     // Cancel all timers
     _rideOfferTimer?.cancel();

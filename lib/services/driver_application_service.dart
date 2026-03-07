@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:friendsride_app/models/driver_document_model.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class DriverApplicationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -42,7 +43,7 @@ class DriverApplicationService {
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    debugPrint('Personal info saved for user: $_currentUserId');
+    Logger.debug('Personal info saved for user: $_currentUserId');
   }
 
   // Salvează informațiile despre mașină
@@ -67,7 +68,7 @@ class DriverApplicationService {
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    debugPrint('Car info saved for user: $_currentUserId');
+    Logger.debug('Car info saved for user: $_currentUserId');
   }
 
   // Salvează informațiile finale
@@ -84,7 +85,7 @@ class DriverApplicationService {
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    debugPrint('Final info saved for user: $_currentUserId');
+    Logger.debug('Final info saved for user: $_currentUserId');
   }
 
   // Încarcă document
@@ -96,7 +97,7 @@ class DriverApplicationService {
     if (_currentUserId == null) throw Exception('Utilizator neautentificat');
 
     try {
-      debugPrint('=== UPLOADING ${documentType.displayName} ===');
+      Logger.debug('=== UPLOADING ${documentType.displayName} ===');
       
       // Verifică dimensiunea fișierului (max 10MB)
       final fileSize = await file.length();
@@ -104,7 +105,7 @@ class DriverApplicationService {
         throw Exception('Fișierul este prea mare. Dimensiunea maximă permisă este 10MB.');
       }
 
-      debugPrint('File size: $fileSize bytes');
+      Logger.debug('File size: $fileSize bytes');
 
       // Creează referința Storage
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -117,7 +118,7 @@ class DriverApplicationService {
           .child(documentType.storageFolder)
           .child(storageFileName);
 
-      debugPrint('Storage path: ${storageRef.fullPath}');
+      Logger.debug('Storage path: ${storageRef.fullPath}');
 
       // Determină content type
       String contentType = 'application/octet-stream';
@@ -140,13 +141,13 @@ class DriverApplicationService {
         },
       );
 
-      debugPrint('Starting upload...');
+      Logger.debug('Starting upload...');
       
       // Upload fișier
       final uploadTask = await storageRef.putFile(file, metadata);
       final downloadUrl = await uploadTask.ref.getDownloadURL();
       
-      debugPrint('Upload completed. URL: $downloadUrl');
+      Logger.info('Upload completed. URL: $downloadUrl');
 
       // Salvează în Firestore
       await _firestore
@@ -159,11 +160,11 @@ class DriverApplicationService {
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      debugPrint('Document info saved to Firestore');
+      Logger.debug('Document info saved to Firestore');
 
       return downloadUrl;
     } catch (e) {
-      debugPrint('Error uploading document: $e');
+      Logger.error('Error uploading document: $e', error: e);
       rethrow;
     }
   }
@@ -184,9 +185,9 @@ class DriverApplicationService {
         'lastUpdated': FieldValue.serverTimestamp(),
       });
 
-      debugPrint('Document ${documentType.displayName} removed from Firestore');
+      Logger.debug('Document ${documentType.displayName} removed from Firestore');
     } catch (e) {
-      debugPrint('Error removing document: $e');
+      Logger.error('Error removing document: $e', error: e);
       rethrow;
     }
   }
@@ -225,9 +226,9 @@ class DriverApplicationService {
       // Notifică administratorii (opțional - poți adăuga aici logica de notificare)
       await _notifyAdminsOfNewApplication();
 
-      debugPrint('Driver application submitted successfully');
+      Logger.debug('Driver application submitted successfully');
     } catch (e) {
-      debugPrint('Error submitting application: $e');
+      Logger.error('Error submitting application: $e', error: e);
       rethrow;
     }
   }
@@ -247,9 +248,9 @@ class DriverApplicationService {
         'read': false,
       });
 
-      debugPrint('Admin notification sent');
+      Logger.debug('Admin notification sent');
     } catch (e) {
-      debugPrint('Error sending admin notification: $e');
+      Logger.error('Error sending admin notification: $e', error: e);
       // Nu aruncăm eroarea aici pentru că este o funcție auxiliară
     }
   }
@@ -268,7 +269,7 @@ class DriverApplicationService {
       
       return DriverApplicationData.fromFirestore(doc.data()!);
     } catch (e) {
-      debugPrint('Error getting current application: $e');
+      Logger.error('Error getting current application: $e', error: e);
       return null;
     }
   }
@@ -288,7 +289,7 @@ class DriverApplicationService {
       final status = doc.data()?['status'] ?? 'draft';
       return ['draft', 'submitted', 'under_review'].contains(status);
     } catch (e) {
-      debugPrint('Error checking active application: $e');
+      Logger.error('Error checking active application: $e', error: e);
       return false;
     }
   }
@@ -306,7 +307,7 @@ class DriverApplicationService {
       'lastUpdated': FieldValue.serverTimestamp(),
     });
 
-    debugPrint('Application reset for user: $_currentUserId');
+    Logger.debug('Application reset for user: $_currentUserId');
   }
 
   // Obține URL-ul pentru previzualizarea documentului

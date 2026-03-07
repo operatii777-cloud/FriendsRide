@@ -6,6 +6,7 @@ import 'package:friendsride_app/services/firestore_service.dart';
 import 'package:friendsride_app/widgets/rating_stars.dart';
 import 'package:friendsride_app/screens/map_screen.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 class RideSummaryScreen extends StatefulWidget {
   final String rideId;
@@ -60,7 +61,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching user role: $e");
+      Logger.error("Error fetching user role: $e", error: e);
       if (mounted) {
         setState(() {
           _currentUserRole = UserRole.passenger; 
@@ -120,7 +121,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error submitting rating: $e');
+      Logger.error('Error submitting rating: $e', error: e);
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         _showSnackBar(l10n.errorSubmittingRating);
@@ -140,7 +141,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     try {
       // ✅ FIX: Atât pasagerul cât și șoferul navighează la MapScreen
       // Pasagerul poate comanda o altă cursă, șoferul poate prelua alte curse
-      debugPrint('🔄 Navigating to MapScreen...');
+      Logger.debug('Navigating to MapScreen...');
       
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -149,13 +150,13 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error in _handleExit: $e');
+      Logger.error('Error in _handleExit: $e', error: e);
       // ✅ FALLBACK: Încearcă să navigheze înapoi la ruta principală
       if (mounted) {
         try {
           Navigator.of(context).popUntil((route) => route.isFirst);
         } catch (e2) {
-          debugPrint('❌ Fallback navigation also failed: $e2');
+          Logger.error('Fallback navigation also failed: $e2');
         }
       }
     }

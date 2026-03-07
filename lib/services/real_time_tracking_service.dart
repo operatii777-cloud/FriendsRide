@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:friendsride_app/utils/coordinate_helpers.dart';
 import 'package:friendsride_app/services/ai_location_service.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🚀 Real-time Tracking Service cu AI Integration
 /// 
@@ -64,7 +65,7 @@ class RealTimeTrackingService {
     required Point destination,
   }) async {
     try {
-      debugPrint('🚀 Starting real-time tracking for ride: $rideId');
+      Logger.info('Starting real-time tracking for ride: $rideId');
       
       _currentRideId = rideId;
       _currentUserId = userId;
@@ -87,10 +88,10 @@ class RealTimeTrackingService {
       
       _isTrackingActive = true;
       
-      debugPrint('✅ Real-time tracking started successfully');
+      Logger.info('Real-time tracking started successfully');
       
     } catch (e) {
-      debugPrint('❌ Failed to start tracking: $e');
+      Logger.error('Failed to start tracking: $e', error: e);
       rethrow;
     }
   }
@@ -98,7 +99,7 @@ class RealTimeTrackingService {
   /// 🛑 Oprește real-time tracking
   Future<void> stopTracking() async {
     try {
-      debugPrint('🛑 Stopping real-time tracking');
+      Logger.debug('Stopping real-time tracking');
       
       // Stop all subscriptions
       await _locationSubscription?.cancel();
@@ -118,16 +119,16 @@ class RealTimeTrackingService {
       _pendingLocationUpdates.clear();
       _predictionCache.clear();
       
-      debugPrint('✅ Real-time tracking stopped successfully');
+      Logger.info('Real-time tracking stopped successfully');
       
     } catch (e) {
-      debugPrint('❌ Error stopping tracking: $e');
+      Logger.error('Error stopping tracking: $e', error: e);
     }
   }
   
   /// 🧹 Dispose resources with MEMORY LEAK PREVENTION
   void dispose() {
-    debugPrint('🧹 Disposing RealTimeTrackingService');
+    Logger.debug('Disposing RealTimeTrackingService');
     
     // Cancel all subscriptions
     _locationSubscription?.cancel();
@@ -147,7 +148,7 @@ class RealTimeTrackingService {
     _currentRideId = null;
     _currentUserId = null;
     
-    debugPrint('✅ RealTimeTrackingService disposed successfully');
+    Logger.info('RealTimeTrackingService disposed successfully');
   }
   
   /// 📍 Trimite update de locație în timp real
@@ -181,7 +182,7 @@ class RealTimeTrackingService {
       }
       
     } catch (e) {
-      debugPrint('❌ Error sending location update: $e');
+      Logger.error('Error sending location update: $e', error: e);
     }
   }
   
@@ -220,7 +221,7 @@ class RealTimeTrackingService {
       return prediction;
       
     } catch (e) {
-      debugPrint('❌ Error getting AI prediction: $e');
+      Logger.error('Error getting AI prediction: $e', error: e);
       return AIPrediction.empty();
     }
   }
@@ -255,7 +256,7 @@ class RealTimeTrackingService {
       onCommunicationUpdate?.call(communication);
       
     } catch (e) {
-      debugPrint('❌ Error sending real-time message: $e');
+      Logger.error('Error sending real-time message: $e', error: e);
     }
   }
   
@@ -301,7 +302,7 @@ class RealTimeTrackingService {
       onEmergencyAlert?.call(alert);
       
     } catch (e) {
-      debugPrint('❌ Error sending emergency alert: $e');
+      Logger.error('Error sending emergency alert: $e', error: e);
     }
   }
   
@@ -334,7 +335,7 @@ class RealTimeTrackingService {
       locationSettings: locationSettings,
     ).listen(
       (position) => sendLocationUpdate(position),
-      onError: (error) => debugPrint('❌ Location monitoring error: $error'),
+      onError: (error) => Logger.error('Location monitoring error: $error', error: error),
     );
   }
   
@@ -346,7 +347,7 @@ class RealTimeTrackingService {
         .snapshots()
         .listen(
       (snapshot) => _handleRideUpdate(snapshot),
-      onError: (error) => debugPrint('❌ Ride monitoring error: $error'),
+      onError: (error) => Logger.error('Ride monitoring error: $error', error: error),
     );
   }
   
@@ -388,7 +389,7 @@ class RealTimeTrackingService {
           }
         }
       } catch (e) {
-        debugPrint('❌ AI prediction error: $e');
+        Logger.error('AI prediction error: $e', error: e);
       }
     });
   }
@@ -427,10 +428,10 @@ class RealTimeTrackingService {
       // Clear pending updates
       _pendingLocationUpdates.clear();
       
-      debugPrint('✅ Flushed ${_pendingLocationUpdates.length} location updates');
+      Logger.info('Flushed ${_pendingLocationUpdates.length} location updates');
       
     } catch (e) {
-      debugPrint('❌ Error flushing updates: $e');
+      Logger.error('Error flushing updates: $e', error: e);
     }
   }
   

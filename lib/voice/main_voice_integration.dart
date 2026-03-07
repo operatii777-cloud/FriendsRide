@@ -9,6 +9,7 @@ import 'tts/natural_voice_synthesizer.dart' as tts;
 import 'ride/ride_flow_manager.dart';
 import 'states/voice_interaction_states.dart';
 import 'core/voice_orchestrator.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// ✅ Helper: Obține limba curentă din SharedPreferences
 Future<String> _getCurrentLanguageCode() async {
@@ -17,7 +18,7 @@ Future<String> _getCurrentLanguageCode() async {
     final code = prefs.getString('locale');
     return code ?? 'ro'; // Default română
   } catch (e) {
-    debugPrint('🎯 [MAIN_VOICE] Error getting language: $e');
+    Logger.error('Error getting language: $e', tag: 'MAIN_VOICE', error: e);
     return 'ro'; // Default română
   }
 }
@@ -73,21 +74,21 @@ class MainVoiceIntegration extends ChangeNotifier {
     
     try {
       _isInitializing = true;
-      debugPrint('🎯 [MAIN_VOICE] Initializing components...');
+      Logger.info('Initializing components...', tag: 'MAIN_VOICE');
       
       // 🎤 PRIMUL: Inițializez Voice Orchestrator
       _voiceOrchestrator = VoiceOrchestrator();
       await _voiceOrchestrator.initialize();
-      debugPrint('🎯 [MAIN_VOICE] ✅ VoiceOrchestrator initialized');
+      Logger.info('VoiceOrchestrator initialized', tag: 'MAIN_VOICE');
       
       // 🧠 AL DOILEA: Inițializez Gemini Engine
       _geminiEngine = GeminiVoiceEngine();
-      debugPrint('🎯 [MAIN_VOICE] ✅ Gemini engine created');
+      Logger.info('Gemini engine created', tag: 'MAIN_VOICE');
       
       // 🗣️ AL TREILEA: Inițializez TTS natural
       _naturalTts = tts.NaturalVoiceSynthesizer();
       await _naturalTts.initialize();
-      debugPrint('🎯 [MAIN_VOICE] ✅ TTS initialized');
+      Logger.info('TTS initialized', tag: 'MAIN_VOICE');
       
       // 🚗 AL PATRULEA: Acum pot inițializa RideFlowManager cu toate dependințele
       _rideFlowManager = RideFlowManager(
@@ -98,33 +99,33 @@ class MainVoiceIntegration extends ChangeNotifier {
         
         // ✅ Callback-uri pentru acțiuni în UI
         onFillAddressInUI: (pickup, destination, {pickupLat, pickupLng, destLat, destLng}) {
-          debugPrint('🎯 [MAIN_VOICE] Filling address: $pickup → $destination');
+          Logger.info('Filling address: $pickup → $destination', tag: 'MAIN_VOICE');
           if (destLat != null && destLng != null) {
-            debugPrint('🎯 [MAIN_VOICE] ✅ Destination coordinates received: $destLat, $destLng');
+            Logger.info('Destination coordinates received: $destLat, $destLng', tag: 'MAIN_VOICE');
           }
         },
         onSelectRideOptionInUI: (category) {
-          debugPrint('🎯 [MAIN_VOICE] Selecting ride option: $category');
+          Logger.info('Selecting ride option: $category', tag: 'MAIN_VOICE');
         },
         onPressConfirmButtonInUI: () {
-          debugPrint('🎯 [MAIN_VOICE] Pressing confirm button');
+          Logger.info('Pressing confirm button', tag: 'MAIN_VOICE');
         },
         onNavigateToScreen: (screen) {
-          debugPrint('🎯 [MAIN_VOICE] Navigating to screen: ${screen.runtimeType}');
+          Logger.info('Navigating to screen: ${screen.runtimeType}', tag: 'MAIN_VOICE');
         },
         onCreateRideRequest: (rideRequest) async {
-          debugPrint('🎯 [MAIN_VOICE] Creating ride request');
+          Logger.info('Creating ride request', tag: 'MAIN_VOICE');
           return 'ride_${DateTime.now().millisecondsSinceEpoch}';
         },
         onDriverResponse: (driverId, accepted) {
-          debugPrint('🎯 [MAIN_VOICE] Driver response: $driverId, accepted: $accepted');
+          Logger.info('Driver response: $driverId, accepted: $accepted', tag: 'MAIN_VOICE');
         },
         onCloseAI: () {
-          debugPrint('🎯 [MAIN_VOICE] Closing AI');
+          Logger.info('Closing AI', tag: 'MAIN_VOICE');
         },
       );
       await _rideFlowManager.initialize();
-      debugPrint('🎯 [MAIN_VOICE] ✅ RideFlowManager initialized');
+      Logger.info('RideFlowManager initialized', tag: 'MAIN_VOICE');
       
       // 🎯 În final: Setez callback-urile
       _setupCallbacks();
@@ -132,10 +133,10 @@ class MainVoiceIntegration extends ChangeNotifier {
       _isInitialized = true;
       _isInitializing = false;
       
-      debugPrint('🎯 [MAIN_VOICE] ✅ All components initialized successfully');
+      Logger.info('All components initialized successfully', tag: 'MAIN_VOICE');
       
     } catch (e) {
-      debugPrint('🎯 [MAIN_VOICE] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'MAIN_VOICE', error: e);
       _isInitializing = false;
       _isInitialized = false;
     }
@@ -151,7 +152,7 @@ class MainVoiceIntegration extends ChangeNotifier {
   
   /// 🎤 Gestionează rezultatul speech recognition
   void _handleSpeechResult(String result) {
-    debugPrint('🎯 [MAIN_VOICE] Speech result: "$result"');
+    Logger.info('Speech result: "$result"', tag: 'MAIN_VOICE');
     
     // 📝 Actualizez contextul
     _updateContextWithSpeechResult(result);
@@ -164,7 +165,7 @@ class MainVoiceIntegration extends ChangeNotifier {
   
   /// 🎤 Gestionează erorile speech recognition
   void _handleSpeechError(String error) {
-    debugPrint('🎯 [MAIN_VOICE] Speech error: $error');
+    Logger.error('Speech error: $error', tag: 'MAIN_VOICE', error: error);
     
     // 📝 Actualizez contextul cu eroarea
     _currentContext = _currentContext.copyWith(
@@ -177,7 +178,7 @@ class MainVoiceIntegration extends ChangeNotifier {
   
   /// 🎯 Gestionează schimbările de stare
   void _handleStateChange(VoiceProcessingState newState) {
-    debugPrint('🎯 [MAIN_VOICE] State change: $newState');
+    Logger.info('State change: $newState', tag: 'MAIN_VOICE');
     
     _currentContext = _currentContext.copyWith(
       processingState: newState,
@@ -205,7 +206,7 @@ class MainVoiceIntegration extends ChangeNotifier {
   /// 🚀 Procesează input-ul vocal
   Future<void> _processVoiceInput(String userInput) async {
     try {
-      debugPrint('🎯 [MAIN_VOICE] Processing voice input: "$userInput"');
+      Logger.info('Processing voice input: "$userInput"', tag: 'MAIN_VOICE');
       
       // 🚀 Procesez cu Ride Flow Manager
       await _rideFlowManager.processVoiceInput(userInput);
@@ -213,10 +214,10 @@ class MainVoiceIntegration extends ChangeNotifier {
       // 📝 Actualizez contextul cu noua stare
       _updateContextFromRideFlow();
       
-      debugPrint('🎯 [MAIN_VOICE] ✅ Voice input processed successfully');
+      Logger.info('Voice input processed successfully', tag: 'MAIN_VOICE');
       
     } catch (e) {
-      debugPrint('🎯 [MAIN_VOICE] ❌ Voice input processing error: $e');
+      Logger.error('Voice input processing error: $e', tag: 'MAIN_VOICE', error: e);
       _handleError(e.toString());
     }
   }
@@ -235,7 +236,7 @@ class MainVoiceIntegration extends ChangeNotifier {
   
   /// 🎯 Gestionează erorile
   void _handleError(String error) {
-    debugPrint('🎯 [MAIN_VOICE] ❌ Error: $error');
+    Logger.error('Error: $error', tag: 'MAIN_VOICE', error: error);
     
     _currentContext = _currentContext.copyWith(
       rideState: RideFlowState.error,
@@ -253,7 +254,7 @@ class MainVoiceIntegration extends ChangeNotifier {
     }
     
     try {
-      debugPrint('🎯 [MAIN_VOICE] Starting voice interaction...');
+      Logger.info('Starting voice interaction...', tag: 'MAIN_VOICE');
       
       // ✅ NOU: Obțin limba curentă și o setez în toate componentele
       final languageCode = await _getCurrentLanguageCode();
@@ -290,7 +291,7 @@ class MainVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [MAIN_VOICE] ❌ Start voice interaction error: $e');
+      Logger.error('Start voice interaction error: $e', tag: 'MAIN_VOICE', error: e);
       _handleError(e.toString());
     }
   }
@@ -298,7 +299,7 @@ class MainVoiceIntegration extends ChangeNotifier {
   /// 🛑 Oprește interacțiunea vocală
   Future<void> stopVoiceInteraction() async {
     try {
-      debugPrint('🎯 [MAIN_VOICE] Stopping voice interaction...');
+      Logger.info('Stopping voice interaction...', tag: 'MAIN_VOICE');
       
       // Verifică dacă componentele sunt inițializate înainte să le oprești
       if (_isInitialized) {
@@ -315,7 +316,7 @@ class MainVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [MAIN_VOICE] ❌ Stop voice interaction error: $e');
+      Logger.error('Stop voice interaction error: $e', tag: 'MAIN_VOICE', error: e);
       // În caz de eroare, forțează resetarea
       _currentContext = _currentContext.copyWith(
         rideState: RideFlowState.idle,

@@ -236,7 +236,7 @@ class PushNotificationService {
     } catch (e) {
       Logger.error('Error sending driver assignment notification', error: e, tag: 'PushNotifications');
       // Fallback to debug print if Cloud Function fails
-      debugPrint('🔔 [PUSH] Notify driver $driverId about ride $rideId (${distanceKm.toStringAsFixed(1)} km).');
+      Logger.info('Notify driver $driverId about ride $rideId (${distanceKm.toStringAsFixed(1)} km).', tag: 'PUSH');
     }
   }
 
@@ -263,7 +263,7 @@ class PushNotificationService {
       Logger.info('Driver timeout notification sent: $driverId for ride $rideId', tag: 'PushNotifications');
     } catch (e) {
       Logger.error('Error sending driver timeout notification', error: e, tag: 'PushNotifications');
-      debugPrint('🔔 [PUSH] Driver timeout for ride $rideId (driver $driverId).');
+      Logger.warning('Driver timeout for ride $rideId (driver $driverId).', tag: 'PUSH');
     }
   }
 
@@ -290,7 +290,7 @@ class PushNotificationService {
       Logger.info('Passenger no driver notification sent: $passengerId for ride $rideId', tag: 'PushNotifications');
     } catch (e) {
       Logger.error('Error sending passenger notification', error: e, tag: 'PushNotifications');
-      debugPrint('🔔 [PUSH] Notifying passenger $passengerId that ride $rideId is searching for another driver.');
+      Logger.info('Notifying passenger $passengerId that ride $rideId is searching for another driver.', tag: 'PUSH');
     }
   }
 

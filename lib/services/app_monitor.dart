@@ -12,6 +12,7 @@ import 'package:friendsride_app/services/firebase_service.dart';
 import 'package:friendsride_app/voice/core/voice_analytics.dart';
 import 'package:friendsride_app/voice/core/voice_analytics_bridge.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🏥 App Monitor - Sistema de prevenire crash-uri și recuperare automată
 /// 
@@ -70,7 +71,7 @@ class AppMonitor {
     if (_isInitialized) return;
     
     try {
-      debugPrint('🏥 [APP_MONITOR] Initializing system health monitoring...');
+      Logger.debug('Initializing system health monitoring...', tag: 'APP_MONITOR');
       
       // Setup crash detection
       await _setupCrashDetection();
@@ -95,10 +96,10 @@ class AppMonitor {
       
       _isInitialized = true;
       
-      debugPrint('✅ [APP_MONITOR] System health monitoring initialized successfully');
+      Logger.info('System health monitoring initialized successfully', tag: 'APP_MONITOR');
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to initialize: $e');
+      Logger.error('Failed to initialize: $e', tag: 'APP_MONITOR', error: e);
       await _recordCrash('app_monitor_initialization_failed', e, StackTrace.current);
       rethrow;
     }
@@ -163,10 +164,10 @@ class AppMonitor {
         isHealthy: true,
       );
       
-      debugPrint('📱 [APP_MONITOR] Device info initialized: ${deviceInfo['platform']}');
+      Logger.info('Device info initialized: ${deviceInfo['platform']}', tag: 'APP_MONITOR');
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to get device info: $e');
+      Logger.error('Failed to get device info: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -181,7 +182,7 @@ class AppMonitor {
     // Start network monitoring
     _networkCheckTimer = Timer.periodic(_networkCheckInterval, (_) => _checkNetworkHealth());
     
-    debugPrint('🏃 [APP_MONITOR] Health monitoring started');
+    Logger.info('Health monitoring started', tag: 'APP_MONITOR');
   }
   
   /// 🌐 Setup network monitoring
@@ -192,7 +193,7 @@ class AppMonitor {
         _handleConnectivityChange(result);
       },
       onError: (error) {
-        debugPrint('❌ [APP_MONITOR] Connectivity monitoring error: $error');
+        Logger.error('Connectivity monitoring error: $error', tag: 'APP_MONITOR', error: error);
         _recordNetworkIssue('connectivity_monitoring_error', error.toString());
       },
     );
@@ -206,7 +207,7 @@ class AppMonitor {
     // Initialize voice analytics
     await _voiceAnalytics.initialize();
     
-    debugPrint('🛠️ [APP_MONITOR] Recovery mechanisms initialized');
+    Logger.info('Recovery mechanisms initialized', tag: 'APP_MONITOR');
   }
   
   /// 🏥 Perform comprehensive health check
@@ -232,11 +233,11 @@ class AppMonitor {
       
       // Log health status periodically
       if (DateTime.now().minute % 5 == 0) {
-        debugPrint('🏥 [APP_MONITOR] Health Status: Overall=$_isHealthy, Memory=$_isMemoryHealthy, Network=$_isNetworkHealthy, CPU=$_isCpuHealthy');
+        Logger.debug('Health Status: Overall=$_isHealthy, Memory=$_isMemoryHealthy, Network=$_isNetworkHealthy, CPU=$_isCpuHealthy', tag: 'APP_MONITOR');
       }
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Health check failed: $e');
+      Logger.error('Health check failed: $e', tag: 'APP_MONITOR', error: e);
       await _recordCrash('health_check_failed', e, StackTrace.current);
     }
   }
@@ -258,12 +259,12 @@ class AppMonitor {
       _isMemoryHealthy = memoryUsageMB < _maxMemoryMB;
       
       if (!_isMemoryHealthy) {
-        debugPrint('⚠️ [APP_MONITOR] High memory usage detected: ${memoryUsageMB}MB');
+        Logger.warning('High memory usage detected: ${memoryUsageMB}MB', tag: 'APP_MONITOR');
         await _handleMemoryIssue(memoryUsageMB);
       }
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Memory check failed: $e');
+      Logger.error('Memory check failed: $e', tag: 'APP_MONITOR', error: e);
       _isMemoryHealthy = false;
     }
   }
@@ -296,7 +297,7 @@ class AppMonitor {
       }
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Network check failed: $e');
+      Logger.error('Network check failed: $e', tag: 'APP_MONITOR', error: e);
       _isNetworkHealthy = false;
       _networkBackoffSeconds = _networkBackoffSeconds == 0 ? 15 : (_networkBackoffSeconds * 2).clamp(15, 120);
       _rescheduleNetworkTimer(_networkBackoffSeconds);
@@ -307,7 +308,7 @@ class AppMonitor {
     try {
       _networkCheckTimer?.cancel();
       _networkCheckTimer = Timer.periodic(Duration(seconds: seconds), (_) => _checkNetworkHealth());
-      debugPrint('🌐 [APP_MONITOR] Network poll interval: ${seconds}s');
+      Logger.debug('Network poll interval: ${seconds}s', tag: 'APP_MONITOR');
     } catch (_) {}
   }
   
@@ -319,7 +320,7 @@ class AppMonitor {
     ).length;
     
     if (recentErrors > _maxErrorsPerMinute) {
-      debugPrint('🚨 [APP_MONITOR] Critical: High error rate detected: $recentErrors errors/minute');
+      Logger.error('Critical: High error rate detected: $recentErrors errors/minute', tag: 'APP_MONITOR');
       await _handleCriticalIssue('high_error_rate', 'Too many errors: $recentErrors/minute');
     }
     
@@ -346,7 +347,7 @@ class AppMonitor {
   
   /// 🛠️ Handle Flutter errors
   Future<void> _handleFlutterError(FlutterErrorDetails details) async {
-    debugPrint('🚨 [APP_MONITOR] Flutter Error: ${details.exception}');
+    Logger.error('Flutter Error: ${details.exception}', tag: 'APP_MONITOR');
     
     await _recordCrash(
       'flutter_error',
@@ -365,7 +366,7 @@ class AppMonitor {
   
   /// 🛠️ Handle platform errors
   Future<void> _handlePlatformError(Object error, StackTrace stack) async {
-    debugPrint('🚨 [APP_MONITOR] Platform Error: $error');
+    Logger.error('Platform Error: $error', tag: 'APP_MONITOR', error: error);
     
     await _recordCrash('platform_error', error, stack);
     await _attemptErrorRecovery('platform_error', error);
@@ -373,7 +374,7 @@ class AppMonitor {
   
   /// 🛠️ Handle isolate errors
   Future<void> _handleIsolateError(dynamic error, dynamic stack) async {
-    debugPrint('🚨 [APP_MONITOR] Isolate Error: $error');
+    Logger.error('Isolate Error: $error', tag: 'APP_MONITOR', error: error);
     
     await _recordCrash('isolate_error', error, stack);
     await _attemptErrorRecovery('isolate_error', error);
@@ -381,7 +382,7 @@ class AppMonitor {
   
   /// 🧠 Handle memory issues
   Future<void> _handleMemoryIssue(int memoryUsageMB) async {
-    debugPrint('🧠 [APP_MONITOR] Handling memory issue: ${memoryUsageMB}MB');
+    Logger.debug('Handling memory issue: ${memoryUsageMB}MB', tag: 'APP_MONITOR');
     
     final recoveryAction = RecoveryAction(
       type: 'memory_cleanup',
@@ -402,13 +403,13 @@ class AppMonitor {
       recoveryAction.success = true;
       recoveryAction.result = 'Memory cleanup completed successfully';
       
-      debugPrint('✅ [APP_MONITOR] Memory recovery completed');
+      Logger.info('Memory recovery completed', tag: 'APP_MONITOR');
       
     } catch (e) {
       recoveryAction.success = false;
       recoveryAction.result = 'Memory cleanup failed: $e';
       
-      debugPrint('❌ [APP_MONITOR] Memory recovery failed: $e');
+      Logger.error('Memory recovery failed: $e', tag: 'APP_MONITOR', error: e);
     }
     
     _recoveryHistory['memory_${DateTime.now().millisecondsSinceEpoch}'] = recoveryAction;
@@ -417,7 +418,7 @@ class AppMonitor {
   
   /// 🌐 Handle network issues
   Future<void> _handleNetworkIssue(String type, String reason) async {
-    debugPrint('🌐 [APP_MONITOR] Handling network issue: $type - $reason');
+    Logger.debug('Handling network issue: $type - $reason', tag: 'APP_MONITOR');
     
     final recoveryAction = RecoveryAction(
       type: 'network_recovery',
@@ -435,13 +436,13 @@ class AppMonitor {
       recoveryAction.success = true;
       recoveryAction.result = 'Network recovery completed';
       
-      debugPrint('✅ [APP_MONITOR] Network recovery completed');
+      Logger.info('Network recovery completed', tag: 'APP_MONITOR');
       
     } catch (e) {
       recoveryAction.success = false;
       recoveryAction.result = 'Network recovery failed: $e';
       
-      debugPrint('❌ [APP_MONITOR] Network recovery failed: $e');
+      Logger.error('Network recovery failed: $e', tag: 'APP_MONITOR', error: e);
     }
     
     _recoveryHistory['network_${DateTime.now().millisecondsSinceEpoch}'] = recoveryAction;
@@ -450,7 +451,7 @@ class AppMonitor {
   
   /// 🚨 Handle critical issues
   Future<void> _handleCriticalIssue(String type, String reason) async {
-    debugPrint('🚨 [APP_MONITOR] CRITICAL ISSUE: $type - $reason');
+    Logger.error('CRITICAL ISSUE: $type - $reason', tag: 'APP_MONITOR');
     
     final recoveryAction = RecoveryAction(
       type: 'critical_recovery',
@@ -471,13 +472,13 @@ class AppMonitor {
       recoveryAction.success = true;
       recoveryAction.result = 'Critical recovery completed';
       
-      debugPrint('✅ [APP_MONITOR] Critical recovery completed');
+      Logger.info('Critical recovery completed', tag: 'APP_MONITOR');
       
     } catch (e) {
       recoveryAction.success = false;
       recoveryAction.result = 'Critical recovery failed: $e';
       
-      debugPrint('❌ [APP_MONITOR] Critical recovery failed: $e');
+      Logger.error('Critical recovery failed: $e', tag: 'APP_MONITOR', error: e);
       
       // Last resort: notify user
       await _notifyUserOfCriticalIssue(type, reason);
@@ -514,7 +515,7 @@ class AppMonitor {
       onRecoveryActionTaken?.call(recoveryAction);
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Error recovery failed: $e');
+      Logger.error('Error recovery failed: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -549,7 +550,7 @@ class AppMonitor {
         };
       }
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to get device info: $e');
+      Logger.error('Failed to get device info: $e', tag: 'APP_MONITOR', error: e);
       return {
         'platform': 'unknown',
         'version': 'unknown',
@@ -589,7 +590,7 @@ class AppMonitor {
         }
       };
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to get memory info: $e');
+      Logger.error('Failed to get memory info: $e', tag: 'APP_MONITOR', error: e);
       return {
         'usedMB': 50, // Default estimation
         'availableMB': _maxMemoryMB - 50,
@@ -627,9 +628,9 @@ class AppMonitor {
         temp.clear();
       }
       
-      debugPrint('🧹 [APP_MONITOR] Garbage collection completed');
+      Logger.info('Garbage collection completed', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] GC failed: $e');
+      Logger.error('GC failed: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -639,14 +640,14 @@ class AppMonitor {
       // Clear image cache if available
       try {
         // Skip image cache clearing for now - requires Flutter services
-        debugPrint('⚠️ [APP_MONITOR] Image cache clearing skipped - requires Flutter services');
+        Logger.warning('Image cache clearing skipped - requires Flutter services', tag: 'APP_MONITOR');
       } catch (e) {
-        debugPrint('⚠️ [APP_MONITOR] Could not clear image cache: $e');
+        Logger.warning('Could not clear image cache: $e', tag: 'APP_MONITOR');
       }
       
-      debugPrint('🧹 [APP_MONITOR] Caches cleared');
+      Logger.debug('Caches cleared', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to clear caches: $e');
+      Logger.error('Failed to clear caches: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -656,9 +657,9 @@ class AppMonitor {
       // This would dispose of any unused resources
       // Implementation depends on specific resource management strategy
       
-      debugPrint('🗑️ [APP_MONITOR] Unused resources disposed');
+      Logger.debug('Unused resources disposed', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to dispose resources: $e');
+      Logger.error('Failed to dispose resources: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -668,9 +669,9 @@ class AppMonitor {
       // Attempt to reconnect to Firebase
       await _firebaseService.initialize();
       
-      debugPrint('🌐 [APP_MONITOR] Network recovery attempted');
+      Logger.debug('Network recovery attempted', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Network recovery failed: $e');
+      Logger.error('Network recovery failed: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -680,9 +681,9 @@ class AppMonitor {
       // Enable Firestore offline persistence
       // This would typically be done at app startup
       
-      debugPrint('📴 [APP_MONITOR] Offline mode enabled');
+      Logger.debug('Offline mode enabled', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to enable offline mode: $e');
+      Logger.error('Failed to enable offline mode: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -693,9 +694,9 @@ class AppMonitor {
       await _clearCaches();
       await _disposeUnusedResources();
       
-      debugPrint('🚨 [APP_MONITOR] Emergency cleanup completed');
+      Logger.error('Emergency cleanup completed', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Emergency cleanup failed: $e');
+      Logger.error('Emergency cleanup failed: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -710,9 +711,9 @@ class AppMonitor {
       _voiceAnalytics.dispose();
       await _voiceAnalytics.initialize();
       
-      debugPrint('🔄 [APP_MONITOR] Critical services restarted');
+      Logger.debug('Critical services restarted', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to restart services: $e');
+      Logger.error('Failed to restart services: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -728,9 +729,9 @@ class AppMonitor {
       // Clear recent crashes to avoid cascade failures
       _recentCrashes.clear();
       
-      debugPrint('🔒 [APP_MONITOR] Reset to safe state');
+      Logger.debug('Reset to safe state', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to reset to safe state: $e');
+      Logger.error('Failed to reset to safe state: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -740,9 +741,9 @@ class AppMonitor {
       // This would request any missing permissions
       // Implementation depends on specific permission requirements
       
-      debugPrint('🔐 [APP_MONITOR] Missing permissions requested');
+      Logger.debug('Missing permissions requested', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to request permissions: $e');
+      Logger.error('Failed to request permissions: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -752,9 +753,9 @@ class AppMonitor {
       await _forceGarbageCollection();
       await Future.delayed(Duration(milliseconds: 500));
       
-      debugPrint('🔧 [APP_MONITOR] Generic recovery completed');
+      Logger.info('Generic recovery completed', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Generic recovery failed: $e');
+      Logger.error('Generic recovery failed: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -764,9 +765,9 @@ class AppMonitor {
       // This would show a user notification about the critical issue
       // Implementation depends on UI framework and user notification strategy
       
-      debugPrint('📢 [APP_MONITOR] User notified of critical issue: $type - $reason');
+      Logger.debug('User notified of critical issue: $type - $reason', tag: 'APP_MONITOR');
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to notify user: $e');
+      Logger.error('Failed to notify user: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -827,10 +828,10 @@ class AppMonitor {
       // Trigger callback
       onCrashDetected?.call(crash);
       
-      debugPrint('📝 [APP_MONITOR] Crash recorded: $type - $error');
+      Logger.error('Crash recorded: $type - $error', tag: 'APP_MONITOR', error: error);
       
     } catch (e) {
-      debugPrint('❌ [APP_MONITOR] Failed to record crash: $e');
+      Logger.error('Failed to record crash: $e', tag: 'APP_MONITOR', error: e);
     }
   }
   
@@ -843,7 +844,7 @@ class AppMonitor {
       isHealthy: false,
     );
     
-    debugPrint('🌐 [APP_MONITOR] Network issue recorded: $type - $reason');
+    Logger.debug('Network issue recorded: $type - $reason', tag: 'APP_MONITOR');
   }
   
   /// 🌐 Handle connectivity changes
@@ -852,7 +853,7 @@ class AppMonitor {
     _isNetworkHealthy = result != ConnectivityResult.none;
     
     if (wasHealthy != _isNetworkHealthy) {
-      debugPrint('🌐 [APP_MONITOR] Connectivity changed: ${result.name} (healthy: $_isNetworkHealthy)');
+      Logger.debug('Connectivity changed: ${result.name} (healthy: $_isNetworkHealthy)', tag: 'APP_MONITOR');
       
       if (!_isNetworkHealthy) {
         _recordNetworkIssue('connectivity_lost', 'Connection changed to: ${result.name}');
@@ -909,7 +910,7 @@ class AppMonitor {
 
   /// 🧹 Dispose App Monitor
   void dispose() {
-    debugPrint('🧹 [APP_MONITOR] Disposing system health monitoring...');
+    Logger.debug('Disposing system health monitoring...', tag: 'APP_MONITOR');
     
     // Cancel timers
     _healthCheckTimer?.cancel();
@@ -933,7 +934,7 @@ class AppMonitor {
     _isNetworkHealthy = true;
     _isCpuHealthy = true;
     
-    debugPrint('✅ [APP_MONITOR] System health monitoring disposed');
+    Logger.info('System health monitoring disposed', tag: 'APP_MONITOR');
   }
 }
 

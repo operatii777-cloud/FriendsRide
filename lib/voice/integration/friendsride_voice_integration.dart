@@ -2,17 +2,16 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-// import 'package:firebase_auth/firebase_auth.dart'; // Comentat temporar
 
 // Existing FriendsRide services
 import '../../services/firestore_service.dart';
-// import '../../services/pricing_service.dart'; // Comentat temporar
 import '../../models/ride_model.dart';
 import '../../models/voice_models.dart';
 
 // New Voice AI System
 import '../states/voice_interaction_states.dart';
 import '../passenger/passenger_voice_controller.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 /// 🎯 FriendsRide Voice Integration - Sistemul vocal complet integrat cu aplicația
@@ -79,14 +78,14 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
     
     try {
       _isInitializing = true;
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] Initializing components...');
+      Logger.info('Initializing components...', tag: 'FRIENDSRIDE_VOICE');
       
       // ✅ Inițializez controller-ul vocal cu toate dependințele
       _voiceController = PassengerVoiceController(
         firestoreService: _firestoreService,
       );
       await _voiceController!.initialize();
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ✅ Voice controller initialized');
+      Logger.info('Voice controller initialized', tag: 'FRIENDSRIDE_VOICE');
       
       // 🎯 În final: Setez callback-urile
       _setupCallbacks();
@@ -94,10 +93,10 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
       _isInitialized = true;
       _isInitializing = false;
       
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ✅ All components initialized successfully');
+      Logger.info('All components initialized successfully', tag: 'FRIENDSRIDE_VOICE');
       
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       _isInitializing = false;
       _isInitialized = false;
     }
@@ -108,7 +107,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
     try {
       await _initializeComponents();
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] warmUp error: $e');
+      Logger.error('warmUp error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
     }
   }
   
@@ -180,7 +179,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
   
   /// 🎯 Gestionează erorile
   void _handleError(String error) {
-    debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Error: $error');
+    Logger.error('Error: $error', tag: 'FRIENDSRIDE_VOICE', error: error);
     
     _currentContext = _currentContext.copyWith(
       rideState: RideFlowState.error,
@@ -198,7 +197,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
     }
     
     try {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] Starting voice interaction...');
+      Logger.info('Starting voice interaction...', tag: 'FRIENDSRIDE_VOICE');
       
       _isVoiceActive = true;
       // _isFirstInteraction = true;
@@ -231,7 +230,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Start voice interaction error: $e');
+      Logger.error('Start voice interaction error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       _handleError(e.toString());
     }
   }
@@ -239,7 +238,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
   /// 🛑 Oprește interacțiunea vocală
   Future<void> stopVoiceInteraction() async {
     try {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] Stopping voice interaction...');
+      Logger.info('Stopping voice interaction...', tag: 'FRIENDSRIDE_VOICE');
       
       _isVoiceActive = false;
       await _stopContinuousListening();
@@ -258,7 +257,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Stop voice interaction error: $e');
+      Logger.error('Stop voice interaction error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       // În caz de eroare, forțează resetarea
       _currentContext = _currentContext.copyWith(
         rideState: RideFlowState.idle,
@@ -286,7 +285,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
           // CORECTAT: Verifică dacă VoiceOrchestrator nu este deja în proces de ascultare sau vorbire
           final voiceOrchestrator = _voiceController!.voiceOrchestrator;
           if (voiceOrchestrator.isAvailable) {
-            debugPrint('🎯 [FRIENDSRIDE_VOICE] Auto-starting listening (state: $state)');
+            Logger.info('Auto-starting listening (state: $state)', tag: 'FRIENDSRIDE_VOICE');
             _currentContext = _currentContext.copyWith(
               processingState: VoiceProcessingState.listening,
               lastInteractionTime: DateTime.now(),
@@ -294,11 +293,11 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
             notifyListeners();
             await _voiceController!.listenOnce(timeoutSeconds: 30, pauseForSeconds: 3, localeId: 'ro_RO');
           } else {
-            debugPrint('🎯 [FRIENDSRIDE_VOICE] VoiceOrchestrator not available (listening: ${voiceOrchestrator.isListening}, speaking: ${voiceOrchestrator.isSpeaking})');
+            Logger.info('VoiceOrchestrator not available (listening: ${voiceOrchestrator.isListening}, speaking: ${voiceOrchestrator.isSpeaking})', tag: 'FRIENDSRIDE_VOICE');
           }
         }
       } catch (e) {
-        debugPrint('🎯 [FRIENDSRIDE_VOICE] Continuous listening error: $e');
+        Logger.error('Continuous listening error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       }
     });
   }
@@ -357,7 +356,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
   /// 🚗 Gestionează cererea de cursă
   Future<void> handleRideRequest(Map<String, dynamic> rideData) async {
     try {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] Handling ride request...');
+      Logger.info('Handling ride request...', tag: 'FRIENDSRIDE_VOICE');
       
       if (_voiceController != null) {
         await _voiceController!.processVoiceInput('confirm ride request');
@@ -371,7 +370,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Ride request error: $e');
+      Logger.error('Ride request error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       _handleError(e.toString());
     }
   }
@@ -379,7 +378,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
   /// 📍 Procesează comanda de locație
   Future<void> processLocationCommand(String locationCommand) async {
     try {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] Processing location command: $locationCommand');
+      Logger.info('Processing location command: $locationCommand', tag: 'FRIENDSRIDE_VOICE');
       
       if (_voiceController != null) {
         await _voiceController!.processVoiceInput(locationCommand);
@@ -393,7 +392,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Location command error: $e');
+      Logger.error('Location command error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       _handleError(e.toString());
     }
   }
@@ -401,7 +400,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
   /// 🔄 Execută fluxul complet de cursă
   Future<void> executeRideFlow() async {
     try {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] Executing ride flow...');
+      Logger.info('Executing ride flow...', tag: 'FRIENDSRIDE_VOICE');
       
       if (_voiceController != null) {
         await _voiceController!.processVoiceInput('execute ride flow');
@@ -415,7 +414,7 @@ class FriendsRideVoiceIntegration extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('🎯 [FRIENDSRIDE_VOICE] ❌ Ride flow execution error: $e');
+      Logger.error('Ride flow execution error: $e', tag: 'FRIENDSRIDE_VOICE', error: e);
       _handleError(e.toString());
     }
   }

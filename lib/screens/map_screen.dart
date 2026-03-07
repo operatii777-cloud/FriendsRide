@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:convert';
-// import 'dart:ui' as ui; // removed as unused after moving controls to AppBar
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -45,6 +44,7 @@ import 'package:friendsride_app/widgets/map/map_poi_category_chips.dart';
 import 'package:friendsride_app/widgets/map/map_driver_interface.dart';;
 import 'package:friendsride_app/widgets/map/map_ride_info_panel.dart';
 import 'package:friendsride_app/widgets/map/map_intermediate_stops.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 
 
@@ -293,7 +293,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         _pickupLongitude != null &&
         _destinationLatitude != null &&
         _destinationLongitude != null) {
-      debugPrint('🗺️ Auto-showing route: pickup and destination are set');
+      Logger.debug('Auto-showing route: pickup and destination are set');
       try {
         final List<Point> waypoints = [];
 
@@ -318,10 +318,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         final routeData = await _routingService.getRoute(waypoints);
         if (routeData != null && mounted) {
           await _onRouteCalculated(routeData);
-          debugPrint('✅ Route automatically displayed');
+          Logger.info('Route automatically displayed');
         }
       } catch (e) {
-        debugPrint('❌ Auto route calculation error: $e');
+        Logger.error('Auto route calculation error: $e', error: e);
       }
     }
   }
@@ -386,26 +386,26 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       // 1. Mai întâi verifică destinațiile predefinite (rapid)
       final predefinedCoordinates = _getPredefinedDestinationCoordinates(destination);
       if (predefinedCoordinates != null) {
-        debugPrint('✅ Destinație predefinită găsită: $destination');
+        Logger.info('Destinație predefinită găsită: $destination');
         return predefinedCoordinates;
       }
       
       // 2. Dacă nu e predefinită, folosește geocoding API
-      debugPrint('🔍 Caut adresa cu geocoding: $destination');
+      Logger.debug('Caut adresa cu geocoding: $destination');
       final coordinates = await _geocodeAddress(destination);
       
       if (coordinates != null) {
-        debugPrint('✅ Coordonate găsite cu geocoding: $destination');
+        Logger.info('Coordonate găsite cu geocoding: $destination');
         return coordinates;
       }
       
       // 3. ❌ NU FOLOSIM COORDONATE DEFAULT - Returnează null și gestionează eroarea
-      debugPrint('⚠️ Nu am găsit coordonatele pentru: $destination');
+      Logger.warning('Nu am găsit coordonatele pentru: $destination');
       // Nu returnăm coordonate default - utilizatorul trebuie să specifice o adresă validă
       return null;
       
     } catch (e) {
-      debugPrint('❌ Eroare la găsirea coordonatelor: $e');
+      Logger.error('Eroare la găsirea coordonatelor: $e', error: e);
       // ❌ NU RETURNĂM COORDONATE DEFAULT
       return null;
     }
@@ -417,7 +417,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     try {
       final location = BucharestLocationsDatabase.findLocation(destination);
       if (location != null) {
-        debugPrint('✅ Destinație predefinită găsită în baza de date: ${location['name']} (${location['category']})');
+        Logger.info('Destinație predefinită găsită în baza de date: ${location['name']} (${location['category']})');
         return Point(
           coordinates: Position(
             location['longitude'] as double,
@@ -426,7 +426,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         );
       }
     } catch (e) {
-      debugPrint('⚠️ Eroare la căutarea în baza de date: $e');
+      Logger.warning('Eroare la căutarea în baza de date: $e');
     }
     
     return null; // Nu e predefinită
@@ -441,7 +441,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         ? address 
         : '$address, România';
       
-      debugPrint('🌍 Geocoding pentru: $fullAddress');
+      Logger.debug('Geocoding pentru: $fullAddress');
       
       // Folosește OpenStreetMap Nominatim API (gratuit)
       final url = Uri.parse(
@@ -471,23 +471,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
           
           // ✅ VALIDARE COORDONATE
           if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-            debugPrint('⚠️ Coordonate invalide pentru: $address');
+            Logger.warning('Coordonate invalide pentru: $address');
             return null;
           }
           
-          debugPrint('✅ Geocoding reușit: $lat, $lon pentru $address');
+          Logger.info('Geocoding reușit: $lat, $lon pentru $address');
           return Point(coordinates: Position(lon, lat));
         }
       }
       
-      debugPrint('⚠️ Nu am găsit rezultate pentru: $address');
+      Logger.warning('Nu am găsit rezultate pentru: $address');
       return null;
       
     } on TimeoutException catch (e) {
-      debugPrint('❌ Geocoding timeout: $e');
+      Logger.error('Geocoding timeout: $e', error: e);
       return null;
     } catch (e) {
-      debugPrint('❌ Eroare geocoding: $e');
+      Logger.error('Eroare geocoding: $e', error: e);
       return null;
     }
   }
@@ -511,9 +511,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       // Adaugă marker-ul pe hartă
       await _routeMarkersAnnotationManager?.create(destinationMarkerOptions);
       
-      debugPrint('✅ Marker destinație adăugat: $title');
+      Logger.info('Marker destinație adăugat: $title');
     } catch (e) {
-      debugPrint('❌ Eroare la adăugarea marker-ului destinație: $e');
+      Logger.error('Eroare la adăugarea marker-ului destinație: $e', error: e);
     }
   }
   
@@ -622,7 +622,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   //       // _aiResponse = '🗑️ Oprire ștearsă: $removedStop'; // ❌ ELIMINAT
   //     });
   //     
-  //       debugPrint('🗑️ Oprire intermediară ștearsă: $removedStop');
+  //       Logger.debug('Oprire intermediară ștearsă: $removedStop');
   //       
   //       // Actualizează harta (șterge marker-ul)
   //       _updateMapWithAllPoints();
@@ -672,7 +672,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     
-    debugPrint('🧹 MapScreen dispose - cleaning up all resources');
+    Logger.debug('MapScreen dispose - cleaning up all resources');
     
     _audioService.dispose();
     
@@ -721,17 +721,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     super.didChangeAppLifecycleState(state);
     
             if (state == AppLifecycleState.resumed) {
-      debugPrint('📱 App resumed - checking if we need to reset route state');
+      Logger.info('App resumed - checking if we need to reset route state');
       
       _resetRouteStateIfNeeded();
       
       if (_isDriverAvailable && _currentRole == UserRole.driver) {
-        debugPrint('🔄 App resumed - restarting location updates and ride listener');
+        Logger.debug('App resumed - restarting location updates and ride listener');
         _startDriverLocationUpdates();
         _startListeningForRides(); 
       }
     } else if (state == AppLifecycleState.paused) {
-      debugPrint('⏸️ App paused - stopping location updates');
+      Logger.debug('⏸ App paused - stopping location updates');
       _stopLocationUpdates();
     }
   }
@@ -739,29 +739,29 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   void _resetRouteStateIfNeeded() {
     if (!_shouldResetRoute || !mounted) return;
     
-    debugPrint('🔄 MapScreen: Resetting route state after ride completion');
+    Logger.debug('MapScreen: Resetting route state after ride completion');
     
     _routeAnnotationManager?.deleteAll().catchError((e) {
-      debugPrint('⚠️ Error clearing route annotations: $e');
+      Logger.error('Error clearing route annotations: $e', error: e);
     });
     
     _routeMarkersAnnotationManager?.deleteAll().catchError((e) {
-      debugPrint('⚠️ Error clearing route markers: $e');
+      Logger.error('Error clearing route markers: $e', error: e);
     });
 
     _pickupCircleManager?.deleteAll().catchError((e) {
-      debugPrint('⚠️ Error clearing pickup circle: $e');
+      Logger.error('Error clearing pickup circle: $e', error: e);
     });
 
     _destinationCircleManager?.deleteAll().catchError((e) {
-      debugPrint('⚠️ Error clearing destination circle: $e');
+      Logger.error('Error clearing destination circle: $e', error: e);
     });
     
     _rideRequestPanelKey.currentState?.resetPanel();
     
     _shouldResetRoute = false;
     
-    debugPrint('✅ MapScreen: Route state reset completed');
+    Logger.info('MapScreen: Route state reset completed');
   }
   
   // ✅ FIX: Metoda veche a fost înlocuită cu _playRideOfferSoundRobust()
@@ -772,7 +772,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     // ✅ VERIFICĂ DOAR mounted - eliminăm verificarea _currentRideOffer
     if (!mounted) return;
     
-    debugPrint('🔊 [SOUND] Starting ride offer sound...');
+    Logger.debug('Starting ride offer sound...', tag: 'SOUND');
     
     try {
       // ✅ FIX 1: Testează multiple metode de redare audio
@@ -782,9 +782,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       try {
         await _audioService.playRideRequestSound();
         audioPlayed = true;
-        debugPrint('✅ AudioService played successfully');
+        Logger.info('AudioService played successfully');
       } catch (e) {
-        debugPrint('❌ AudioService failed: $e');
+        Logger.error('AudioService failed: $e', error: e);
       }
       
       // Metodă 2: Fallback la system sounds
@@ -792,9 +792,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         try {
           await SystemSound.play(SystemSoundType.alert);
           audioPlayed = true;
-          debugPrint('✅ SystemSound played successfully');
+          Logger.info('SystemSound played successfully');
         } catch (e) {
-          debugPrint('❌ SystemSound failed: $e');
+          Logger.error('SystemSound failed: $e', error: e);
         }
       }
       
@@ -806,9 +806,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
           HapticFeedback.heavyImpact();
           await Future.delayed(Duration(milliseconds: 300));
           HapticFeedback.heavyImpact();
-          debugPrint('✅ HapticFeedback sequence played');
+          Logger.info('HapticFeedback sequence played');
         } catch (e) {
-          debugPrint('❌ HapticFeedback failed: $e');
+          Logger.error('HapticFeedback failed: $e', error: e);
         }
       }
       
@@ -828,7 +828,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       }
       
     } catch (e) {
-      debugPrint('🚨 CRITICAL: All audio methods failed: $e');
+      Logger.error('CRITICAL: All audio methods failed: $e', error: e);
       // Ultimate fallback: Show visual notification
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
@@ -865,16 +865,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
                 !messageText.contains('location_update') &&
                 !messageText.startsWith('system:')) {
               
-              debugPrint('🔊 [MAP_CHAT] New message from $senderId to $currentUserId - playing sound notification');
+              Logger.debug('New message from $senderId to $currentUserId - playing sound notification', tag: 'MAP_CHAT');
               
               // ✅ FIX: Redă sunetul pe background thread
               unawaited(_audioService.playMessageReceivedSound().catchError((e) async {
-                debugPrint('🔊 [MAP_CHAT] Error playing chat sound: $e');
+                Logger.error('Error playing chat sound: $e', tag: 'MAP_CHAT', error: e);
                 // ✅ FALLBACK: Încearcă sunetul de sistem dacă audio custom eșuează
                 try {
                   await SystemSound.play(SystemSoundType.alert);
                 } catch (e2) {
-                  debugPrint('🔊 [MAP_CHAT] Even system sound failed: $e2');
+                  Logger.error('Even system sound failed: $e2', tag: 'MAP_CHAT');
                 }
               }));
               
@@ -900,7 +900,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     );
 
     if (distanceFromPrevious > 100) {
-      debugPrint('📍 GPS jump detected: ${distanceFromPrevious.toStringAsFixed(1)}m - applying road snapping');
+      Logger.debug('GPS jump detected: ${distanceFromPrevious.toStringAsFixed(1)}m - applying road snapping');
       final interpolationFactor = 100 / distanceFromPrevious;
       final correctedLat = _previousPositionObject!.latitude + 
           (rawPosition.latitude - _previousPositionObject!.latitude) * interpolationFactor;
@@ -917,7 +917,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     }
 
     if (distanceFromPrevious < 5 && rawPosition.accuracy > 10) {
-      debugPrint('📍 GPS noise detected - applying smoothing');
+      Logger.debug('GPS noise detected - applying smoothing');
       const smoothingFactor = 0.7;
       final smoothedLat = rawPosition.latitude * smoothingFactor + 
           _previousPositionObject!.latitude * (1 - smoothingFactor);
@@ -937,7 +937,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
 
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
-    debugPrint("🗺️ Map created. Initializing light map state...");
+    Logger.info("Map created. Initializing light map state...");
 
     try {
       // Disable default UI plugins to reduce AppCompat theme warnings and save GPU
@@ -970,7 +970,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         });
       }
       _pickupSuggestionsManager = null;
-      debugPrint("✅ Deferred annotation managers creation (lazy mode).");
+      Logger.info("Deferred annotation managers creation (lazy mode).");
 
       // Defer POI symbol layer init until first category interaction
       
@@ -981,7 +981,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         unawaited(_prewarmTiles());
       }
     } catch (e) {
-      debugPrint("⚡ CRITICAL ERROR creating annotation managers: $e. Map markers will not work.");
+      Logger.error("CRITICAL ERROR creating annotation managers: $e. Map markers will not work.", error: e);
     }
   }
 
@@ -1058,13 +1058,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
 
       _poiLayersInitialized = true;
     } catch (e) {
-      debugPrint('⚠️ Failed to init POI layers: $e');
+      Logger.error('Failed to init POI layers: $e', error: e);
     }
   }
 
   Future<void> _updateUserMarker({bool centerCamera = false}) async {
           if (!mounted) {
-      debugPrint('⏭️ Skipping marker update - widget unmounted or navigating');
+      Logger.debug('⏭ Skipping marker update - widget unmounted or navigating');
       return;
     }
     
@@ -1072,16 +1072,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       try {
         _userPointAnnotationManager = await _mapboxMap?.annotations.createPointAnnotationManager(id: 'user-marker-manager');
       } catch (e) {
-        debugPrint('⚠️ Could not create user annotation manager: $e');
+        Logger.warning('Could not create user annotation manager: $e');
       }
       if (_userPointAnnotationManager == null) {
-        debugPrint('⚠️ Skipping marker update - annotation manager is null');
+        Logger.warning('Skipping marker update - annotation manager is null');
         return;
       }
     }
     
     if (_currentPositionObject == null) {
-      debugPrint('⚠️ Skipping marker update - no current position');
+      Logger.warning('Skipping marker update - no current position');
       return;
     }
 
@@ -1128,7 +1128,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       );
 
       if (!mounted || _userPointAnnotationManager == null) {
-        debugPrint('🛑 Aborting marker update - state changed during operation');
+        Logger.debug('Aborting marker update - state changed during operation');
         return;
       }
 
@@ -1152,7 +1152,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         _schedulePoiUpdate();
       }
     } catch (e) {
-      debugPrint('⚠️ Non-fatal error during _updateUserMarker: $e');
+      Logger.error('Non-fatal error during _updateUserMarker: $e', error: e);
     }
   }
 
@@ -1219,7 +1219,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Non-fatal error during _updateNearbyDrivers: $e');
+      Logger.error('Non-fatal error during _updateNearbyDrivers: $e', error: e);
     }
   }
 
@@ -1259,7 +1259,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         });
       }
     } catch (e) {
-      debugPrint('⚠️ Screen initialization error: $e');
+      Logger.error('Screen initialization error: $e', error: e);
       if (mounted) {
         setState(() { _currentRole = UserRole.passenger; });
       }
@@ -1273,7 +1273,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       
       // ✅ FIX: Nu pornim listener-ul aici
       if (_driverCategory != null) {
-        debugPrint('🚗 [MAP] Driver system initialized for category: ${_driverCategory!.name}');
+        Logger.info('Driver system initialized for category: ${_driverCategory!.name}', tag: 'MAP');
         
         // ✅ FIX: Verifică dacă șoferul e deja disponibil din storage
         _checkAndStartDriverSystemIfReady();
@@ -1292,13 +1292,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         
         // Acum pornește sistemul dacă totul e gata
         if (_driverCategory != null && _isDriverAvailable) {
-          debugPrint('🚗 [MAP] Starting driver system - category: ${_driverCategory!.name}, available: $_isDriverAvailable');
+          Logger.debug('Starting driver system - category: ${_driverCategory!.name}, available: $_isDriverAvailable', tag: 'MAP');
           _startListeningForRides();
           _startDriverLocationUpdates();
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Error checking driver status: $e');
+      Logger.error('Error checking driver status: $e', error: e);
     }
   }
 
@@ -1315,13 +1315,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   void _startListeningForRides() {
     if (_driverCategory == null || !_isDriverAvailable) return;
     
-    debugPrint('🚗 [MAP] Starting to listen for ${_driverCategory!.name} rides');
+    Logger.debug('Starting to listen for ${_driverCategory!.name} rides', tag: 'MAP');
     
     _pendingRidesSubscription?.cancel();
     _pendingRidesSubscription = _firestoreService
         .getPendingRideRequests(_driverCategory!)
         .listen((rides) {
-      debugPrint('🚗 [MAP] Received ${rides.length} pending rides');
+      Logger.debug('Received ${rides.length} pending rides', tag: 'MAP');
 
       final currentDriverId = FirebaseAuth.instance.currentUser?.uid;
       final availableRides = rides.where((ride) {
@@ -1381,7 +1381,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       });
     }
     
-    debugPrint('🚗 [MAP] Showing ride offer: ${ride.destinationAddress}');
+    Logger.debug('Showing ride offer: ${ride.destinationAddress}', tag: 'MAP');
 
     try {
       final driverVoice = Provider.of<DriverVoiceController>(context, listen: false);
@@ -1393,7 +1393,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         onNavigateToActiveRide: () async => _navigateToActiveRideScreen(ride.id),
       );
     } catch (e) {
-      debugPrint('🎤 [VOICE] Unable to start driver voice flow: $e');
+      Logger.debug('Unable to start driver voice flow: $e', tag: 'VOICE');
     }
     
     _rideOfferTimer?.cancel();
@@ -1432,7 +1432,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   Future<void> _acceptRide(Ride ride) async {
     // ✅ FIX: Protecție îmbunătățită împotriva apăsărilor multiple
     if (_isProcessingAccept) {
-      debugPrint('🚗 [MAP] Already processing accept request, ignoring duplicate tap');
+      Logger.debug('Already processing accept request, ignoring duplicate tap', tag: 'MAP');
       return;
     }
     
@@ -1446,7 +1446,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     await Future.microtask(() {});
     
     try {
-      debugPrint('🚗 [MAP] Accepting ride: ${ride.id}');
+      Logger.debug('Accepting ride: ${ride.id}', tag: 'MAP');
       await _firestoreService.acceptRide(ride.id);
       
       // ✅ FIX: Nu mai anulăm oferta imediat - așteptăm confirmarea pasagerului
@@ -1462,7 +1462,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         );
       }
     } catch (e) {
-      debugPrint('⚡ [MAP] Error accepting ride: $e');
+      Logger.error('Error accepting ride: $e', tag: 'MAP', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1491,7 +1491,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   Future<void> _declineRide(Ride ride) async {
     // 🚗 FIX: Protecție împotriva apăsărilor multiple
     if (_isProcessingDecline) {
-      debugPrint('🚗 [MAP] Already processing decline request, ignoring duplicate tap');
+      Logger.debug('Already processing decline request, ignoring duplicate tap', tag: 'MAP');
       return;
     }
     
@@ -1500,7 +1500,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     });
     
     try {
-      debugPrint('🚗 [MAP] Declining ride: ${ride.id}');
+      Logger.debug('Declining ride: ${ride.id}', tag: 'MAP');
       await _firestoreService.declineRide(ride.id);
       _dismissRideOffer();
       
@@ -1513,7 +1513,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         });
       }
     } catch (e) {
-      debugPrint('⚡ [MAP] Error declining ride: $e');
+      Logger.error('Error declining ride: $e', tag: 'MAP', error: e);
     } finally {
       // 🚗 FIX: Reset protecția după procesare
       if (mounted) {
@@ -1532,7 +1532,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     
     // ✅ FIX: Pornește sistemul DUPĂ ce statusul e setat
     if (_driverCategory != null && _isDriverAvailable) {
-      debugPrint('🚗 [MAP] Driver status loaded - starting ride system');
+      Logger.info('Driver status loaded - starting ride system', tag: 'MAP');
       _startListeningForRides();
       _startDriverLocationUpdates();
     }
@@ -1552,14 +1552,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       // 🚀 PERFORMANȚĂ: Timeout pentru verificarea permisiunilor
       geolocator.LocationPermission permission = await geolocator.Geolocator.checkPermission()
           .timeout(const Duration(seconds: 2), onTimeout: () {
-        debugPrint('⚠️ Permission check timeout');
+        Logger.warning('Permission check timeout');
         return geolocator.LocationPermission.denied;
       });
       
       if (permission == geolocator.LocationPermission.denied) {
         permission = await geolocator.Geolocator.requestPermission()
             .timeout(const Duration(seconds: 3), onTimeout: () {
-          debugPrint('⚠️ Permission request timeout');
+          Logger.warning('Permission request timeout');
           return geolocator.LocationPermission.denied;
         });
         
@@ -1584,7 +1584,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         _updateUserMarker(centerCamera: centerCamera);
       }
     } catch (e) {
-      debugPrint("Could not get current location: $e");
+      Logger.debug("Could not get current location: $e");
       // 🚀 PERFORMANȚĂ: Încercăm să folosim ultima locație cunoscută
       try {
         final lastKnownPosition = await geolocator.Geolocator.getLastKnownPosition()
@@ -1594,7 +1594,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
           _updateUserMarker(centerCamera: centerCamera);
         }
       } catch (fallbackError) {
-        debugPrint("Could not get last known location: $fallbackError");
+        Logger.debug("Could not get last known location: $fallbackError");
       }
     }
   }
@@ -1643,7 +1643,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       // Verificăm dacă a trecut suficient timp de la ultima trimitere
       if (_lastUpdateTime == null || now.difference(_lastUpdateTime!).inSeconds >= currentInterval) {
         
-        debugPrint('--> Sending location update. Speed: ${speed.toStringAsFixed(2)} m/s. Interval: $currentInterval s.');
+        Logger.debug('--> Sending location update. Speed: ${speed.toStringAsFixed(2)} m/s. Interval: $currentInterval s.');
         
         final snappedPosition = _applyRoadSnapping(position);
         _firestoreService.updateDriverLocation(snappedPosition, bearing: snappedPosition.heading);
@@ -1662,10 +1662,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         _lastUpdateTime = now;
       }
     }, onError: (error) {
-      debugPrint("Eroare la stream-ul de locație: $error");
+      Logger.error("Eroare la stream-ul de locație: $error", error: error);
     });
 
-    debugPrint('▶️ Started location stream');
+    Logger.info('▶ Started location stream');
   }
 
   // ✅ ÎMBUNĂTĂȚIT: Oprește și stream-ul și timer-ul
@@ -1673,14 +1673,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
     if (_positionSubscription != null) {
       _positionSubscription!.cancel();
       _positionSubscription = null;
-      debugPrint('⏹️ Stopped location stream');
+      Logger.debug('⏹ Stopped location stream');
     }
     
     // ✅ ADĂUGAT: Oprește și timer-ul constant
     if (_locationUpdateTimer != null) {
       _locationUpdateTimer!.cancel();
       _locationUpdateTimer = null;
-      debugPrint('⏹️ Stopped location timer');
+      Logger.debug('⏹ Stopped location timer');
     }
   }
 
@@ -1706,9 +1706,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         });
       }
       
-      debugPrint('🚗 Background location update successful');
+      Logger.debug('Background location update successful');
     } catch (e) {
-      debugPrint('⚠️ Background location update failed: $e');
+      Logger.error('Background location update failed: $e', error: e);
     }
   }
 
@@ -1944,7 +1944,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         }
       });
     } catch (e) {
-      debugPrint('⚠️ Driver precise ETA calculation failed: $e');
+      Logger.error('Driver precise ETA calculation failed: $e', error: e);
     } finally {
       _driverIsFetchingEta = false;
     }
@@ -1988,7 +1988,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       }
       _updateUserMarker();
     } catch (e) {
-      debugPrint('⚡ [DRIVER] Error updating availability: $e');
+      Logger.error('Error updating availability: $e', tag: 'DRIVER', error: e);
       if (mounted) {
         setState(() { _isDriverAvailable = !value; });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2021,7 +2021,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
         _currentRouteDistanceMeters = null;
         _currentRouteDurationSeconds = null;
       });
-      debugPrint('🧹 Route cleared in MapScreen');
+      Logger.debug('Route cleared in MapScreen');
       return;
     }
     
@@ -2202,13 +2202,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Failed to fit camera to route: $e');
+        Logger.error('Failed to fit camera to route: $e', error: e);
       }
       
-      debugPrint('🗺️ Route and circles displayed in MapScreen');
+      Logger.debug('Route and circles displayed in MapScreen');
     } catch (e) {
-      debugPrint('🚨 Error processing route geometry: $e');
-      debugPrint('🚨 Route data structure: $routeData');
+      Logger.error('Error processing route geometry: $e', error: e);
+      Logger.error('Route data structure: $routeData');
     }
   }
 
@@ -2246,15 +2246,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       await _pickupCircleManager?.create(pickupOptions);
       await _destinationCircleManager?.create(destinationOptions);
       
-      debugPrint('✅ Route circles added successfully');
+      Logger.info('Route circles added successfully');
       
     } catch (e) {
-      debugPrint('⚠️ Error adding route circles: $e');
+      Logger.error('Error adding route circles: $e', error: e);
     }
   }
 
   void _navigateToActiveRideScreen(String rideId) {
-    debugPrint('🧭 Navigating to ActiveRideScreen - stopping background processes');
+    Logger.debug('Navigating to ActiveRideScreen - stopping background processes');
     // ✅ FIX: Eliminăm blocajul hartii pentru experiență fluidă
     // _isNavigatingToActiveRide = true;
     _stopLocationUpdates();
@@ -2264,7 +2264,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
       context,
       MaterialPageRoute(builder: (context) => ActiveRideScreen(rideId: rideId)),
     ).then((_) {
-      debugPrint('🔄 Returned from ActiveRideScreen - resuming background processes');
+      Logger.debug('Returned from ActiveRideScreen - resuming background processes');
       // ✅ FIX: Eliminăm blocajul hartii pentru experiență fluidă
     // _isNavigatingToActiveRide = false;
       
@@ -2283,24 +2283,24 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
   @override
   Widget build(BuildContext context) {
     if (_verboseBuildLogs) {
-      debugPrint('🎤 DEBUG: MapScreen build() apelat');
-      debugPrint('🎤 DEBUG: _currentRole = $_currentRole');
-      debugPrint('🎤 DEBUG: _isDriverAvailable = $_isDriverAvailable');
-      debugPrint('🎤 DEBUG: ========== BUILD METHOD DEBUG ==========');
-      debugPrint('🎤 DEBUG: canShowVoiceAI = $canShowVoiceAI');
+      Logger.debug('DEBUG: MapScreen build() apelat');
+      Logger.debug('DEBUG: _currentRole = $_currentRole');
+      Logger.debug('DEBUG: _isDriverAvailable = $_isDriverAvailable');
+      Logger.debug('DEBUG: ========== BUILD METHOD DEBUG ==========');
+      Logger.debug('DEBUG: canShowVoiceAI = $canShowVoiceAI');
       if (canShowVoiceAI) {
-        debugPrint('🎤 DEBUG: ✅ canShowVoiceAI = true - va afișa AI button și overlay!');
+        Logger.info('DEBUG:  canShowVoiceAI = true - va afișa AI button și overlay!');
       } else {
-        debugPrint('🎤 DEBUG: ❌ canShowVoiceAI = false - NU va afișa AI button și overlay!');
+        Logger.error('DEBUG:  canShowVoiceAI = false - NU va afișa AI button și overlay!');
       }
-      debugPrint('🎤 DEBUG: ========== END BUILD METHOD DEBUG ==========');
+      Logger.debug('DEBUG: ========== END BUILD METHOD DEBUG ==========');
     }
     
     final bool shouldShowPassengerUI = _currentRole == UserRole.passenger || 
                                        (_currentRole == UserRole.driver && !_isDriverAvailable);
     
     if (_verboseBuildLogs) {
-      debugPrint('🎤 DEBUG: shouldShowPassengerUI = $shouldShowPassengerUI');
+      Logger.debug('DEBUG: shouldShowPassengerUI = $shouldShowPassengerUI');
     }
 
     return Scaffold(
@@ -2707,15 +2707,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver, Tick
               builder: (context, voiceIntegration, statusProvider, child) {
                 return DraggableAIButton(
                   onTap: () async {
-                    debugPrint('🎤 DEBUG: AI Button apăsat - pornesc voice interaction');
+                    Logger.debug('DEBUG: AI Button apăsat - pornesc voice interaction');
                     try {
                       // ✅ NOU: Actualizează statusul asistentului la "working"
                       statusProvider.setStatus(AssistantWorkStatus.working);
                       
                       await voiceIntegration.startVoiceInteraction();
-                      debugPrint('🎤 DEBUG: Voice interaction pornit cu succes');
+                      Logger.debug('DEBUG: Voice interaction pornit cu succes');
                     } catch (e) {
-                      debugPrint('🎤 DEBUG: ❌ Eroare la pornirea voice interaction: $e');
+                      Logger.error('DEBUG:  Eroare la pornirea voice interaction: $e', error: e);
                       // ✅ NOU: Revenire la idle dacă apare eroare
                       statusProvider.setStatus(AssistantWorkStatus.idle);
                     }
@@ -2798,7 +2798,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         'longitude': cameraState.center.coordinates.lng.toDouble(),
       };
 
-      debugPrint('🌍 Fetching ${category.displayName} via Mapbox Search (București-Ilfov)...');
+      Logger.debug('Fetching ${category.displayName} via Mapbox Search (București-Ilfov)...');
       final fetchedPois = await _poiService.fetchPoisFromApi(center, category);
 
       if (!mounted) return;
@@ -2813,7 +2813,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       if (mounted) {
         _showSafeSnackBar('Eroare la încărcarea datelor: $e', Colors.red);
       }
-      debugPrint('❌ Eroare la _onPoiCategoryTapped: $e');
+      Logger.error('Eroare la _onPoiCategoryTapped: $e', error: e);
     } finally {
       if (mounted) {
         setState(() { _isLoadingPois = false; });
@@ -2955,7 +2955,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         json.encode(fc),
       );
     } catch (e) {
-      debugPrint('⚠️ Failed to update POI GeoJSON: $e');
+      Logger.error('Failed to update POI GeoJSON: $e', error: e);
     }
   }
 
@@ -3031,7 +3031,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       final distance = _calculateDistanceBetweenPoints(tappedPoint, poiPoint);
       
       if (distance <= detectionRadiusMeters) {
-        debugPrint('🏛️ POI detected: ${poi.name}');
+        Logger.debug('POI detected: ${poi.name}');
         _onPoiTapped(poi);
         return; // Stop la primul POI găsit
       }
@@ -3056,7 +3056,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
   /// Handler pentru POI selectat
   void _onPoiTapped(PointOfInterest poi) {
-    debugPrint('🎯 POI tapped: ${poi.name}');
+    Logger.info('POI tapped: ${poi.name}');
     HapticFeedback.selectionClick();
     
     setState(() {
@@ -3120,7 +3120,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
             _showPoiCard = false;
           });
         }
-        debugPrint('🧹 Auto-hide POI ${poi.name} după 5s (fără navigare)');
+        Logger.debug('Auto-hide POI ${poi.name} după 5s (fără navigare)');
       }
     });
 
@@ -3153,7 +3153,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         json.encode(fc),
       ));
     } catch (e) {
-      debugPrint('⚠️ Failed to update selected POI highlight: $e');
+      Logger.error('Failed to update selected POI highlight: $e', error: e);
     }
   }
 
@@ -3167,7 +3167,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         json.encode(empty),
       );
     } catch (e) {
-      debugPrint('⚠️ Failed to clear selected POI highlight: $e');
+      Logger.error('Failed to clear selected POI highlight: $e', error: e);
     }
   }
 
@@ -3177,7 +3177,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
   /// Setează POI ca punct de plecare
   void _setPOIAsPickup(PointOfInterest poi) {
-    debugPrint('🚀 Setting POI as pickup: ${poi.name}');
+    Logger.info('Setting POI as pickup: ${poi.name}');
     
     try {
       // ✅ PERFORMANCE: Cancel previous operations
@@ -3185,14 +3185,14 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       
       // ✅ PERFORMANCE: Quick UI update - batch all setState calls
       setState(() {
-        debugPrint('🚀 Updating pickup state...');
+        Logger.info('Updating pickup state...');
         _pickupController.text = poi.name;
         _pickupLatitude = poi.location.latitude;
         _pickupLongitude = poi.location.longitude;
         // ✅ PERFORMANCE: Close POI card in same setState
         _selectedPoi = null;
         _showPoiCard = false;
-        debugPrint('🚀 Pickup state updated: lat=$_pickupLatitude, lng=$_pickupLongitude');
+        Logger.info('Pickup state updated: lat=$_pickupLatitude, lng=$_pickupLongitude');
       });
 
       // ✅ PERFORMANCE: Close POI card immediately - no additional navigation
@@ -3214,7 +3214,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       // ✅ PERFORMANCE: Debounce heavy operations
       _poiOperationTimer = Timer(Duration(milliseconds: 300), () {
         if (mounted) {
-          debugPrint('🚀 Executing deferred operations for pickup...');
+          Logger.info('Executing deferred operations for pickup...');
           _updateRideRequestPanelPickup(poi);
           _updateMapWithNewPickup();
           // ✅ CONECTARE: Folosește batch map updates
@@ -3230,8 +3230,8 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       });
       
     } catch (e) {
-      debugPrint('🚨 CRASH in _setPOIAsPickup: $e');
-      debugPrint('🚨 Stack trace: ${StackTrace.current}');
+      Logger.error('CRASH in _setPOIAsPickup: $e', error: e);
+      Logger.error('Stack trace: ${StackTrace.current}');
       if (mounted) {
         _closePoiCard();
         _showSafeSnackBar('Eroare la setarea pickup: $e', Colors.red);
@@ -3241,7 +3241,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
   /// Setează POI ca punct de destinație
   void _setPOIAsDestination(PointOfInterest poi) {
-    debugPrint('🎯 Setting POI as destination: ${poi.name}');
+    Logger.info('Setting POI as destination: ${poi.name}');
     
     try {
       // ✅ PERFORMANCE: Cancel previous operations
@@ -3249,14 +3249,14 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       
       // ✅ PERFORMANCE: Quick UI update - batch all setState calls
       setState(() {
-        debugPrint('🎯 Updating destination state...');
+        Logger.info('Updating destination state...');
         _destinationController.text = poi.name;
         _destinationLatitude = poi.location.latitude;
         _destinationLongitude = poi.location.longitude;
         // ✅ PERFORMANCE: Close POI card in same setState
         _selectedPoi = null;
         _showPoiCard = false;
-        debugPrint('🎯 Destination state updated: lat=$_destinationLatitude, lng=$_destinationLongitude');
+        Logger.info('Destination state updated: lat=$_destinationLatitude, lng=$_destinationLongitude');
       });
 
       // ✅ PERFORMANCE: Close POI card immediately - no additional navigation
@@ -3278,7 +3278,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       // ✅ PERFORMANCE: Debounce heavy operations
       _poiOperationTimer = Timer(Duration(milliseconds: 300), () {
         if (mounted) {
-          debugPrint('🎯 Executing deferred operations for destination...');
+          Logger.info('Executing deferred operations for destination...');
           _updateRideRequestPanelDestination(poi);
           _updateMapWithNewDestination();
           // ✅ CONECTARE: Folosește batch map updates
@@ -3294,8 +3294,8 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       });
       
     } catch (e) {
-      debugPrint('🚨 CRASH in _setPOIAsDestination: $e');
-      debugPrint('🚨 Stack trace: ${StackTrace.current}');
+      Logger.error('CRASH in _setPOIAsDestination: $e', error: e);
+      Logger.error('Stack trace: ${StackTrace.current}');
       if (mounted) {
         _closePoiCard();
         _showSafeSnackBar('Eroare la setarea destinației: $e', Colors.red);
@@ -3305,7 +3305,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
     /// Adaugă POI ca oprire intermediară
   void _addPOIAsStop(PointOfInterest poi) {
-    debugPrint('🛑 Adding POI as stop: ${poi.name}');
+    Logger.debug('Adding POI as stop: ${poi.name}');
     
     try {
       // ✅ PERFORMANCE: Cancel previous operations
@@ -3328,12 +3328,12 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
       // ✅ PERFORMANCE: Quick UI update - batch all setState calls
       setState(() {
-        debugPrint('🛑 Adding stop to list...');
+        Logger.debug('Adding stop to list...');
         _intermediateStops.add(poi.name);
         // ✅ PERFORMANCE: Close POI card in same setState
         _selectedPoi = null;
         _showPoiCard = false;
-        debugPrint('🛑 Stop added. Total stops: ${_intermediateStops.length}');
+        Logger.debug('Stop added. Total stops: ${_intermediateStops.length}');
       });
 
       // ✅ PERFORMANCE: Close POI card immediately - no additional navigation
@@ -3355,7 +3355,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       // ✅ PERFORMANCE: Debounce heavy operations
       _poiOperationTimer = Timer(Duration(milliseconds: 300), () {
         if (mounted) {
-          debugPrint('🛑 Executing deferred operations for stop...');
+          Logger.debug('Executing deferred operations for stop...');
           _updateMapWithAllPoints();
           // ✅ CONECTARE: Folosește batch map updates
           _batchMapUpdates();
@@ -3370,8 +3370,8 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       });
       
     } catch (e) {
-      debugPrint('🚨 CRASH in _addPOIAsStop: $e');
-      debugPrint('🚨 Stack trace: ${StackTrace.current}');
+      Logger.error('CRASH in _addPOIAsStop: $e', error: e);
+      Logger.error('Stack trace: ${StackTrace.current}');
       if (mounted) {
         _closePoiCard();
         _showSafeSnackBar('Eroare la adăugarea opririi: $e', Colors.red);
@@ -3550,10 +3550,10 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
   /// ✅ PERFORMANCE: Update route cu toate punctele - optimized with async
   void _updateRouteWithAllPoints() async {
-    debugPrint('🗺️ Starting route update...');
+    Logger.debug('Starting route update...');
     
     if (_pickupLatitude == null || _destinationLatitude == null) {
-      debugPrint('🗺️ Missing pickup or destination - skipping route update');
+      Logger.debug('Missing pickup or destination - skipping route update');
       return;
     }
     
@@ -3563,11 +3563,11 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       
       if (!mounted) return;
       
-      debugPrint('🗺️ Building waypoints...');
+      Logger.debug('Building waypoints...');
       final waypoints = await _buildWaypoints(); // ✅ CONECTARE: Folosește helper method
-      debugPrint('🗺️ Built ${waypoints.length} waypoints');
+      Logger.debug('Built ${waypoints.length} waypoints');
 
-      debugPrint('🗺️ Calculating route with ${waypoints.length} waypoints...');
+      Logger.debug('Calculating route with ${waypoints.length} waypoints...');
       
       // ✅ PERFORMANCE: Execute in next frame to avoid blocking
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -3581,7 +3581,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
             unawaited(_fetchAlternativeRoutes(waypoints));
           }
         } catch (e) {
-          debugPrint('🚨 Route calculation failed: $e');
+          Logger.error('Route calculation failed: $e', error: e);
           if (mounted) {
             _showSafeSnackBar('Eroare la calcularea rutei: $e', Colors.red);
           }
@@ -3589,8 +3589,8 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       });
       
     } catch (e) {
-      debugPrint('🚨 Route setup failed: $e');
-      debugPrint('🚨 Stack trace: ${StackTrace.current}');
+      Logger.error('Route setup failed: $e', error: e);
+      Logger.error('Stack trace: ${StackTrace.current}');
       if (mounted) {
         _showSafeSnackBar('Eroare la configurarea rutei: $e', Colors.red);
       }
@@ -3606,7 +3606,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       waypoints.add(Point(
         coordinates: Position(_pickupLongitude!, _pickupLatitude!)
       ));
-      debugPrint('🗺️ Added pickup waypoint');
+      Logger.debug('Added pickup waypoint');
     }
     
     // Stops
@@ -3616,10 +3616,10 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         final coordinates = await _getCoordinatesForDestination(stop);
         if (coordinates != null) {
           waypoints.add(coordinates);
-          debugPrint('🗺️ Added intermediate stop: $stop');
+          Logger.debug('Added intermediate stop: $stop');
         }
       }
-      debugPrint('🗺️ Found ${_intermediateStops.length} intermediate stops');
+      Logger.debug('Found ${_intermediateStops.length} intermediate stops');
     }
     
     // Destination
@@ -3627,7 +3627,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       waypoints.add(Point(
         coordinates: Position(_destinationLongitude!, _destinationLatitude!)
       ));
-      debugPrint('🗺️ Added destination waypoint');
+      Logger.debug('Added destination waypoint');
     }
     
     return waypoints;
@@ -3701,7 +3701,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   // _buildStartRideButton() extracted to lib/widgets/map/map_ride_info_panel.dart
   /// Închide card-ul POI
   void _closePoiCard() {
-    debugPrint('🔒 Closing POI card safely...');
+    Logger.debug('Closing POI card safely...');
     if (mounted) {
       try {
         setState(() {
@@ -3710,42 +3710,42 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         });
         // Curăță highlight la închiderea cardului
         unawaited(_clearSelectedPoiHighlight());
-        debugPrint('🔒 POI card closed successfully');
+        Logger.debug('POI card closed successfully');
       } catch (e) {
-        debugPrint('🚨 Error closing POI card: $e');
+        Logger.error('Error closing POI card: $e', error: e);
       }
     }
   }
 
   /// ✅ PERFORMANCE: Deferred RideRequestPanel update for pickup
   void _updateRideRequestPanelPickup(PointOfInterest poi) {
-    debugPrint('🚀 Calling RideRequestPanel setPickup...');
+    Logger.info('Calling RideRequestPanel setPickup...');
           if (_rideRequestPanelKey.currentState != null) {
-        debugPrint('🚀 RideRequestPanel state found, calling setPickup...');
+        Logger.info('RideRequestPanel state found, calling setPickup...');
         _rideRequestPanelKey.currentState!.setPickup(
           address: poi.name,
           latitude: poi.location.latitude,
           longitude: poi.location.longitude,
         );
-        debugPrint('🚀 RideRequestPanel setPickup called successfully');
+        Logger.info('RideRequestPanel setPickup called successfully');
       } else {
-        debugPrint('🚨 RideRequestPanel state is null! Cannot update panel');
+        Logger.error('RideRequestPanel state is null! Cannot update panel');
       }
   }
 
   /// ✅ PERFORMANCE: Deferred RideRequestPanel update for destination
   void _updateRideRequestPanelDestination(PointOfInterest poi) {
-    debugPrint('🎯 Calling RideRequestPanel setDestination...');
+    Logger.info('Calling RideRequestPanel setDestination...');
           if (_rideRequestPanelKey.currentState != null) {
-        debugPrint('🎯 RideRequestPanel state found, calling setDestination...');
+        Logger.info('RideRequestPanel state found, calling setDestination...');
         _rideRequestPanelKey.currentState!.setDestination(
           address: poi.name,
           latitude: poi.location.latitude,
           longitude: poi.location.longitude,
         );
-        debugPrint('🎯 RideRequestPanel setDestination called successfully');
+        Logger.info('RideRequestPanel setDestination called successfully');
       } else {
-        debugPrint('🚨 RideRequestPanel state is null! Cannot update panel');
+        Logger.error('RideRequestPanel state is null! Cannot update panel');
       }
   }
 
@@ -3753,21 +3753,21 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   void _batchMapUpdates() async {
     if (!mounted) return;
     
-    debugPrint('🗺️ Starting batch map updates...');
+    Logger.debug('Starting batch map updates...');
     
     // ✅ PERFORMANCE: Collect all updates
     final List<Future<void> Function()> updates = [];
     
     if (_pickupLatitude != null && _pickupLongitude != null) {
       updates.add(() async {
-        debugPrint('🗺️ Updating pickup marker...');
+        Logger.debug('Updating pickup marker...');
         await _addPickupMarker();
       });
     }
     
     if (_destinationLatitude != null && _destinationLongitude != null) {
       updates.add(() async {
-        debugPrint('🗺️ Updating destination marker...');
+        Logger.debug('Updating destination marker...');
         final coordinates = Point(coordinates: Position(_destinationLongitude!, _destinationLatitude!));
         await _addDestinationMarker(coordinates, 'Destinație');
       });
@@ -3775,7 +3775,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
     
     if (_intermediateStops.isNotEmpty) {
       updates.add(() async {
-        debugPrint('🗺️ Updating stop markers...');
+        Logger.debug('Updating stop markers...');
         await _addStopMarkers();
       });
     }
@@ -3791,18 +3791,18 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
           await Future.delayed(Duration(milliseconds: 16)); // 60fps = 16ms per frame
         }
       } catch (e) {
-        debugPrint('🚨 Map update $i failed: $e');
+        Logger.error('Map update $i failed: $e', error: e);
       }
     }
     
-    debugPrint('✅ Batch map updates completed');
+    Logger.info('Batch map updates completed');
   }
 
   /// ✅ PERFORMANCE: Add pickup marker with performance optimization
   Future<void> _addPickupMarker() async {
     // Implementation for adding pickup marker
     // This would replace existing map marker logic
-    debugPrint('✅ Pickup marker added');
+    Logger.info('Pickup marker added');
   }
 
   /// ✅ PERFORMANCE: Add destination marker with performance optimization
@@ -3812,7 +3812,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   Future<void> _addStopMarkers() async {
     // Implementation for adding stop markers
     // This would replace existing map marker logic
-    debugPrint('✅ Stop markers added');
+    Logger.info('Stop markers added');
   }
 
   Future<void> _fetchAlternativeRoutes(List<Point> waypoints) async {
@@ -3824,7 +3824,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       final routes = (data?['routes'] as List?) ?? const [];
       setState(() { _alternativeRoutes = routes.cast<Map<String, dynamic>>(); });
     } catch (e) {
-      debugPrint('⚠️ Alternative routes fetch failed: $e');
+      Logger.error('Alternative routes fetch failed: $e', error: e);
     } finally {
       if (mounted) setState(() { _isFetchingAlternatives = false; });
     }
@@ -3930,7 +3930,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       });
       await _pickupSuggestionsManager?.createMulti(options);
     } catch (e) {
-      debugPrint('⚠️ Failed to generate pickup suggestions: $e');
+      Logger.error('Failed to generate pickup suggestions: $e', error: e);
     }
   }
 
@@ -3939,7 +3939,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
     if (!mounted) return;
     
     try {
-      debugPrint('🗺️ Calculating route with service for ${waypoints.length} waypoints...');
+      Logger.debug('Calculating route with service for ${waypoints.length} waypoints...');
       
       // ✅ FOLOSEȘTE _routingService instance
       final routeData = await _routingService.getRoute(waypoints);
@@ -3947,7 +3947,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
       if (!mounted) return;
       
       if (routeData != null) {
-        debugPrint('🗺️ Route calculated successfully with service');
+        Logger.debug('Route calculated successfully with service');
         await _onRouteCalculated(routeData);
         // AUTO-PROGRESSION: dacă voice este activ, încearcă auto-booking după calcul rută
         try {
@@ -3965,13 +3965,13 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
           } catch (_) {}
         } catch (_) {}
       } else {
-        debugPrint('🗺️ Route calculation returned null');
+        Logger.debug('Route calculation returned null');
         if (mounted) {
           _showSafeSnackBar('Nu s-a putut calcula ruta', Colors.orange);
         }
       }
     } catch (e) {
-      debugPrint('🚨 Route calculation with service failed: $e');
+      Logger.error('Route calculation with service failed: $e', error: e);
       if (mounted) {
         _showSafeSnackBar('Eroare la calcularea rutei: $e', Colors.red);
       }
@@ -4026,7 +4026,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         voice.stopVoiceInteraction();
       });
     } catch (e) {
-      debugPrint('❌ [MAP_SCREEN] Auto-booking error: $e');
+      Logger.error('Auto-booking error: $e', tag: 'MAP_SCREEN', error: e);
       voice.updateBookingProgress('A apărut o eroare la crearea rezervării. Vă rog să încercați manual.');
     }
   }
@@ -4042,7 +4042,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
         await _calculateRouteWithService(waypoints);
         
       } catch (e) {
-        debugPrint('🚨 Route update after POI error: $e');
+        Logger.error('Route update after POI error: $e', error: e);
       }
     }
   }
@@ -4064,7 +4064,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
 
   void _showSafeSnackBar(String message, Color backgroundColor, {SnackBarAction? action}) {
     if (!mounted) {
-      debugPrint('🚨 Cannot show SnackBar - widget not mounted');
+      Logger.error('Cannot show SnackBar - widget not mounted');
       return;
     }
     
@@ -4076,9 +4076,9 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
           action: action,
         ),
       );
-      debugPrint('✅ SnackBar shown: $message');
+      Logger.info('SnackBar shown: $message');
     } catch (e) {
-      debugPrint('🚨 SnackBar error: $e');
+      Logger.error('SnackBar error: $e', error: e);
     }
   }
 
@@ -4189,7 +4189,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   //           
   //     final destination = voiceController.currentDestination;
   //     
-  //     debugPrint('🚗 Booking voice ride: $pickup → $destination');
+  //     Logger.debug('Booking voice ride: $pickup → $destination');
   //     
   //     // Navighează la SearchingForDriverScreen
   //     Navigator.push(
@@ -4207,7 +4207,7 @@ double _calculateDirectDistance(double lat1, double lon1, double lat2, double lo
   //     );
   //     
   //   } catch (e) {
-  //     debugPrint('❌ Voice booking error: $e');
+  //     Logger.error('Voice booking error: $e', error: e);
   //     _showSafeSnackBar(
   //       'Eroare la rezervarea cursei: ${e.toString()}', 
   //         Colors.red

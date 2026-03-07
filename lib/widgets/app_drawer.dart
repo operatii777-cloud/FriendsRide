@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:friendsride_app/l10n/app_localizations.dart';
 import 'package:friendsride_app/providers/locale_provider.dart';
@@ -342,8 +343,9 @@ class AppDrawer extends StatelessWidget {
                     ),
                     onTap: () => _navigateTo(context, const VoiceSettingsScreen()),
                   ),
-            ListTile(
-              dense: true,
+            if (kDebugMode)
+              ListTile(
+                dense: true,
                     leading: const Icon(Icons.voice_chat, color: Colors.green),
                     title: Text(
                       l10n.voiceDemo,
@@ -351,8 +353,9 @@ class AppDrawer extends StatelessWidget {
                     ),
                     onTap: () => _navigateTo(context, const VoiceDemoScreen()),
                   ),
-            ListTile(
-              dense: true,
+            if (kDebugMode)
+              ListTile(
+                dense: true,
                     leading: const Icon(Icons.mic_external_on_outlined, color: Colors.orange),
                     title: Text(
                       l10n.microphoneTest,
@@ -360,8 +363,9 @@ class AppDrawer extends StatelessWidget {
                     ),
                     onTap: () => _navigateTo(context, const MicrophoneTest()),
                   ),
-            ListTile(
-              dense: true,
+            if (kDebugMode)
+              ListTile(
+                dense: true,
                     leading: const Icon(Icons.psychology, color: Colors.purple),
                     title: Text(
                       l10n.aiLibraryTest,
@@ -572,35 +576,38 @@ class AppDrawer extends StatelessWidget {
                 onTap: () => _navigateTo(context, const VoiceSettingsScreen()),
               ),
               
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.voice_chat, color: Colors.green),
-                title: Text(
-                  l10n.voiceAIDemo,
-                  style: AppTextStyles.menuItem,
+              if (kDebugMode)
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.voice_chat, color: Colors.green),
+                  title: Text(
+                    l10n.voiceAIDemo,
+                    style: AppTextStyles.menuItem,
+                  ),
+                  onTap: () => _navigateTo(context, const VoiceDemoScreen()),
                 ),
-                onTap: () => _navigateTo(context, const VoiceDemoScreen()),
-              ),
               
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.bug_report, color: Colors.orange),
-                title: Text(
-                  l10n.microphoneTestTool,
-                  style: AppTextStyles.menuItem,
+              if (kDebugMode)
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.bug_report, color: Colors.orange),
+                  title: Text(
+                    l10n.microphoneTestTool,
+                    style: AppTextStyles.menuItem,
+                  ),
+                  onTap: () => _navigateTo(context, const MicrophoneTest()),
                 ),
-                onTap: () => _navigateTo(context, const MicrophoneTest()),
-              ),
 
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.psychology, color: Colors.purple),
-                title: Text(
-                  l10n.aiLibraryTestTool,
-                  style: AppTextStyles.menuItem,
+              if (kDebugMode)
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.psychology, color: Colors.purple),
+                  title: Text(
+                    l10n.aiLibraryTestTool,
+                    style: AppTextStyles.menuItem,
+                  ),
+                  onTap: () => _navigateTo(context, const AIVocabularyTestScreen()),
                 ),
-                onTap: () => _navigateTo(context, const AIVocabularyTestScreen()),
-              ),
 
               ListTile(
                 dense: true,

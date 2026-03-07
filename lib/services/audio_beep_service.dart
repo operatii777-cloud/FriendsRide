@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:friendsride_app/utils/logger.dart';
 
 /// 🔔 Serviciu pentru beep-uri audio în conversațiile AI
 /// 
@@ -26,16 +27,16 @@ class AudioBeepService {
     if (_isInitialized) return;
 
     try {
-      debugPrint('🔔 [AUDIO_BEEP] Initializing beep service...');
+      Logger.info('Initializing beep service...', tag: 'AUDIO_BEEP');
 
       // Pentru moment, folosim beep-uri simulate
       // În viitor, aici se vor configura fișierele audio reale
 
       _isInitialized = true;
-      debugPrint('🔔 [AUDIO_BEEP] ✅ Beep service initialized successfully');
+      Logger.info('Beep service initialized successfully', tag: 'AUDIO_BEEP');
 
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Initialization error: $e');
+      Logger.error('Initialization error: $e', tag: 'AUDIO_BEEP', error: e);
       _isInitialized = false;
       rethrow;
     }
@@ -48,17 +49,17 @@ class AudioBeepService {
     if (!_isInitialized) await initialize();
 
     try {
-      debugPrint('🔔 [AUDIO_BEEP] 🎤 ACUM POȚI VORBI - ascult...');
+      Logger.info('ACUM POȚI VORBI - ascult...', tag: 'AUDIO_BEEP');
       
       // Beep ascendent scurt = "te ascult acum"
       await _playSystemBeep(frequency: 600, duration: 100);
       await Future.delayed(Duration(milliseconds: 50));
       await _playSystemBeep(frequency: 900, duration: 150);
       
-      debugPrint('🔔 [AUDIO_BEEP] ✅ Listening start beep played');
+      Logger.info('Listening start beep played', tag: 'AUDIO_BEEP');
       
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Error playing listening start beep: $e');
+      Logger.error('Error playing listening start beep: $e', tag: 'AUDIO_BEEP', error: e);
     }
   }
 
@@ -69,7 +70,7 @@ class AudioBeepService {
     if (!_isInitialized) await initialize();
 
     try {
-      debugPrint('🔔 [AUDIO_BEEP] 🟢→🔴 AI a terminat de vorbit - ACUM VORBIȚI DVS!');
+      Logger.error('→ AI a terminat de vorbit - ACUM VORBIȚI DVS!', tag: 'AUDIO_BEEP');
       
       if (_isPlaying) {
         _isPlaying = false;
@@ -78,10 +79,10 @@ class AudioBeepService {
       // UN BEEP LUNG pentru a indica "Acum e rândul dvs să vorbiți"
       await _playSystemBeep(frequency: 800, duration: 400); // Mai lung (400ms)
       
-      debugPrint('🔔 [AUDIO_BEEP] ✅ Conversation end beep played (User turn to speak)');
+      Logger.info('Conversation end beep played (User turn to speak)', tag: 'AUDIO_BEEP');
 
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Conversation end beep error: $e');
+      Logger.error('Conversation end beep error: $e', tag: 'AUDIO_BEEP', error: e);
       await _playFallbackBeep();
     }
   }
@@ -93,7 +94,7 @@ class AudioBeepService {
     if (!_isInitialized) await initialize();
 
     try {
-      debugPrint('🔔 [AUDIO_BEEP] 🔴→🟡 AI a înțeles - PROCESEZ...');
+      Logger.error('→ AI a înțeles - PROCESEZ...', tag: 'AUDIO_BEEP');
       
       if (_isPlaying) {
         _isPlaying = false;
@@ -106,10 +107,10 @@ class AudioBeepService {
       // Al doilea beep scurt (mai înalt)
       await _playSystemBeep(frequency: 1200, duration: 100); // Mai scurt (100ms)
       
-      debugPrint('🔔 [AUDIO_BEEP] ✅ Processing start beeps played (AI is thinking)');
+      Logger.info('Processing start beeps played (AI is thinking)', tag: 'AUDIO_BEEP');
 
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Processing start beeps error: $e');
+      Logger.error('Processing start beeps error: $e', tag: 'AUDIO_BEEP', error: e);
       await _playFallbackBeep();
     }
   }
@@ -121,7 +122,7 @@ class AudioBeepService {
     if (!_isInitialized) await initialize();
 
     try {
-      debugPrint('🔔 [AUDIO_BEEP] 🟡→🟢 AI a procesat - ACUM VORBEȘTE AI');
+      Logger.warning('→ AI a procesat - ACUM VORBEȘTE AI', tag: 'AUDIO_BEEP');
       
       if (_isPlaying) {
         _isPlaying = false;
@@ -130,10 +131,10 @@ class AudioBeepService {
       // UN BEEP MEDIU pentru a indica "AI va vorbi acum"
       await _playSystemBeep(frequency: 1400, duration: 200); // Mai scurt (200ms)
       
-      debugPrint('🔔 [AUDIO_BEEP] ✅ Processing complete beep played (AI will speak)');
+      Logger.info('Processing complete beep played (AI will speak)', tag: 'AUDIO_BEEP');
 
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Processing complete beep error: $e');
+      Logger.error('Processing complete beep error: $e', tag: 'AUDIO_BEEP', error: e);
       await _playFallbackBeep();
     }
   }
@@ -143,7 +144,7 @@ class AudioBeepService {
     if (!_isInitialized) await initialize();
 
     try {
-      debugPrint('🔔 [AUDIO_BEEP] Playing error beep...');
+      Logger.error('Playing error beep...', tag: 'AUDIO_BEEP');
       
       if (_isPlaying) {
         // Oprește beep-ul curent dacă este în curs
@@ -153,10 +154,10 @@ class AudioBeepService {
       // Beep scăzut pentru erori
       await _playSystemBeep(frequency: 400, duration: 500);
       
-      debugPrint('🔔 [AUDIO_BEEP] ✅ Error beep played');
+      Logger.error('Error beep played', tag: 'AUDIO_BEEP');
 
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Error beep error: $e');
+      Logger.error('Error beep error: $e', tag: 'AUDIO_BEEP', error: e);
       await _playFallbackBeep();
     }
   }
@@ -185,7 +186,7 @@ class AudioBeepService {
       _isPlaying = false;
 
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] System beep error: $e');
+      Logger.error('System beep error: $e', tag: 'AUDIO_BEEP', error: e);
       _isPlaying = false;
       await _playFallbackBeep();
     }
@@ -196,13 +197,13 @@ class AudioBeepService {
     try {
       // Pentru Android, folosește beep-ul sistem prin canalul platform
       // Aceasta va fi implementată prin un plugin nativ dacă este necesar
-      debugPrint('🔔 [AUDIO_BEEP] Playing Android beep: ${frequency}Hz for ${duration}ms');
+      Logger.info('Playing Android beep: ${frequency}Hz for ${duration}ms', tag: 'AUDIO_BEEP');
       
       // Simulează beep-ul prin pauză (pentru moment)
       await Future.delayed(Duration(milliseconds: duration));
       
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] Android beep error: $e');
+      Logger.error('Android beep error: $e', tag: 'AUDIO_BEEP', error: e);
     }
   }
 
@@ -210,13 +211,13 @@ class AudioBeepService {
   Future<void> _playIOSBeep(int frequency, int duration) async {
     try {
       // Pentru iOS, folosește beep-ul sistem
-      debugPrint('🔔 [AUDIO_BEEP] Playing iOS beep: ${frequency}Hz for ${duration}ms');
+      Logger.info('Playing iOS beep: ${frequency}Hz for ${duration}ms', tag: 'AUDIO_BEEP');
       
       // Simulează beep-ul prin pauză (pentru moment)
       await Future.delayed(Duration(milliseconds: duration));
       
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] iOS beep error: $e');
+      Logger.error('iOS beep error: $e', tag: 'AUDIO_BEEP', error: e);
     }
   }
 
@@ -224,26 +225,26 @@ class AudioBeepService {
   Future<void> _playDesktopBeep(int frequency, int duration) async {
     try {
       // Pentru desktop, folosește beep-ul sistem prin stdout
-      debugPrint('🔔 [AUDIO_BEEP] Playing desktop beep: ${frequency}Hz for ${duration}ms');
+      Logger.info('Playing desktop beep: ${frequency}Hz for ${duration}ms', tag: 'AUDIO_BEEP');
       
       // Simulează beep-ul prin pauză (pentru moment)
       await Future.delayed(Duration(milliseconds: duration));
       
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] Desktop beep error: $e');
+      Logger.error('Desktop beep error: $e', tag: 'AUDIO_BEEP', error: e);
     }
   }
 
   /// 🔄 Beep de fallback pentru când alte metode eșuează
   Future<void> _playFallbackBeep() async {
     try {
-      debugPrint('🔔 [AUDIO_BEEP] Playing fallback beep...');
+      Logger.warning('Playing fallback beep...', tag: 'AUDIO_BEEP');
       
       // Simulează un beep prin pauză
       await Future.delayed(Duration(milliseconds: 200));
       
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] Fallback beep error: $e');
+      Logger.error('Fallback beep error: $e', tag: 'AUDIO_BEEP', error: e);
     }
   }
 
@@ -252,10 +253,10 @@ class AudioBeepService {
     try {
       if (_isPlaying) {
         _isPlaying = false;
-        debugPrint('🔔 [AUDIO_BEEP] All beeps stopped');
+        Logger.info('All beeps stopped', tag: 'AUDIO_BEEP');
       }
     } catch (e) {
-      debugPrint('🔔 [AUDIO_BEEP] ❌ Stop beeps error: $e');
+      Logger.error('Stop beeps error: $e', tag: 'AUDIO_BEEP', error: e);
     }
   }
 
