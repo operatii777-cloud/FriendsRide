@@ -13,6 +13,8 @@ import 'package:friendsride_app/screens/driver_scheduled_rides_screen.dart';
 import 'package:friendsride_app/widgets/driver_verification_badge_widget.dart';
 import 'package:friendsride_app/models/driver_verification_model.dart';
 import 'package:friendsride_app/screens/ride_preferences_screen.dart';
+import 'package:friendsride_app/screens/business_profile_screen.dart';
+import 'package:friendsride_app/screens/selfie_verification_screen.dart';
 import 'package:friendsride_app/utils/logger.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -195,6 +197,24 @@ class _AccountScreenState extends State<AccountScreen> {
                       title: 'Chitantele tale',
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (ctx) => const ReceiptsScreen()));
+                      },
+                    ),
+
+                    // Feature: Business profile — for corporate accounts and expense receipts
+                    _buildMenuOption(
+                      icon: Icons.business_center_outlined,
+                      title: 'Profil Business',
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (ctx) => const BusinessProfileScreen()));
+                      },
+                    ),
+
+                    // Feature: Selfie identity verification
+                    _buildMenuOption(
+                      icon: Icons.face_retouching_natural,
+                      title: 'Verificare identitate (selfie)',
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (ctx) => const SelfieVerificationScreen()));
                       },
                     ),
                     

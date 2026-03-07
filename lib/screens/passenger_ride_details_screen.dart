@@ -430,6 +430,14 @@ class _PassengerRideDetailsScreenState extends State<PassengerRideDetailsScreen>
                   children: [
                     _buildStatusCard(),
                     const SizedBox(height: 16),
+                    // Feature: Pickup code — show code when driver is on the way or arrived
+                    if (_currentRide?.pickupCode != null &&
+                        (_currentRide?.status == 'driver_found' ||
+                         _currentRide?.status == 'accepted' ||
+                         _currentRide?.status == 'arrived')) ...[
+                      _buildPickupCodeCard(_currentRide!.pickupCode!),
+                      const SizedBox(height: 16),
+                    ],
                     if (_driverProfile != null) ...[
                       _buildDriverCard(),
                       const SizedBox(height: 16),
@@ -445,6 +453,61 @@ class _PassengerRideDetailsScreenState extends State<PassengerRideDetailsScreen>
                 ),
               ),
             ),
+    );
+  }
+
+  /// Feature: Pickup code — displays the 4-digit code for the driver to verify.
+  Widget _buildPickupCodeCard(String code) {
+    return Card(
+      elevation: 4,
+      color: Colors.blue.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.pin, color: Colors.blue.shade700, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Cod de preluare',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade700,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                code,
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Arată acest cod șoferului la preluare',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.blue.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

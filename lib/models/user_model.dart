@@ -41,7 +41,22 @@ class UserModel {
   final bool locationSharingEnabled;
   final String preferredLanguage;
   final String preferredCurrency;
-  
+
+  // Feature: Gender — used for women-only ride matching
+  final String? gender; // 'male', 'female', 'other'
+
+  // Feature: Business profile — for corporate accounts and expense receipts
+  final bool isBusinessAccount;
+  final String? businessName;
+  final String? businessTaxId;
+  final String? businessAddress;
+
+  // Feature: Driver session — tracks when driver started online session
+  final DateTime? driverSessionStartedAt;
+
+  // Feature: Selfie verification — tracks selfie identity check status
+  final String? selfieVerificationStatus; // 'pending', 'verified', 'rejected', null
+
   const UserModel({
     required this.id,
     required this.email,
@@ -80,6 +95,13 @@ class UserModel {
     this.locationSharingEnabled = true,
     this.preferredLanguage = 'ro',
     this.preferredCurrency = 'RON',
+    this.gender,
+    this.isBusinessAccount = false,
+    this.businessName,
+    this.businessTaxId,
+    this.businessAddress,
+    this.driverSessionStartedAt,
+    this.selfieVerificationStatus,
   });
 
   // Convert to Map for Firestore
@@ -121,6 +143,13 @@ class UserModel {
       'locationSharingEnabled': locationSharingEnabled,
       'preferredLanguage': preferredLanguage,
       'preferredCurrency': preferredCurrency,
+      'gender': gender,
+      'isBusinessAccount': isBusinessAccount,
+      'businessName': businessName,
+      'businessTaxId': businessTaxId,
+      'businessAddress': businessAddress,
+      'driverSessionStartedAt': driverSessionStartedAt != null ? Timestamp.fromDate(driverSessionStartedAt!) : null,
+      'selfieVerificationStatus': selfieVerificationStatus,
     };
   }
 
@@ -169,6 +198,13 @@ class UserModel {
       locationSharingEnabled: data['locationSharingEnabled'] ?? true,
       preferredLanguage: data['preferredLanguage'] ?? 'ro',
       preferredCurrency: data['preferredCurrency'] ?? 'RON',
+      gender: data['gender'],
+      isBusinessAccount: data['isBusinessAccount'] ?? false,
+      businessName: data['businessName'],
+      businessTaxId: data['businessTaxId'],
+      businessAddress: data['businessAddress'],
+      driverSessionStartedAt: (data['driverSessionStartedAt'] as Timestamp?)?.toDate(),
+      selfieVerificationStatus: data['selfieVerificationStatus'],
     );
   }
 
@@ -238,6 +274,13 @@ class UserModel {
     bool? locationSharingEnabled,
     String? preferredLanguage,
     String? preferredCurrency,
+    String? gender,
+    bool? isBusinessAccount,
+    String? businessName,
+    String? businessTaxId,
+    String? businessAddress,
+    DateTime? driverSessionStartedAt,
+    String? selfieVerificationStatus,
   }) {
     return UserModel(
       id: id,
@@ -269,6 +312,13 @@ class UserModel {
       locationSharingEnabled: locationSharingEnabled ?? this.locationSharingEnabled,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       preferredCurrency: preferredCurrency ?? this.preferredCurrency,
+      gender: gender ?? this.gender,
+      isBusinessAccount: isBusinessAccount ?? this.isBusinessAccount,
+      businessName: businessName ?? this.businessName,
+      businessTaxId: businessTaxId ?? this.businessTaxId,
+      businessAddress: businessAddress ?? this.businessAddress,
+      driverSessionStartedAt: driverSessionStartedAt ?? this.driverSessionStartedAt,
+      selfieVerificationStatus: selfieVerificationStatus ?? this.selfieVerificationStatus,
     );
   }
 

@@ -15,6 +15,10 @@ class PricingService {
   static const double _stopDriverShare = 0.8; // 80% din taxa de opriri merge la șofer
   static const double _stopAppShare = 0.2; // 20% rămâne la aplicație
 
+  // Feature: Wait time fee — driver earns fee after free waiting period
+  static const int freeWaitMinutes = 5; // 5 minute gratuite de așteptare
+  static const double waitFeePerMinute = 1.0; // 1 RON pe minut după perioada gratuită
+
   double _getMultiplier(RideCategory category) {
     switch (category) {
       // --- CAZ NOU ADĂUGAT ---
@@ -145,6 +149,15 @@ class PricingService {
 
   // ADĂUGAT: Metodă helper pentru calcularea costului total al opririlor
   static double calculateStopsCost(int numberOfStops) => numberOfStops * _stopFee;
+
+  /// Feature: Wait time fee — calculates fee for driver waiting beyond free period.
+  /// Returns the fee in RON (0.0 if within the free period).
+  static double calculateWaitTimeFee(DateTime waitStartedAt) {
+    final waitedMinutes = DateTime.now().difference(waitStartedAt).inMinutes;
+    final billableMinutes = waitedMinutes - freeWaitMinutes;
+    if (billableMinutes <= 0) return 0.0;
+    return billableMinutes * waitFeePerMinute;
+  }
   
   /// 🎯 Metodă simplă pentru calcularea prețului (pentru Voice AI)
   Future<double> calculatePrice({

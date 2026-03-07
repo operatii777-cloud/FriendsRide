@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:friendsride_app/models/ride_model.dart';
 import 'package:friendsride_app/models/user_model.dart';
 import 'package:friendsride_app/services/firestore_service.dart';
+import 'package:friendsride_app/services/pricing_service.dart';
 import 'package:friendsride_app/services/routing_service.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
@@ -55,6 +56,18 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
   bool _isLoading = true;
   bool _isAtPickupLocation = false;
   bool _hasNotifiedArrival = false;
+
+  // Feature: Wait time fee — tracks wait duration after driver arrives
+  Timer? _waitTimer;
+  DateTime? _waitStartTime;
+  int _waitedMinutes = 0;
+  double _accumulatedWaitFee = 0.0;
+
+  // Feature: Pickup code — driver verifies passenger's 4-digit code
+  static const int _pickupCodeLength = 4;
+  final TextEditingController _pickupCodeController = TextEditingController();
+  bool _isVerifyingCode = false;
+  bool _codeVerified = false;
   
   // Pickup process states
   PickupState _pickupState = PickupState.approaching;
@@ -76,6 +89,8 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
     _fadeController.dispose();
     _locationTimer?.cancel();
     _etaTimer?.cancel();
+    _waitTimer?.cancel();
+    _pickupCodeController.dispose();
     super.dispose();
   }
 
@@ -229,8 +244,13 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
 
   Future<void> _notifyArrival() async {
     try {
-      await _firestoreService.updateRideStatus(widget.rideId, 'arrived');
-      setState(() => _hasNotifiedArrival = true);
+      // Feature: Wait time fee — use markDriverArrived to record wait start time
+      await _firestoreService.markDriverArrived(widget.rideId);
+      setState(() {
+        _hasNotifiedArrival = true;
+        _waitStartTime = DateTime.now();
+      });
+      _startWaitTimer();
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -250,6 +270,59 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
           ),
         );
       }
+    }
+  }
+
+  void _startWaitTimer() {
+    _waitTimer?.cancel();
+    _waitTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      final start = _waitStartTime;
+      if (start == null) return;
+      setState(() {
+        _waitedMinutes = DateTime.now().difference(start).inMinutes;
+        _accumulatedWaitFee = PricingService.calculateWaitTimeFee(start);
+      });
+    });
+  }
+
+  Future<void> _verifyPickupCode() async {
+    final enteredCode = _pickupCodeController.text.trim();
+    if (enteredCode.length != _pickupCodeLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Introdu codul de $_pickupCodeLength cifre al pasagerului')),
+      );
+      return;
+    }
+    setState(() => _isVerifyingCode = true);
+    try {
+      final rideDoc = await _firestoreService.getRideById(widget.rideId);
+      final correctCode = rideDoc?.pickupCode;
+      if (correctCode == null || correctCode != enteredCode) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Cod incorect. Verificați din nou cu pasagerul.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        setState(() => _codeVerified = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Cod verificat! Poți porni cursa.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _updatePickupState(PickupState.pickingUp);
+        }
+      }
+    } catch (e) {
+      Logger.error('Error verifying pickup code: $e', error: e);
+    } finally {
+      if (mounted) setState(() => _isVerifyingCode = false);
     }
   }
 
@@ -311,6 +384,10 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
 
   void _startRide() async {
     try {
+      // Feature: Wait time fee — finalize the fee before starting
+      _waitTimer?.cancel();
+      await _firestoreService.finalizeWaitTimeFee(widget.rideId);
+
       await _firestoreService.updateRideStatus(widget.rideId, 'in_progress');
       
       if (mounted) {
@@ -318,7 +395,7 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
           MaterialPageRoute(
             builder: (context) => ActiveRideScreen(
               rideId: widget.rideId,
-              routeGeoJSON: null, // Will be loaded in ActiveRideScreen
+              routeGeoJSON: null,
             ),
           ),
         );
@@ -799,6 +876,34 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
   Widget _buildPickupActions() {
     return Column(
       children: [
+        // Feature: Wait time fee — show wait timer when driver is arrived
+        if (_waitStartTime != null && _pickupState != PickupState.approaching) ...[
+          Card(
+            color: _accumulatedWaitFee > 0 ? Colors.orange.shade50 : Colors.green.shade50,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.timer, color: _accumulatedWaitFee > 0 ? Colors.orange : Colors.green),
+                  const SizedBox(width: 8),
+                  Text(
+                    _waitedMinutes <= PricingService.freeWaitMinutes
+                        ? 'Așteptare: $_waitedMinutes min (gratuit ${PricingService.freeWaitMinutes} min)'
+                        : 'Așteptare: $_waitedMinutes min • Taxa: ${_accumulatedWaitFee.toStringAsFixed(2)} RON',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _accumulatedWaitFee > 0 ? Colors.orange.shade800 : Colors.green.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         if (_pickupState == PickupState.approaching && _isAtPickupLocation) ...[
           SizedBox(
             width: double.infinity,
@@ -818,27 +923,76 @@ class _DriverRidePickupScreenState extends State<DriverRidePickupScreen>
           ),
           const SizedBox(height: 12),
         ],
-        
-        if (_pickupState == PickupState.arrived || _pickupState == PickupState.waiting) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _updatePickupState(PickupState.pickingUp),
-              icon: const Icon(Icons.directions_walk),
-              label: const Text('Pasagerul se îmbarcă'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+
+        // Feature: Pickup code — show code verification when arrived/waiting
+        if ((_pickupState == PickupState.arrived || _pickupState == PickupState.waiting) && !_codeVerified) ...[
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.pin, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Verifică codul pasagerului',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _pickupCodeController,
+                          keyboardType: TextInputType.number,
+                          maxLength: _pickupCodeLength,
+                          decoration: const InputDecoration(
+                            hintText: 'Cod 4 cifre',
+                            counterText: '',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: _isVerifyingCode ? null : _verifyPickupCode,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: _isVerifyingCode
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Text('Verifică'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
           const SizedBox(height: 12),
         ],
-        
+
         if (_pickupState == PickupState.pickingUp) ...[
           SizedBox(
             width: double.infinity,

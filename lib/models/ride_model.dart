@@ -69,6 +69,13 @@ class Ride {
   final DateTime? scheduledPickupTime;
   final RidePreferences? ridePreferences;
 
+  // Feature: Pickup code — 4-digit code shown to passenger for driver verification
+  final String? pickupCode;
+
+  // Feature: Wait time fee — tracks wait start and accumulated fee
+  final DateTime? waitStartedAt;
+  final double? waitTimeFee;
+
   const Ride({
     required this.id,
     required this.passengerId,  // ✅ MODIFICAT: userId → passengerId
@@ -110,6 +117,9 @@ class Ride {
     this.isScheduled = false,
     this.scheduledPickupTime,
     this.ridePreferences,
+    this.pickupCode,
+    this.waitStartedAt,
+    this.waitTimeFee,
   });
 
   Map<String, dynamic> toMap() {
@@ -153,6 +163,9 @@ class Ride {
       'isScheduled': isScheduled,
       'scheduledPickupTime': scheduledPickupTime != null ? Timestamp.fromDate(scheduledPickupTime!) : null,
       'ridePreferences': ridePreferences?.toMap(),
+      'pickupCode': pickupCode,
+      'waitStartedAt': waitStartedAt != null ? Timestamp.fromDate(waitStartedAt!) : null,
+      'waitTimeFee': waitTimeFee,
     };
   }
   
@@ -210,6 +223,11 @@ class Ride {
       ridePreferences: map['ridePreferences'] != null
         ? RidePreferences.fromMap(Map<String, dynamic>.from(map['ridePreferences']))
         : null,
+      pickupCode: map['pickupCode'],
+      waitStartedAt: map['waitStartedAt'] != null
+        ? (map['waitStartedAt'] as Timestamp).toDate()
+        : null,
+      waitTimeFee: (map['waitTimeFee'] as num?)?.toDouble(),
     );
   }
 
@@ -269,6 +287,9 @@ class Ride {
       ridePreferences: data['ridePreferences'] != null
         ? RidePreferences.fromMap(Map<String, dynamic>.from(data['ridePreferences']))
         : null,
+      pickupCode: data['pickupCode'],
+      waitStartedAt: (data['waitStartedAt'] as Timestamp?)?.toDate(),
+      waitTimeFee: (data['waitTimeFee'] as num?)?.toDouble(),
     );
   }
 }

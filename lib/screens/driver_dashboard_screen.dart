@@ -44,7 +44,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   StreamSubscription? _activeRideSubscription;
   StreamSubscription? _ridesHistorySubscription;
   bool _isDriverAvailable = false;
-  
+
+  // Feature: Driver hours limit — tracks online session time
+  Timer? _sessionTimer;
+  double _sessionHours = 0.0;
+  static const double _warnHours = 8.0;
+  static const double _maxHours = 10.0;
+  bool _hasShownHoursWarning = false;
+
   // ✅ NOU: Incentives
   final DriverIncentivesService _incentivesService = DriverIncentivesService();
   List<DriverIncentive> _incentives = [];
@@ -69,6 +76,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     
     // ✅ NOU: Încarcă incentives
     _loadIncentives();
+
+    // Feature: Driver hours limit — start session timer check
+    _startSessionHoursCheck();
   }
   
   // ✅ NOU: Încarcă incentives pentru șofer
@@ -104,6 +114,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     _activeRideSubscription?.cancel();
     _ridesHistorySubscription?.cancel();
     _incentivesSubscription?.cancel();
+    _sessionTimer?.cancel();
     super.dispose();
   }
 
@@ -120,6 +131,99 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     } catch (e) {
       Logger.error('Error initializing driver system: $e', tag: 'DASHBOARD', error: e);
     }
+  }
+
+  // Feature: Driver hours limit — periodically checks session duration
+  void _startSessionHoursCheck() {
+    _sessionTimer = Timer.periodic(const Duration(minutes: 5), (_) async {
+      if (!mounted) return;
+      final hours = await _firestoreService.getDriverSessionHours();
+      if (!mounted) return;
+      setState(() => _sessionHours = hours);
+
+      if (hours >= _maxHours) {
+        _forceDriverOffline();
+      } else if (hours >= _warnHours && !_hasShownHoursWarning) {
+        _hasShownHoursWarning = true;
+        _showHoursWarningDialog(hours);
+      }
+    });
+
+    // Also load initial value
+    _firestoreService.getDriverSessionHours().then((hours) {
+      if (mounted) setState(() => _sessionHours = hours);
+    });
+  }
+
+  void _showHoursWarningDialog(double hours) {
+    final remaining = _maxHours - hours;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Limită ore condus'),
+          ],
+        ),
+        content: Text(
+          'Ai condus ${hours.toStringAsFixed(1)} ore astăzi.\n'
+          'Mai ai ${remaining.toStringAsFixed(1)} ore disponibile.\n\n'
+          'Consideră o pauză pentru siguranța ta și a pasagerilor.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Continuă'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _setDriverOffline();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Ieși offline', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _forceDriverOffline() async {
+    await _firestoreService.updateDriverAvailability(false);
+    if (mounted) {
+      setState(() => _isDriverAvailable = false);
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.timer_off, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Limită de 10 ore atinsă'),
+            ],
+          ),
+          content: const Text(
+            'Ai condus 10 ore consecutive.\n'
+            'Din motive de siguranță ai fost deconectat automat.\n\n'
+            'Te poți reconecta după o perioadă de odihnă.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _setDriverOffline() async {
+    await _firestoreService.updateDriverAvailability(false);
+    if (mounted) setState(() => _isDriverAvailable = false);
   }
 
   // 🚀 FUNCȚIE PĂSTRATĂ - Ascultă pentru cursa activă
@@ -358,6 +462,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Feature: Driver hours limit — session hours banner
+            if (_isDriverAvailable && _sessionHours > 0)
+              _buildSessionHoursBanner(),
             _buildStatsSection(),
             const Divider(height: 1),
             
@@ -626,6 +733,46 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       case 'in_progress': return l10n.rideInProgress;
       default: return status;
     }
+  }
+
+  /// Feature: Driver hours limit — shows a banner with session driving hours.
+  Widget _buildSessionHoursBanner() {
+    final isWarning = _sessionHours >= _warnHours;
+    final isCritical = _sessionHours >= _maxHours;
+    final color = isCritical ? Colors.red : isWarning ? Colors.orange : Colors.green;
+    final remaining = _maxHours - _sessionHours;
+
+    return Container(
+      width: double.infinity,
+      color: color.withValues(alpha: 0.15),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(isCritical ? Icons.timer_off : Icons.timer, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isCritical
+                  ? 'Limită de 10 ore atinsă. Te rog ieși offline.'
+                  : isWarning
+                      ? 'Sesiune: ${_sessionHours.toStringAsFixed(1)}h  •  Rămân ${remaining.toStringAsFixed(1)}h'
+                      : 'Sesiune: ${_sessionHours.toStringAsFixed(1)}h',
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          if (isWarning)
+            TextButton(
+              onPressed: _setDriverOffline,
+              style: TextButton.styleFrom(foregroundColor: color),
+              child: const Text('Offline'),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStatsSection() {
