@@ -52,7 +52,10 @@ class AccountService {
 
       return {'success': true, 'message': 'Contul a fost șters cu succes.'};
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'wrong-password' || e.code == 'INVALID_LOGIN_CREDENTIALS') {
+      if (e.code == 'wrong-password' ||
+          e.code == 'INVALID_LOGIN_CREDENTIALS' ||
+          e.code == 'invalid-credential' ||
+          e.code == 'invalid-login-credentials') {
         return {'success': false, 'message': 'Parola introdusă este incorectă.'};
       }
       return {
@@ -64,12 +67,14 @@ class AccountService {
     }
   }
 
-  /// Forces a token refresh to invalidate existing sessions on other devices,
-  /// then signs out from the current device.
+  /// Signs out the current user from this device.
+  ///
+  /// Note: Firebase Auth client-side tokens on other devices cannot be
+  /// invalidated without server-side Admin SDK token revocation. This method
+  /// signs out the current device only. For full multi-device revocation,
+  /// use Firebase Admin SDK on a backend server.
   Future<void> logoutAllDevices() async {
-    // Force token refresh to invalidate existing sessions
-    await _auth.currentUser?.getIdToken(true);
-    // Sign out from current device
+    // Sign out from the current device
     await _auth.signOut();
   }
 }
