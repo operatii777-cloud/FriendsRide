@@ -1,4 +1,4 @@
-﻿# ðŸš— FriendsRide - Intelligent Ride-Sharing App
+# 🚗 FriendsRide - Intelligent Ride-Sharing App
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.16+-blue.svg)](https://flutter.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.0-orange.svg)](https://firebase.google.com/)
@@ -6,71 +6,71 @@
 [![Analyze](https://img.shields.io/badge/flutter%20analyze-0%20issues-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**FriendsRide** este o aplicaÈ›ie de ride-sharing inteligentÄƒ care conecteazÄƒ pasagerii cu È™oferi parteneri, oferind o experienÈ›Äƒ vocalÄƒ avansatÄƒ cu AI, navigaÈ›ie Ã®n timp real, funcÈ›ionalitÄƒÈ›i sociale (cadouri, referral, social login) È™i notificÄƒri smart.
+**FriendsRide** este o aplicație de ride-sharing inteligentă care conectează pasagerii cu șoferi parteneri, oferind o experiență vocală avansată cu AI, navigație în timp real, funcționalități sociale (cadouri, referral, social login) și notificări smart.
 
 ---
 
-## ðŸŒŸ Caracteristici Principale
+## 🌟 Caracteristici Principale
 
-### ðŸŽ¤ Asistent Vocal AI (PR #1 â€” Ã®mbunÄƒtÄƒÈ›it)
-- **Sincronizare TTS-STT perfectÄƒ** â€” STT nu mai porneÈ™te Ã®n timp ce TTS vorbeÈ™te
-- **Control vocal complet** â€” RezervÄƒ curse prin comenzi vocale naturale
-- **Beep-uri de feedback** â€” IndicaÈ›ii audio clare pentru start/stop ascultare
-- **Flux AI end-to-end** â€” Salut â†’ DestinaÈ›ie â†’ Confirmare â†’ Pickup â†’ CursÄƒ
+### 🎤 Asistent Vocal AI (PR #1 — îmbunătățit)
+- **Sincronizare TTS-STT perfectă** — STT nu mai pornește în timp ce TTS vorbește
+- **Control vocal complet** — Rezervă curse prin comenzi vocale naturale
+- **Beep-uri de feedback** — Indicații audio clare pentru start/stop ascultare
+- **Flux AI end-to-end** — Salut → Destinație → Confirmare → Pickup → Cursă
 
-### ðŸŽ Gift Ride â€” Cadouri de CursÄƒ (PR #3 â€” nou)
-- **Trimite curse cadou** â€” Oferi o cursÄƒ unui prieten sau familiar
-- **Cod unic de revendicare** â€” Format `GFTxxxxxx`, valabil 365 zile
-- **Revendicare simplÄƒ** â€” Destinatarul introduce codul la checkout
-- **Gestionare cadouri** â€” VizualizeazÄƒ cadourile trimise È™i statusul lor
-- **State machine** â€” `pending â†’ claimed / expired / cancelled`
+### 🎁 Gift Ride — Cadouri de Cursă (PR #3 — nou)
+- **Trimite curse cadou** — Oferi o cursă unui prieten sau familiar
+- **Cod unic de revendicare** — Format `GFTxxxxxx`, valabil 365 zile
+- **Revendicare simplă** — Destinatarul introduce codul la checkout
+- **Gestionare cadouri** — Vizualizează cadourile trimise și statusul lor
+- **State machine** — `pending → claimed / expired / cancelled`
 
-### ðŸ‘¥ Sistem Referral (PR #3 â€” nou)
-- **Cod personal** â€” Fiecare utilizator are un cod unic `FRxxxxxxxx`
-- **Recompense duble** â€” Invitantul primeÈ™te 15 RON, invitatul 10 RON
-- **Statistici live** â€” Total, completate, cÃ¢È™tiguri acumulate
-- **Share nativ** â€” Distribuie codul prin orice aplicaÈ›ie instalatÄƒ
-- **ProtecÈ›ie auto-referral** â€” Sistemul previne abuzurile
+### 👥 Sistem Referral (PR #3 — nou)
+- **Cod personal** — Fiecare utilizator are un cod unic `FRxxxxxxxx`
+- **Recompense duble** — Invitantul primește 15 RON, invitatul 10 RON
+- **Statistici live** — Total, completate, câștiguri acumulate
+- **Share nativ** — Distribuie codul prin orice aplicație instalată
+- **Protecție auto-referral** — Sistemul previne abuzurile
 
-### ðŸ” Social Login (PR #3 â€” nou)
-- **Google Sign-In** â€” Autentificare cu un singur tap
-- **Apple Sign-In** â€” Suport complet iOS (Sign in with Apple)
-- **Facebook Login** â€” Autentificare via Facebook
-- **Fallback email/parolÄƒ** â€” Clasic, cu recuperare parolÄƒ
+### 🔐 Social Login (PR #3 — nou)
+- **Google Sign-In** — Autentificare cu un singur tap
+- **Apple Sign-In** — Suport complet iOS (Sign in with Apple)
+- **Facebook Login** — Autentificare via Facebook
+- **Fallback email/parolă** — Clasic, cu recuperare parolă
 
-### ðŸ“… Curse Programate + NotificÄƒri (PR #3 â€” nou)
-- **Programare curse** â€” SeteazÄƒ cursÄƒ pentru o datÄƒ/orÄƒ viitoare
-- **NotificÄƒri locale** â€” Reminder automat cu 30 min Ã®nainte
-- **Toggle notificÄƒri** â€” ActiveazÄƒ/dezactiveazÄƒ per cursÄƒ
-- **Gestionare listÄƒ** â€” AdaugÄƒ, modificÄƒ, È™terge curse programate
+### 📅 Curse Programate + Notificări (PR #3 — nou)
+- **Programare curse** — Setează cursă pentru o dată/oră viitoare
+- **Notificări locale** — Reminder automat cu 30 min înainte
+- **Toggle notificări** — Activează/dezactivează per cursă
+- **Gestionare listă** — Adaugă, modifică, șterge curse programate
 
-### ðŸ§­ Onboarding Wizard (PR #3 â€” nou)
-- **Tutorial pas cu pas** â€” 4 ecrane animate pentru utilizatori noi
-- **Prezentare funcÈ›ionalitÄƒÈ›i** â€” HartÄƒ, vocal AI, plÄƒÈ›i, siguranÈ›Äƒ
-- **Skip oricÃ¢nd** â€” Utilizatorul poate sÄƒri tutorialul
+### 🧭 Onboarding Wizard (PR #3 — nou)
+- **Tutorial pas cu pas** — 4 ecrane animate pentru utilizatori noi
+- **Prezentare funcționalități** — Hartă, vocal AI, plăți, siguranță
+- **Skip oricând** — Utilizatorul poate sări tutorialul
 
-### ðŸ—ºï¸ HartÄƒ InteractivÄƒ + Heatmap Cerere (PR #3 â€” nou)
-- **Heatmap vizual** â€” Gradient color pentru densitatea cererii (verde â†’ galben â†’ roÈ™u)
-- **GrilÄƒ suprapusÄƒ** â€” Ajutor vizual pentru zone de cerere
-- **Date tempo real** â€” `HeatmapPoint` cu latitudine, longitudine, intensitate
-- **POI-uri inteligente** â€” Clustering GPU, zoom gates, max 200 POI-uri
+### 🗺️ Hartă Interactivă + Heatmap Cerere (PR #3 — nou)
+- **Heatmap vizual** — Gradient color pentru densitatea cererii (verde → galben → roșu)
+- **Grilă suprapusă** — Ajutor vizual pentru zone de cerere
+- **Date tempo real** — `HeatmapPoint` cu latitudine, longitudine, intensitate
+- **POI-uri inteligente** — Clustering GPU, zoom gates, max 200 POI-uri
 
-### ðŸ’¸ Ride Sharing Avansat (PR #3 â€” Ã®mbunÄƒtÄƒÈ›it)
-- **Algoritm Haversine** â€” DistanÈ›Äƒ precisÄƒ Ã®ntre coordonate GPS
-- **Prag compatibilitate** â€” Pickup < 2 km + DestinaÈ›ie < 2 km
-- **Matching static testabil** â€” `RideSharingService.areRoutesCompatible(s1, s2)`
-- **Mesaje sistem automate** â€” Notificare Ã®n chat la match confirmat
-- **Reducere 30%** â€” Cost partajat calculat automat
+### 💸 Ride Sharing Avansat (PR #3 — îmbunătățit)
+- **Algoritm Haversine** — Distanță precisă între coordonate GPS
+- **Prag compatibilitate** — Pickup < 2 km + Destinație < 2 km
+- **Matching static testabil** — `RideSharingService.areRoutesCompatible(s1, s2)`
+- **Mesaje sistem automate** — Notificare în chat la match confirmat
+- **Reducere 30%** — Cost partajat calculat automat
 
-### ðŸ”” Multiple Stops + Surge Pricing (PR #3 â€” nou)
-- **Multiple opriri** â€” AdaugÄƒ pÃ¢nÄƒ la N opriri intermediare pe traseu
-- **Surge pricing transparent** â€” Widget dedicat care explicÄƒ multiplicatorul preÈ›ului
-- **Acceptance timer** â€” Countdown animat pentru acceptarea cursei de È™ofer
+### 🔔 Multiple Stops + Surge Pricing (PR #3 — nou)
+- **Multiple opriri** — Adaugă până la N opriri intermediare pe traseu
+- **Surge pricing transparent** — Widget dedicat care explică multiplicatorul prețului
+- **Acceptance timer** — Countdown animat pentru acceptarea cursei de șofer
 
-### ðŸŽ¨ Sistem Design Unificat (PR #3 â€” nou)
-- **`AppColors`** â€” PaletÄƒ cromaticÄƒ centralizatÄƒ (primary, secondary, background, surface, error, textHint, border)
-- **`AppTextStyles`** â€” Tipografie consistentÄƒ (heading1-4, bodySmall/Medium/Large, button)
-- **Dark/Light mode ready** â€” StructurÄƒ pregÄƒtitÄƒ pentru teme multiple
+### 🎨 Sistem Design Unificat (PR #3 — nou)
+- **`AppColors`** — Paletă cromatică centralizată (primary, secondary, background, surface, error, textHint, border)
+- **`AppTextStyles`** — Tipografie consistentă (heading1-4, bodySmall/Medium/Large, button)
+- **Dark/Light mode ready** — Structură pregătită pentru teme multiple
 
 ---
 
@@ -129,57 +129,57 @@
 
 ---
 
-## ðŸ“ Structura Proiectului
+## 📁 Structura Proiectului
 
 ```
 lib/
-â”œâ”€â”€ main.dart                          # Entry point + routes
-â”œâ”€â”€ theme/
-â”‚   â”œâ”€â”€ app_colors.dart                # âœ¨ Nou: paleta de culori centralizatÄƒ
-â”‚   â””â”€â”€ app_text_styles.dart           # âœ¨ Nou: stiluri text unificate
-â”œâ”€â”€ models/
-â”‚   â”œâ”€â”€ gift_ride_model.dart           # âœ¨ Nou: model cadou cursÄƒ
-â”‚   â”œâ”€â”€ referral_model.dart            # âœ¨ Nou: model referral + ReferralStats
-â”‚   â”œâ”€â”€ ride_model.dart
-â”‚   â”œâ”€â”€ ride_sharing_model.dart
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ services/
-â”‚   â”œâ”€â”€ gift_ride_service.dart         # âœ¨ Nou: trimitere, revendicare, anulare
-â”‚   â”œâ”€â”€ referral_service.dart          # âœ¨ Nou: coduri referral, statistici, recompense
-â”‚   â”œâ”€â”€ local_notifications_service.dart # âœ¨ Nou: notificÄƒri locale programate
-â”‚   â”œâ”€â”€ social_auth_service.dart       # âœ¨ Nou: Google/Apple/Facebook auth
-â”‚   â”œâ”€â”€ ride_sharing_service.dart      # âœ… ÃŽmbunÄƒtÄƒÈ›it: matching avansat + static API
-â”‚   â”œâ”€â”€ firestore_service.dart
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ screens/
-â”‚   â”œâ”€â”€ gift_ride_screen.dart          # âœ¨ Nou: UI trimitere + vizualizare cadouri
-â”‚   â”œâ”€â”€ referral_screen.dart           # âœ¨ Nou: UI cod referral + statistici + listÄƒ
-â”‚   â”œâ”€â”€ onboarding_wizard_screen.dart  # âœ¨ Nou: tutorial utilizatori noi
-â”‚   â”œâ”€â”€ social_login_screen.dart       # âœ¨ Nou: ecran login social
-â”‚   â”œâ”€â”€ scheduled_ride_notifications_screen.dart # âœ¨ Nou: curse programate
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ widgets/
-â”‚   â”œâ”€â”€ acceptance_timer_widget.dart   # âœ¨ Nou: countdown acceptare È™ofer
-â”‚   â”œâ”€â”€ heatmap_widget.dart            # âœ¨ Nou: heatmap cerere cu CustomPainter
-â”‚   â”œâ”€â”€ multiple_stops_widget.dart     # âœ¨ Nou: opriri multiple pe traseu
-â”‚   â”œâ”€â”€ surge_pricing_transparency_widget.dart # âœ¨ Nou: explicaÈ›ie surge pricing
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ utils/
-â”‚   â””â”€â”€ logger.dart                    # âœ¨ Nou: logger structurat (debug/info/warning/error)
-â””â”€â”€ voice/                             # âœ… ÃŽmbunÄƒtÄƒÈ›it: PR #1 sync TTS-STT
-    â”œâ”€â”€ ai/
-    â”œâ”€â”€ core/
-    â”œâ”€â”€ integration/
-    â”œâ”€â”€ passenger/
-    â”œâ”€â”€ ride/
-    â””â”€â”€ tts/
+├── main.dart                          # Entry point + routes
+├── theme/
+│   ├── app_colors.dart                # ✨ Nou: paleta de culori centralizată
+│   └── app_text_styles.dart           # ✨ Nou: stiluri text unificate
+├── models/
+│   ├── gift_ride_model.dart           # ✨ Nou: model cadou cursă
+│   ├── referral_model.dart            # ✨ Nou: model referral + ReferralStats
+│   ├── ride_model.dart
+│   ├── ride_sharing_model.dart
+│   └── ...
+├── services/
+│   ├── gift_ride_service.dart         # ✨ Nou: trimitere, revendicare, anulare
+│   ├── referral_service.dart          # ✨ Nou: coduri referral, statistici, recompense
+│   ├── local_notifications_service.dart # ✨ Nou: notificări locale programate
+│   ├── social_auth_service.dart       # ✨ Nou: Google/Apple/Facebook auth
+│   ├── ride_sharing_service.dart      # ✅ Îmbunătățit: matching avansat + static API
+│   ├── firestore_service.dart
+│   └── ...
+├── screens/
+│   ├── gift_ride_screen.dart          # ✨ Nou: UI trimitere + vizualizare cadouri
+│   ├── referral_screen.dart           # ✨ Nou: UI cod referral + statistici + listă
+│   ├── onboarding_wizard_screen.dart  # ✨ Nou: tutorial utilizatori noi
+│   ├── social_login_screen.dart       # ✨ Nou: ecran login social
+│   ├── scheduled_ride_notifications_screen.dart # ✨ Nou: curse programate
+│   └── ...
+├── widgets/
+│   ├── acceptance_timer_widget.dart   # ✨ Nou: countdown acceptare șofer
+│   ├── heatmap_widget.dart            # ✨ Nou: heatmap cerere cu CustomPainter
+│   ├── multiple_stops_widget.dart     # ✨ Nou: opriri multiple pe traseu
+│   ├── surge_pricing_transparency_widget.dart # ✨ Nou: explicație surge pricing
+│   └── ...
+├── utils/
+│   └── logger.dart                    # ✨ Nou: logger structurat (debug/info/warning/error)
+└── voice/                             # ✅ Îmbunătățit: PR #1 sync TTS-STT
+    ├── ai/
+    ├── core/
+    ├── integration/
+    ├── passenger/
+    ├── ride/
+    └── tts/
 ```
 
 ---
 
-## ðŸš€ Instalare È™i Configurare
+## 🚀 Instalare și Configurare
 
-### CerinÈ›e de Sistem
+### Cerințe de Sistem
 - **Android**: 7.0 (API level 24) sau mai nou
 - **iOS**: 12.0 sau mai nou
 - **Flutter**: 3.16+ / **Dart**: 3.2+
@@ -190,9 +190,9 @@ git clone https://github.com/operatii777-cloud/FriendsRide.git
 cd FriendsRide
 flutter pub get
 
-# ConfigureazÄƒ Firebase (google-services.json + GoogleService-Info.plist)
-# ConfigureazÄƒ Mapbox token Ã®n lib/utils/mapbox_config.dart
-# ConfigureazÄƒ Gemini API key
+# Configurează Firebase (google-services.json + GoogleService-Info.plist)
+# Configurează Mapbox token în lib/utils/mapbox_config.dart
+# Configurează Gemini API key
 
 flutter run
 ```
@@ -205,56 +205,56 @@ GEMINI_API_KEY=AIzaSy...
 
 ---
 
-## ðŸŽ¤ Fluxul Vocal AI
+## 🎤 Fluxul Vocal AI
 
 ```
-Utilizator apasÄƒ buton AI
-  â†’ TTS: "BunÄƒ ziua! Unde doriÈ›i sÄƒ mergeÈ›i?"
-  â†’ STT porneÈ™te (dupÄƒ ce TTS terminÄƒ â€” fix PR #1)
-  â†’ Utilizator: "La aeroport"
-  â†’ AI confirmÄƒ destinaÈ›ia
-  â†’ STT pentru pickup (dacÄƒ necesar)
-  â†’ CursÄƒ rezervatÄƒ
+Utilizator apasă buton AI
+  → TTS: "Bună ziua! Unde doriți să mergeți?"
+  → STT pornește (după ce TTS termină — fix PR #1)
+  → Utilizator: "La aeroport"
+  → AI confirmă destinația
+  → STT pentru pickup (dacă necesar)
+  → Cursă rezervată
 ```
 
 **Comenzi vocale disponibile:**
-| ComandÄƒ | AcÈ›iune |
+| Comandă | Acțiune |
 |---------|---------|
-| `"SolicitÄƒ cursÄƒ"` | ÃŽncepe rezervarea |
-| `"CÄƒtre [destinaÈ›ie]"` | SeteazÄƒ destinaÈ›ia |
-| `"De la [adresÄƒ]"` | SeteazÄƒ pickup |
-| `"AnuleazÄƒ"` | AnuleazÄƒ cursa curentÄƒ |
-| `"Unde sunt?"` | AfiÈ™eazÄƒ locaÈ›ia curentÄƒ |
-| `"SunÄƒ È™oferul"` | ApeleazÄƒ È™oferul activ |
+| `"Solicită cursă"` | Începe rezervarea |
+| `"Către [destinație]"` | Setează destinația |
+| `"De la [adresă]"` | Setează pickup |
+| `"Anulează"` | Anulează cursa curentă |
+| `"Unde sunt?"` | Afișează locația curentă |
+| `"Sună șoferul"` | Apelează șoferul activ |
 
 ---
 
-## ðŸŽ Flux Gift Ride
+## 🎁 Flux Gift Ride
 
 ```
-Expeditor â†’ completeazÄƒ formular (nume, email/telefon, sumÄƒ, mesaj)
-  â†’ GiftRideService.sendGiftRide() â†’ cod unic generat + salvat Ã®n Firestore
-  â†’ Destinatar primeÈ™te codul (email/SMS extern)
-  â†’ Destinatar â†’ introduce codul la checkout
-  â†’ GiftRideService.claimGiftRide(cod, userId) â†’ suma creditatÄƒ
-```
-
----
-
-## ðŸ‘¥ Flux Referral
-
-```
-Utilizator A â†’ ReferralService.getReferralCode(uid) â†’ cod "FR12345678"
-  â†’ Share nativ â†’ Utilizator B se Ã®nregistreazÄƒ cu codul
-  â†’ ReferralService.processReferralCode(cod, newUserId)
-  â†’ Referral creat Ã®n Firestore
-  â†’ Utilizator B face prima cursÄƒ â†’ rewardedAt setat
-  â†’ A primeÈ™te 15 RON + B primeÈ™te 10 RON
+Expeditor → completează formular (nume, email/telefon, sumă, mesaj)
+  → GiftRideService.sendGiftRide() → cod unic generat + salvat în Firestore
+  → Destinatar primește codul (email/SMS extern)
+  → Destinatar → introduce codul la checkout
+  → GiftRideService.claimGiftRide(cod, userId) → suma creditată
 ```
 
 ---
 
-## ðŸ§ª Testare
+## 👥 Flux Referral
+
+```
+Utilizator A → ReferralService.getReferralCode(uid) → cod "FR12345678"
+  → Share nativ → Utilizator B se înregistrează cu codul
+  → ReferralService.processReferralCode(cod, newUserId)
+  → Referral creat în Firestore
+  → Utilizator B face prima cursă → rewardedAt setat
+  → A primește 15 RON + B primește 10 RON
+```
+
+---
+
+## 🧪 Testare
 
 ```bash
 # Toate testele
@@ -263,21 +263,21 @@ flutter test
 # Test matching ride sharing
 flutter test test/ride_sharing_service_test.dart
 
-# AnalizÄƒ cod (0 issues)
+# Analiză cod (0 issues)
 flutter analyze --no-fatal-infos
 
 # Integration tests
 flutter test integration_test/
 ```
 
-**Stare curentÄƒ analizÄƒ:**
+**Stare curentă analiză:**
 ```
-No issues found! âœ…  (0 errors, 0 warnings, 0 infos)
+No issues found! ✅  (0 errors, 0 warnings, 0 infos)
 ```
 
 ---
 
-## ðŸ“Š Servicii Principale
+## 📊 Servicii Principale
 
 | Serviciu | Responsabilitate |
 |---------|----------------|
@@ -285,37 +285,37 @@ No issues found! âœ…  (0 errors, 0 warnings, 0 infos)
 | `GiftRideService` | Cadouri curse (creare, revendicare, anulare) |
 | `ReferralService` | Coduri referral, statistici, recompense |
 | `RideSharingService` | Matching pasageri (algoritm Haversine) |
-| `LocalNotificationsService` | NotificÄƒri locale programate |
+| `LocalNotificationsService` | Notificări locale programate |
 | `SocialAuthService` | Google / Apple / Facebook autentificare |
 | `RoutingService` | Calculare trasee Mapbox |
-| `VoiceOrchestrator` | Sincronizare TTS â†” STT |
+| `VoiceOrchestrator` | Sincronizare TTS ↔ STT |
 | `GeminiVoiceEngine` | Procesare AI comenzi vocale |
 | `RealTimeTrackingService` | Tracking GPS timp real |
 
 ---
 
-## ðŸŒ Localizare
+## 🌍 Localizare
 
-| FiÈ™ier | LimbÄƒ | Strings |
+| Fișier | Limbă | Strings |
 |--------|-------|---------|
-| `lib/l10n/app_ro.arb` | RomÃ¢nÄƒ (implicitÄƒ) | 223+ |
-| `lib/l10n/app_en.arb` | EnglezÄƒ | 223+ |
+| `lib/l10n/app_ro.arb` | Română (implicită) | 223+ |
+| `lib/l10n/app_en.arb` | Engleză | 223+ |
 
-Schimbare limbÄƒ: **Meniu hamburger â†’ Limba**. Alegerea se salveazÄƒ automat.
-
----
-
-## ðŸ“ˆ PerformanÈ›Äƒ
-
-- **GPU rendering** â€” Mapbox + CustomPainter pentru heatmap
-- **Clustering POI** â€” Max 200 POI-uri, zoom gates
-- **TTS-STT sync** â€” Eliminat race condition (PR #1)
-- **Lazy loading** â€” Servicii iniÈ›ializate la cerere
-- **Logger structurat** â€” `Logger.debug/info/warning/error` cu tag È™i stack trace
+Schimbare limbă: **Meniu hamburger → Limba**. Alegerea se salvează automat.
 
 ---
 
-## ðŸ”§ Routes ÃŽnregistrate Ã®n main.dart
+## 📈 Performanță
+
+- **GPU rendering** — Mapbox + CustomPainter pentru heatmap
+- **Clustering POI** — Max 200 POI-uri, zoom gates
+- **TTS-STT sync** — Eliminat race condition (PR #1)
+- **Lazy loading** — Servicii inițializate la cerere
+- **Logger structurat** — `Logger.debug/info/warning/error` cu tag și stack trace
+
+---
+
+## 🔧 Routes Înregistrate în main.dart
 
 ```dart
 routes: {
@@ -329,7 +329,7 @@ routes: {
 
 ---
 
-## ðŸ“š DocumentaÈ›ie
+## 📚 Documentație
 
 - **[AI Implementation Guide](VOICE_IMPLEMENTATION_GUIDE.md)**
 - **[Complete Mapbox Setup](COMPLETE_MAPBOX_SETUP.md)**
@@ -338,33 +338,33 @@ routes: {
 
 ---
 
-## ðŸ¤ ContribuÈ›ii
+## 🤝 Contribuții
 
 1. Fork repository-ul
-2. CreeazÄƒ ramurÄƒ: `git checkout -b feature/NumeFeature`
+2. Creează ramură: `git checkout -b feature/NumeFeature`
 3. Commit: `git commit -m 'Add NumeFeature'`
 4. Push: `git push origin feature/NumeFeature`
 5. Deschide Pull Request
 
-**Before PR:** `flutter analyze --no-fatal-infos` trebuie sÄƒ returneze `No issues found!`
+**Before PR:** `flutter analyze --no-fatal-infos` trebuie să returneze `No issues found!`
 
 ---
 
-## ðŸ“„ LicenÈ›Äƒ
+## 📄 Licență
 
-MIT License â€” vezi [LICENSE](LICENSE).
+MIT License — vezi [LICENSE](LICENSE).
 
 ---
 
-## ðŸ“ž Contact
+## 📞 Contact
 
 - **Email**: support@friendsride.com
 - **GitHub**: https://github.com/operatii777-cloud/FriendsRide
 
 ---
 
-*FriendsRide â€” ConectÃ¢nd oamenii prin tehnologie inteligentÄƒ ðŸš—âœ¨*
-*Ultima actualizare: Martie 2026 â€” PR #1 (Voice sync) + PR #3 (Gift, Referral, Social Login, Scheduled Rides, Heatmap, Onboarding)*
+*FriendsRide — Conectând oamenii prin tehnologie inteligentă 🚗✨*
+*Ultima actualizare: Martie 2026 — PR #1 (Voice sync) + PR #3 (Gift, Referral, Social Login, Scheduled Rides, Heatmap, Onboarding)*
 ---
 
 ## ✅ Funcționalități Verificate și Implementate
@@ -411,7 +411,7 @@ MIT License â€” vezi [LICENSE](LICENSE).
 - ✅ Android (API 24+), ✅ iOS (12+), ✅ Web (Flutter Web / PWA)
 - ✅ Linux (CMakeLists.txt), ✅ Windows (Visual Studio runner)
 
-Ÿš— FriendsRide - Intelligent Ride-Sharing App
+🚗 FriendsRide - Intelligent Ride-Sharing App
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.16+-blue.svg)](https://flutter.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-10.0-orange.svg)](https://firebase.google.com/)
@@ -419,125 +419,125 @@ MIT License â€” vezi [LICENSE](LICENSE).
 [![Analyze](https://img.shields.io/badge/flutter%20analyze-0%20issues-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**FriendsRide** este o aplicaÈ›ie de ride-sharing inteligentÄƒ care conecteazÄƒ pasagerii cu È™oferi parteneri, oferind o experienÈ›Äƒ vocalÄƒ avansatÄƒ cu AI, navigaÈ›ie Ã®n timp real, funcÈ›ionalitÄƒÈ›i sociale (cadouri, referral, social login) È™i notificÄƒri smart.
+**FriendsRide** este o aplicație de ride-sharing inteligentă care conectează pasagerii cu șoferi parteneri, oferind o experiență vocală avansată cu AI, navigație în timp real, funcționalități sociale (cadouri, referral, social login) și notificări smart.
 
 ---
 
-## ðŸŒŸ Caracteristici Principale
+## 🌟 Caracteristici Principale
 
-### ðŸŽ¤ Asistent Vocal AI (PR #1 â€” Ã®mbunÄƒtÄƒÈ›it)
-- **Sincronizare TTS-STT perfectÄƒ** â€” STT nu mai porneÈ™te Ã®n timp ce TTS vorbeÈ™te
-- **Control vocal complet** â€” RezervÄƒ curse prin comenzi vocale naturale
-- **Beep-uri de feedback** â€” IndicaÈ›ii audio clare pentru start/stop ascultare
-- **Flux AI end-to-end** â€” Salut â†’ DestinaÈ›ie â†’ Confirmare â†’ Pickup â†’ CursÄƒ
+### 🎤 Asistent Vocal AI (PR #1 — îmbunătățit)
+- **Sincronizare TTS-STT perfectă** — STT nu mai pornește în timp ce TTS vorbește
+- **Control vocal complet** — Rezervă curse prin comenzi vocale naturale
+- **Beep-uri de feedback** — Indicații audio clare pentru start/stop ascultare
+- **Flux AI end-to-end** — Salut → Destinație → Confirmare → Pickup → Cursă
 
-### ðŸŽ Gift Ride â€” Cadouri de CursÄƒ (PR #3 â€” nou)
-- **Trimite curse cadou** â€” Oferi o cursÄƒ unui prieten sau familiar
-- **Cod unic de revendicare** â€” Format `GFTxxxxxx`, valabil 365 zile
-- **Revendicare simplÄƒ** â€” Destinatarul introduce codul la checkout
-- **Gestionare cadouri** â€” VizualizeazÄƒ cadourile trimise È™i statusul lor
-- **State machine** â€” `pending â†’ claimed / expired / cancelled`
+### 🎁 Gift Ride — Cadouri de Cursă (PR #3 — nou)
+- **Trimite curse cadou** — Oferi o cursă unui prieten sau familiar
+- **Cod unic de revendicare** — Format `GFTxxxxxx`, valabil 365 zile
+- **Revendicare simplă** — Destinatarul introduce codul la checkout
+- **Gestionare cadouri** — Vizualizează cadourile trimise și statusul lor
+- **State machine** — `pending → claimed / expired / cancelled`
 
-### ðŸ‘¥ Sistem Referral (PR #3 â€” nou)
-- **Cod personal** â€” Fiecare utilizator are un cod unic `FRxxxxxxxx`
-- **Recompense duble** â€” Invitantul primeÈ™te 15 RON, invitatul 10 RON
-- **Statistici live** â€” Total, completate, cÃ¢È™tiguri acumulate
-- **Share nativ** â€” Distribuie codul prin orice aplicaÈ›ie instalatÄƒ
-- **ProtecÈ›ie auto-referral** â€” Sistemul previne abuzurile
+### 👥 Sistem Referral (PR #3 — nou)
+- **Cod personal** — Fiecare utilizator are un cod unic `FRxxxxxxxx`
+- **Recompense duble** — Invitantul primește 15 RON, invitatul 10 RON
+- **Statistici live** — Total, completate, câștiguri acumulate
+- **Share nativ** — Distribuie codul prin orice aplicație instalată
+- **Protecție auto-referral** — Sistemul previne abuzurile
 
-### ðŸ” Social Login (PR #3 â€” nou)
-- **Google Sign-In** â€” Autentificare cu un singur tap
-- **Apple Sign-In** â€” Suport complet iOS (Sign in with Apple)
-- **Facebook Login** â€” Autentificare via Facebook
-- **Fallback email/parolÄƒ** â€” Clasic, cu recuperare parolÄƒ
+### 🔐 Social Login (PR #3 — nou)
+- **Google Sign-In** — Autentificare cu un singur tap
+- **Apple Sign-In** — Suport complet iOS (Sign in with Apple)
+- **Facebook Login** — Autentificare via Facebook
+- **Fallback email/parolă** — Clasic, cu recuperare parolă
 
-### ðŸ“… Curse Programate + NotificÄƒri (PR #3 â€” nou)
-- **Programare curse** â€” SeteazÄƒ cursÄƒ pentru o datÄƒ/orÄƒ viitoare
-- **NotificÄƒri locale** â€” Reminder automat cu 30 min Ã®nainte
-- **Toggle notificÄƒri** â€” ActiveazÄƒ/dezactiveazÄƒ per cursÄƒ
-- **Gestionare listÄƒ** â€” AdaugÄƒ, modificÄƒ, È™terge curse programate
+### 📅 Curse Programate + Notificări (PR #3 — nou)
+- **Programare curse** — Setează cursă pentru o dată/oră viitoare
+- **Notificări locale** — Reminder automat cu 30 min înainte
+- **Toggle notificări** — Activează/dezactivează per cursă
+- **Gestionare listă** — Adaugă, modifică, șterge curse programate
 
-### ðŸ§­ Onboarding Wizard (PR #3 â€” nou)
-- **Tutorial pas cu pas** â€” 4 ecrane animate pentru utilizatori noi
-- **Prezentare funcÈ›ionalitÄƒÈ›i** â€” HartÄƒ, vocal AI, plÄƒÈ›i, siguranÈ›Äƒ
-- **Skip oricÃ¢nd** â€” Utilizatorul poate sÄƒri tutorialul
+### 🧭 Onboarding Wizard (PR #3 — nou)
+- **Tutorial pas cu pas** — 4 ecrane animate pentru utilizatori noi
+- **Prezentare funcționalități** — Hartă, vocal AI, plăți, siguranță
+- **Skip oricând** — Utilizatorul poate sări tutorialul
 
-### ðŸ—ºï¸ HartÄƒ InteractivÄƒ + Heatmap Cerere (PR #3 â€” nou)
-- **Heatmap vizual** â€” Gradient color pentru densitatea cererii (verde â†’ galben â†’ roÈ™u)
-- **GrilÄƒ suprapusÄƒ** â€” Ajutor vizual pentru zone de cerere
-- **Date tempo real** â€” `HeatmapPoint` cu latitudine, longitudine, intensitate
-- **POI-uri inteligente** â€” Clustering GPU, zoom gates, max 200 POI-uri
+### 🗺️ Hartă Interactivă + Heatmap Cerere (PR #3 — nou)
+- **Heatmap vizual** — Gradient color pentru densitatea cererii (verde → galben → roșu)
+- **Grilă suprapusă** — Ajutor vizual pentru zone de cerere
+- **Date tempo real** — `HeatmapPoint` cu latitudine, longitudine, intensitate
+- **POI-uri inteligente** — Clustering GPU, zoom gates, max 200 POI-uri
 
-### ðŸ’¸ Ride Sharing Avansat (PR #3 â€” Ã®mbunÄƒtÄƒÈ›it)
-- **Algoritm Haversine** â€” DistanÈ›Äƒ precisÄƒ Ã®ntre coordonate GPS
-- **Prag compatibilitate** â€” Pickup < 2 km + DestinaÈ›ie < 2 km
-- **Matching static testabil** â€” `RideSharingService.areRoutesCompatible(s1, s2)`
-- **Mesaje sistem automate** â€” Notificare Ã®n chat la match confirmat
-- **Reducere 30%** â€” Cost partajat calculat automat
+### 💸 Ride Sharing Avansat (PR #3 — îmbunătățit)
+- **Algoritm Haversine** — Distanță precisă între coordonate GPS
+- **Prag compatibilitate** — Pickup < 2 km + Destinație < 2 km
+- **Matching static testabil** — `RideSharingService.areRoutesCompatible(s1, s2)`
+- **Mesaje sistem automate** — Notificare în chat la match confirmat
+- **Reducere 30%** — Cost partajat calculat automat
 
-### ðŸ”” Multiple Stops + Surge Pricing (PR #3 â€” nou)
-- **Multiple opriri** â€” AdaugÄƒ pÃ¢nÄƒ la N opriri intermediare pe traseu
-- **Surge pricing transparent** â€” Widget dedicat care explicÄƒ multiplicatorul preÈ›ului
-- **Acceptance timer** â€” Countdown animat pentru acceptarea cursei de È™ofer
+### 🔔 Multiple Stops + Surge Pricing (PR #3 — nou)
+- **Multiple opriri** — Adaugă până la N opriri intermediare pe traseu
+- **Surge pricing transparent** — Widget dedicat care explică multiplicatorul prețului
+- **Acceptance timer** — Countdown animat pentru acceptarea cursei de șofer
 
-### ðŸŽ¨ Sistem Design Unificat (PR #3 â€” nou)
-- **`AppColors`** â€” PaletÄƒ cromaticÄƒ centralizatÄƒ (primary, secondary, background, surface, error, textHint, border)
-- **`AppTextStyles`** â€” Tipografie consistentÄƒ (heading1-4, bodySmall/Medium/Large, button)
-- **Dark/Light mode ready** â€” StructurÄƒ pregÄƒtitÄƒ pentru teme multiple
+### 🎨 Sistem Design Unificat (PR #3 — nou)
+- **`AppColors`** — Paletă cromatică centralizată (primary, secondary, background, surface, error, textHint, border)
+- **`AppTextStyles`** — Tipografie consistentă (heading1-4, bodySmall/Medium/Large, button)
+- **Dark/Light mode ready** — Structură pregătită pentru teme multiple
 
 ---
 
-## ðŸ“ Structura Proiectului
+## 📁 Structura Proiectului
 
 ```
 lib/
-â”œâ”€â”€ main.dart                          # Entry point + routes
-â”œâ”€â”€ theme/
-â”‚   â”œâ”€â”€ app_colors.dart                # âœ¨ Nou: paleta de culori centralizatÄƒ
-â”‚   â””â”€â”€ app_text_styles.dart           # âœ¨ Nou: stiluri text unificate
-â”œâ”€â”€ models/
-â”‚   â”œâ”€â”€ gift_ride_model.dart           # âœ¨ Nou: model cadou cursÄƒ
-â”‚   â”œâ”€â”€ referral_model.dart            # âœ¨ Nou: model referral + ReferralStats
-â”‚   â”œâ”€â”€ ride_model.dart
-â”‚   â”œâ”€â”€ ride_sharing_model.dart
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ services/
-â”‚   â”œâ”€â”€ gift_ride_service.dart         # âœ¨ Nou: trimitere, revendicare, anulare
-â”‚   â”œâ”€â”€ referral_service.dart          # âœ¨ Nou: coduri referral, statistici, recompense
-â”‚   â”œâ”€â”€ local_notifications_service.dart # âœ¨ Nou: notificÄƒri locale programate
-â”‚   â”œâ”€â”€ social_auth_service.dart       # âœ¨ Nou: Google/Apple/Facebook auth
-â”‚   â”œâ”€â”€ ride_sharing_service.dart      # âœ… ÃŽmbunÄƒtÄƒÈ›it: matching avansat + static API
-â”‚   â”œâ”€â”€ firestore_service.dart
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ screens/
-â”‚   â”œâ”€â”€ gift_ride_screen.dart          # âœ¨ Nou: UI trimitere + vizualizare cadouri
-â”‚   â”œâ”€â”€ referral_screen.dart           # âœ¨ Nou: UI cod referral + statistici + listÄƒ
-â”‚   â”œâ”€â”€ onboarding_wizard_screen.dart  # âœ¨ Nou: tutorial utilizatori noi
-â”‚   â”œâ”€â”€ social_login_screen.dart       # âœ¨ Nou: ecran login social
-â”‚   â”œâ”€â”€ scheduled_ride_notifications_screen.dart # âœ¨ Nou: curse programate
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ widgets/
-â”‚   â”œâ”€â”€ acceptance_timer_widget.dart   # âœ¨ Nou: countdown acceptare È™ofer
-â”‚   â”œâ”€â”€ heatmap_widget.dart            # âœ¨ Nou: heatmap cerere cu CustomPainter
-â”‚   â”œâ”€â”€ multiple_stops_widget.dart     # âœ¨ Nou: opriri multiple pe traseu
-â”‚   â”œâ”€â”€ surge_pricing_transparency_widget.dart # âœ¨ Nou: explicaÈ›ie surge pricing
-â”‚   â””â”€â”€ ...
-â”œâ”€â”€ utils/
-â”‚   â””â”€â”€ logger.dart                    # âœ¨ Nou: logger structurat (debug/info/warning/error)
-â””â”€â”€ voice/                             # âœ… ÃŽmbunÄƒtÄƒÈ›it: PR #1 sync TTS-STT
-    â”œâ”€â”€ ai/
-    â”œâ”€â”€ core/
-    â”œâ”€â”€ integration/
-    â”œâ”€â”€ passenger/
-    â”œâ”€â”€ ride/
-    â””â”€â”€ tts/
+├── main.dart                          # Entry point + routes
+├── theme/
+│   ├── app_colors.dart                # ✨ Nou: paleta de culori centralizată
+│   └── app_text_styles.dart           # ✨ Nou: stiluri text unificate
+├── models/
+│   ├── gift_ride_model.dart           # ✨ Nou: model cadou cursă
+│   ├── referral_model.dart            # ✨ Nou: model referral + ReferralStats
+│   ├── ride_model.dart
+│   ├── ride_sharing_model.dart
+│   └── ...
+├── services/
+│   ├── gift_ride_service.dart         # ✨ Nou: trimitere, revendicare, anulare
+│   ├── referral_service.dart          # ✨ Nou: coduri referral, statistici, recompense
+│   ├── local_notifications_service.dart # ✨ Nou: notificări locale programate
+│   ├── social_auth_service.dart       # ✨ Nou: Google/Apple/Facebook auth
+│   ├── ride_sharing_service.dart      # ✅ Îmbunătățit: matching avansat + static API
+│   ├── firestore_service.dart
+│   └── ...
+├── screens/
+│   ├── gift_ride_screen.dart          # ✨ Nou: UI trimitere + vizualizare cadouri
+│   ├── referral_screen.dart           # ✨ Nou: UI cod referral + statistici + listă
+│   ├── onboarding_wizard_screen.dart  # ✨ Nou: tutorial utilizatori noi
+│   ├── social_login_screen.dart       # ✨ Nou: ecran login social
+│   ├── scheduled_ride_notifications_screen.dart # ✨ Nou: curse programate
+│   └── ...
+├── widgets/
+│   ├── acceptance_timer_widget.dart   # ✨ Nou: countdown acceptare șofer
+│   ├── heatmap_widget.dart            # ✨ Nou: heatmap cerere cu CustomPainter
+│   ├── multiple_stops_widget.dart     # ✨ Nou: opriri multiple pe traseu
+│   ├── surge_pricing_transparency_widget.dart # ✨ Nou: explicație surge pricing
+│   └── ...
+├── utils/
+│   └── logger.dart                    # ✨ Nou: logger structurat (debug/info/warning/error)
+└── voice/                             # ✅ Îmbunătățit: PR #1 sync TTS-STT
+    ├── ai/
+    ├── core/
+    ├── integration/
+    ├── passenger/
+    ├── ride/
+    └── tts/
 ```
 
 ---
 
-## ðŸš€ Instalare È™i Configurare
+## 🚀 Instalare și Configurare
 
-### CerinÈ›e de Sistem
+### Cerințe de Sistem
 - **Android**: 7.0 (API level 24) sau mai nou
 - **iOS**: 12.0 sau mai nou
 - **Flutter**: 3.16+ / **Dart**: 3.2+
@@ -548,9 +548,9 @@ git clone https://github.com/operatii777-cloud/FriendsRide.git
 cd FriendsRide
 flutter pub get
 
-# ConfigureazÄƒ Firebase (google-services.json + GoogleService-Info.plist)
-# ConfigureazÄƒ Mapbox token Ã®n lib/utils/mapbox_config.dart
-# ConfigureazÄƒ Gemini API key
+# Configurează Firebase (google-services.json + GoogleService-Info.plist)
+# Configurează Mapbox token în lib/utils/mapbox_config.dart
+# Configurează Gemini API key
 
 flutter run
 ```
@@ -563,56 +563,56 @@ GEMINI_API_KEY=AIzaSy...
 
 ---
 
-## ðŸŽ¤ Fluxul Vocal AI
+## 🎤 Fluxul Vocal AI
 
 ```
-Utilizator apasÄƒ buton AI
-  â†’ TTS: "BunÄƒ ziua! Unde doriÈ›i sÄƒ mergeÈ›i?"
-  â†’ STT porneÈ™te (dupÄƒ ce TTS terminÄƒ â€” fix PR #1)
-  â†’ Utilizator: "La aeroport"
-  â†’ AI confirmÄƒ destinaÈ›ia
-  â†’ STT pentru pickup (dacÄƒ necesar)
-  â†’ CursÄƒ rezervatÄƒ
+Utilizator apasă buton AI
+  → TTS: "Bună ziua! Unde doriți să mergeți?"
+  → STT pornește (după ce TTS termină — fix PR #1)
+  → Utilizator: "La aeroport"
+  → AI confirmă destinația
+  → STT pentru pickup (dacă necesar)
+  → Cursă rezervată
 ```
 
 **Comenzi vocale disponibile:**
-| ComandÄƒ | AcÈ›iune |
+| Comandă | Acțiune |
 |---------|---------|
-| `"SolicitÄƒ cursÄƒ"` | ÃŽncepe rezervarea |
-| `"CÄƒtre [destinaÈ›ie]"` | SeteazÄƒ destinaÈ›ia |
-| `"De la [adresÄƒ]"` | SeteazÄƒ pickup |
-| `"AnuleazÄƒ"` | AnuleazÄƒ cursa curentÄƒ |
-| `"Unde sunt?"` | AfiÈ™eazÄƒ locaÈ›ia curentÄƒ |
-| `"SunÄƒ È™oferul"` | ApeleazÄƒ È™oferul activ |
+| `"Solicită cursă"` | Începe rezervarea |
+| `"Către [destinație]"` | Setează destinația |
+| `"De la [adresă]"` | Setează pickup |
+| `"Anulează"` | Anulează cursa curentă |
+| `"Unde sunt?"` | Afișează locația curentă |
+| `"Sună șoferul"` | Apelează șoferul activ |
 
 ---
 
-## ðŸŽ Flux Gift Ride
+## 🎁 Flux Gift Ride
 
 ```
-Expeditor â†’ completeazÄƒ formular (nume, email/telefon, sumÄƒ, mesaj)
-  â†’ GiftRideService.sendGiftRide() â†’ cod unic generat + salvat Ã®n Firestore
-  â†’ Destinatar primeÈ™te codul (email/SMS extern)
-  â†’ Destinatar â†’ introduce codul la checkout
-  â†’ GiftRideService.claimGiftRide(cod, userId) â†’ suma creditatÄƒ
-```
-
----
-
-## ðŸ‘¥ Flux Referral
-
-```
-Utilizator A â†’ ReferralService.getReferralCode(uid) â†’ cod "FR12345678"
-  â†’ Share nativ â†’ Utilizator B se Ã®nregistreazÄƒ cu codul
-  â†’ ReferralService.processReferralCode(cod, newUserId)
-  â†’ Referral creat Ã®n Firestore
-  â†’ Utilizator B face prima cursÄƒ â†’ rewardedAt setat
-  â†’ A primeÈ™te 15 RON + B primeÈ™te 10 RON
+Expeditor → completează formular (nume, email/telefon, sumă, mesaj)
+  → GiftRideService.sendGiftRide() → cod unic generat + salvat în Firestore
+  → Destinatar primește codul (email/SMS extern)
+  → Destinatar → introduce codul la checkout
+  → GiftRideService.claimGiftRide(cod, userId) → suma creditată
 ```
 
 ---
 
-## ðŸ§ª Testare
+## 👥 Flux Referral
+
+```
+Utilizator A → ReferralService.getReferralCode(uid) → cod "FR12345678"
+  → Share nativ → Utilizator B se înregistrează cu codul
+  → ReferralService.processReferralCode(cod, newUserId)
+  → Referral creat în Firestore
+  → Utilizator B face prima cursă → rewardedAt setat
+  → A primește 15 RON + B primește 10 RON
+```
+
+---
+
+## 🧪 Testare
 
 ```bash
 # Toate testele
@@ -621,21 +621,21 @@ flutter test
 # Test matching ride sharing
 flutter test test/ride_sharing_service_test.dart
 
-# AnalizÄƒ cod (0 issues)
+# Analiză cod (0 issues)
 flutter analyze --no-fatal-infos
 
 # Integration tests
 flutter test integration_test/
 ```
 
-**Stare curentÄƒ analizÄƒ:**
+**Stare curentă analiză:**
 ```
-No issues found! âœ…  (0 errors, 0 warnings, 0 infos)
+No issues found! ✅  (0 errors, 0 warnings, 0 infos)
 ```
 
 ---
 
-## ðŸ“Š Servicii Principale
+## 📊 Servicii Principale
 
 | Serviciu | Responsabilitate |
 |---------|----------------|
@@ -643,37 +643,37 @@ No issues found! âœ…  (0 errors, 0 warnings, 0 infos)
 | `GiftRideService` | Cadouri curse (creare, revendicare, anulare) |
 | `ReferralService` | Coduri referral, statistici, recompense |
 | `RideSharingService` | Matching pasageri (algoritm Haversine) |
-| `LocalNotificationsService` | NotificÄƒri locale programate |
+| `LocalNotificationsService` | Notificări locale programate |
 | `SocialAuthService` | Google / Apple / Facebook autentificare |
 | `RoutingService` | Calculare trasee Mapbox |
-| `VoiceOrchestrator` | Sincronizare TTS â†” STT |
+| `VoiceOrchestrator` | Sincronizare TTS ↔ STT |
 | `GeminiVoiceEngine` | Procesare AI comenzi vocale |
 | `RealTimeTrackingService` | Tracking GPS timp real |
 
 ---
 
-## ðŸŒ Localizare
+## 🌍 Localizare
 
-| FiÈ™ier | LimbÄƒ | Strings |
+| Fișier | Limbă | Strings |
 |--------|-------|---------|
-| `lib/l10n/app_ro.arb` | RomÃ¢nÄƒ (implicitÄƒ) | 223+ |
-| `lib/l10n/app_en.arb` | EnglezÄƒ | 223+ |
+| `lib/l10n/app_ro.arb` | Română (implicită) | 223+ |
+| `lib/l10n/app_en.arb` | Engleză | 223+ |
 
-Schimbare limbÄƒ: **Meniu hamburger â†’ Limba**. Alegerea se salveazÄƒ automat.
-
----
-
-## ðŸ“ˆ PerformanÈ›Äƒ
-
-- **GPU rendering** â€” Mapbox + CustomPainter pentru heatmap
-- **Clustering POI** â€” Max 200 POI-uri, zoom gates
-- **TTS-STT sync** â€” Eliminat race condition (PR #1)
-- **Lazy loading** â€” Servicii iniÈ›ializate la cerere
-- **Logger structurat** â€” `Logger.debug/info/warning/error` cu tag È™i stack trace
+Schimbare limbă: **Meniu hamburger → Limba**. Alegerea se salvează automat.
 
 ---
 
-## ðŸ”§ Routes ÃŽnregistrate Ã®n main.dart
+## 📈 Performanță
+
+- **GPU rendering** — Mapbox + CustomPainter pentru heatmap
+- **Clustering POI** — Max 200 POI-uri, zoom gates
+- **TTS-STT sync** — Eliminat race condition (PR #1)
+- **Lazy loading** — Servicii inițializate la cerere
+- **Logger structurat** — `Logger.debug/info/warning/error` cu tag și stack trace
+
+---
+
+## 🔧 Routes Înregistrate în main.dart
 
 ```dart
 routes: {
@@ -687,7 +687,7 @@ routes: {
 
 ---
 
-## ðŸ“š DocumentaÈ›ie
+## 📚 Documentație
 
 - **[AI Implementation Guide](VOICE_IMPLEMENTATION_GUIDE.md)**
 - **[Complete Mapbox Setup](COMPLETE_MAPBOX_SETUP.md)**
@@ -696,31 +696,31 @@ routes: {
 
 ---
 
-## ðŸ¤ ContribuÈ›ii
+## 🤝 Contribuții
 
 1. Fork repository-ul
-2. CreeazÄƒ ramurÄƒ: `git checkout -b feature/NumeFeature`
+2. Creează ramură: `git checkout -b feature/NumeFeature`
 3. Commit: `git commit -m 'Add NumeFeature'`
 4. Push: `git push origin feature/NumeFeature`
 5. Deschide Pull Request
 
-**Before PR:** `flutter analyze --no-fatal-infos` trebuie sÄƒ returneze `No issues found!`
+**Before PR:** `flutter analyze --no-fatal-infos` trebuie să returneze `No issues found!`
 
 ---
 
-## ðŸ“„ LicenÈ›Äƒ
+## 📄 Licență
 
-MIT License â€” vezi [LICENSE](LICENSE).
+MIT License — vezi [LICENSE](LICENSE).
 
 ---
 
-## ðŸ“ž Contact
+## 📞 Contact
 
 - **Email**: support@friendsride.com
 - **GitHub**: https://github.com/operatii777-cloud/FriendsRide
 
 ---
 
-*FriendsRide â€” ConectÃ¢nd oamenii prin tehnologie inteligentÄƒ ðŸš—âœ¨*
-*Ultima actualizare: Martie 2026 â€” PR #1 (Voice sync) + PR #3 (Gift, Referral, Social Login, Scheduled Rides, Heatmap, Onboarding)*
+*FriendsRide — Conectând oamenii prin tehnologie inteligentă 🚗✨*
+*Ultima actualizare: Martie 2026 — PR #1 (Voice sync) + PR #3 (Gift, Referral, Social Login, Scheduled Rides, Heatmap, Onboarding)*
 
