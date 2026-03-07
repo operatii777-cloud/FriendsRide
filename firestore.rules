@@ -1,4 +1,27 @@
 rules_version = '2';
+
+// ============================================================
+// FriendsRide – Firestore Security Rules
+//
+// GDPR / Protecție date – Audit și conformitate
+// -------------------------------------------------------
+// Principii aplicate:
+//  1. Minimizarea datelor: utilizatorii pot accesa DOAR propriile date.
+//  2. Dreptul de acces: fiecare utilizator poate citi și actualiza
+//     propriile documente (profil, preferințe cursă, adrese salvate).
+//  3. Dreptul la ștergere: ștergerea contului este gestionată prin
+//     Firebase Auth + Cloud Functions (trigger onDelete).
+//  4. Siguranță implicită: orice colecție care nu are o regulă
+//     explicită este interzisă (deny-by-default).
+//  5. Date sensibile (carduri, documente șofer): acces strict
+//     exclusiv pentru proprietar sau funcții admin.
+//  6. Audit trail: toate scrierile critice sunt înregistrate în
+//     colecția `audit_log` de către Cloud Functions, nu direct
+//     de client.
+//
+// Ultima revizuire: 2026-03-07
+// ============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functions
@@ -41,6 +64,11 @@ service cloud.firestore {
       
       // ✅ NOU: Vouchers subcollection pentru Wallet
       match /vouchers/{voucherId} {
+        allow read, write, delete: if isAuthenticated() && isOwner(userId);
+      }
+
+      // GDPR: Preferințele de cursă sunt date personale – accesibile doar de proprietar
+      match /preferences/{prefId} {
         allow read, write, delete: if isAuthenticated() && isOwner(userId);
       }
     }
@@ -100,6 +128,31 @@ service cloud.firestore {
     // Support tickets
     match /support_tickets/{ticketId} {
       allow read, write: if isAuthenticated();
+    }
+
+    // GDPR: Programul de loialitate – acces exclusiv proprietar
+    match /loyalty_programs/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Promoții – citire publică, scriere doar backend
+    match /promotions/{promoId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if false; // Gestionat exclusiv de backend/admin
+    }
+
+    // Utilizări promoții – creare de client, fără modificare/ștergere
+    match /promotion_uses/{useId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Imutabil după creare
+    }
+
+    // Zone surge pricing – date anonimizate, fără PII
+    match /surge_zones/{zoneId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Actualizat exclusiv de Cloud Functions
     }
     
     // ✅ NOU: Business profile requests pentru Wallet

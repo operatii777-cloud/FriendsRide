@@ -14,7 +14,9 @@ class LoyaltyTierWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final benefits = loyaltyProgram.tierBenefits;
     
-    return Container(
+    return Semantics(
+      label: 'Program loialitate: nivel ${benefits['name']}, ${loyaltyProgram.points} puncte',
+      child: Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -62,10 +64,13 @@ class LoyaltyTierWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              Icon(
-                _getTierIcon(loyaltyProgram.currentTier),
-                size: 48,
-                color: Colors.white,
+              Semantics(
+                label: 'Insignă nivel ${benefits['name']}',
+                child: Icon(
+                  _getTierIcon(loyaltyProgram.currentTier),
+                  size: 48,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -114,6 +119,7 @@ class LoyaltyTierWidget extends StatelessWidget {
           _buildProgressToNextTier(context),
         ],
       ),
+    ),
     );
   }
 
