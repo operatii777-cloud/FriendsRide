@@ -56,6 +56,7 @@ import 'package:friendsride_app/services/email_receipt_service.dart';
 import 'package:friendsride_app/services/driver_incentives_service.dart';
 import 'package:friendsride_app/services/loyalty_program_service.dart';
 import 'package:friendsride_app/widgets/cancellation_policy_widget.dart';
+import 'package:friendsride_app/widgets/voice/active_ride_voice_panel.dart';
 import 'package:friendsride_app/widgets/rate_passenger_widget.dart';
 import 'package:friendsride_app/widgets/real_time_eta_widget.dart';
 import 'package:friendsride_app/widgets/turn_by_turn_navigation_widget.dart';
@@ -3299,6 +3300,18 @@ if (newStaticAnnotations.isNotEmpty) {
                   left: 16,
                   right: 16,
                   child: RideDestinationEntranceChips(onEntrySelected: _onSelectDestinationEntrance),
+                ),
+
+              // Voice assistant panel for passenger: call driver, cancel, share location.
+              if (!isDriver)
+                Positioned(
+                  bottom: 200,
+                  right: 0,
+                  child: ActiveRideVoicePanel(
+                    onCallDriver: () => _callNumber(_otherUserPhone),
+                    onCancelRide: () => _handleCancelRide(widget.rideId, ride),
+                    onShareLocation: _openSafetyShareSheet,
+                  ),
                 ),
 
 

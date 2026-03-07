@@ -59,6 +59,10 @@ class PassengerVoiceController extends ChangeNotifier {
   StreamSubscription<WakeWordEvent>? _wakeWordSubscription;
   bool _wakeWordEnabled = false;
   bool _continuousListeningEnabled = false;
+
+  // 🔢 Failure tracking for voice fallback UI
+  int _consecutiveVoiceFailures = 0;
+  static const int _voiceFailureThreshold = 2;
   
   // ✅ Getters pentru UI
   String? get pickupAddressForUI => _pickupAddressForUI;
@@ -69,6 +73,12 @@ class PassengerVoiceController extends ChangeNotifier {
   String? get currentRideId => _currentRideId;
   bool get wakeWordEnabled => _wakeWordEnabled;
   bool get continuousListeningEnabled => _continuousListeningEnabled;
+
+  /// Whether to show the voice fallback UI (manual input card).
+  bool get showVoiceFallback => _consecutiveVoiceFailures >= _voiceFailureThreshold;
+
+  /// Current consecutive voice failure count (exposed for testing).
+  int get consecutiveVoiceFailures => _consecutiveVoiceFailures;
   RideFlowState get rideState => _rideFlowManager.currentState;
   String get lastAiMessage => _rideFlowManager.lastSpokenMessage;
   List<String> get availableDrivers => _rideFlowManager.availableDrivers;
@@ -99,10 +109,20 @@ class PassengerVoiceController extends ChangeNotifier {
 
       // Wire STT callbacks to route results into the AI flow and reflect state to UI
       _voiceOrchestrator.setSpeechResultCallback((result) async {
+        // Reset failure counter on successful recognition.
+        if (result.trim().isNotEmpty) {
+          _consecutiveVoiceFailures = 0;
+        }
         final normalized = _normalizeUtterance(result);
         await processVoiceInput(normalized);
       });
       _voiceOrchestrator.setSpeechErrorCallback((error) {
+        _consecutiveVoiceFailures++;
+        notifyListeners();
+      });
+      _voiceOrchestrator.setFailureThresholdCallback((count) {
+        Logger.warning('Voice failure threshold reached: $count', tag: 'VOICE_CONTROLLER');
+        // showVoiceFallback getter already derives from _consecutiveVoiceFailures.
         notifyListeners();
       });
       _voiceOrchestrator.setStateChangeCallback((state) {
@@ -350,6 +370,14 @@ class PassengerVoiceController extends ChangeNotifier {
 
   Future<void> _startContinuousListeningLoop() async {
     if (!_continuousListeningEnabled) return;
+    // Don't start a new STT session while TTS is still speaking.
+    if (_voiceOrchestrator.isTtsSpeaking) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (_continuousListeningEnabled) {
+        await _startContinuousListeningLoop();
+      }
+      return;
+    }
     if (_voiceOrchestrator.isListening || _processingState == VoiceProcessingState.listening) {
       await Future.delayed(const Duration(milliseconds: 500));
       if (_continuousListeningEnabled) {
@@ -429,6 +457,20 @@ class PassengerVoiceController extends ChangeNotifier {
     _showRideConfirmation = false;
     _showSearchingDriver = false;
     _currentRideId = null;
+  }
+
+  /// 🔄 Resetează fallback-ul vocal (după ce utilizatorul a trimis input manual)
+  void resetVoiceFallback() {
+    _consecutiveVoiceFailures = 0;
+    _voiceOrchestrator.resetFailureCount();
+    notifyListeners();
+  }
+
+  /// ✍️ Procesează input-ul manual ca și cum ar fi venit prin voce
+  Future<void> handleManualInput(String text) async {
+    if (text.trim().isEmpty) return;
+    resetVoiceFallback();
+    await processVoiceInput(text.trim());
   }
 
   /// 🎯 Resetează controller-ul

@@ -251,5 +251,117 @@ class VoiceTranslations {
         ? 'I couldn\'t find available drivers at this time. We will try again immediately.'
         : 'Nu am putut găsi șoferi disponibili în acest moment. Încercăm din nou imediat.';
   }
+
+  // ─── Active Ride Voice Commands ───────────────────────────────────────────
+
+  /// Comanda vocală "sună șoferul" / "call driver"
+  static Future<String> getCallDriverCommand() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'call driver' : 'sună șoferul';
+  }
+
+  /// Comanda vocală "anulează cursa" / "cancel ride"
+  static Future<String> getCancelRideCommand() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'cancel ride' : 'anulează cursa';
+  }
+
+  /// Comanda vocală "trimite locația" / "share location"
+  static Future<String> getShareLocationCommand() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'share location' : 'trimite locația';
+  }
+
+  /// Confirmare TTS după recunoașterea comenzii "sună șoferul"
+  static Future<String> getCallingDriverConfirmation() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'Calling driver...' : 'Apelăm șoferul...';
+  }
+
+  /// Confirmare TTS după recunoașterea comenzii "anulează cursa"
+  static Future<String> getCancelRideConfirmation() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'Opening cancellation dialog...' : 'Deschid dialogul de anulare...';
+  }
+
+  /// Confirmare TTS după recunoașterea comenzii "trimite locația"
+  static Future<String> getSharingLocationConfirmation() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'Sharing your location...' : 'Partajăm locația ta...';
+  }
+
+  /// Mesajul pentru asistentul vocal în ecranul cursei active
+  static Future<String> getActiveRideVoiceHint() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en'
+        ? 'Say: "call driver", "cancel ride" or "share location"'
+        : 'Spuneți: "sună șoferul", "anulează cursa" sau "trimite locația"';
+  }
+
+  /// Titlul panoului de comenzi vocale
+  static Future<String> getVoiceCommandTitle() async {
+    final lang = await _getCurrentLanguageCode();
+    return lang == 'en' ? 'Voice Commands' : 'Comenzi vocale';
+  }
+
+  /// Mesajul de fallback când asistentul vocal nu înțelege
+  static String getVoiceFallbackMessage({String languageCode = 'ro'}) {
+    return languageCode == 'en'
+        ? 'Voice assistant could not understand. Use manual input.'
+        : 'Asistentul vocal nu a putut înțelege. Folosiți introducerea manuală.';
+  }
+
+  /// Eticheta câmpului de input manual
+  static String getManualInputLabel({String languageCode = 'ro'}) {
+    return languageCode == 'en' ? 'Type your command...' : 'Scrieți comanda...';
+  }
+
+  /// Butonul de trimitere manual
+  static String getManualInputSendButton({String languageCode = 'ro'}) {
+    return languageCode == 'en' ? 'Send' : 'Trimite';
+  }
+
+  /// Butonul de reîncercare a asistentului vocal
+  static String getRetryVoiceButton({String languageCode = 'ro'}) {
+    return languageCode == 'en' ? 'Retry voice' : 'Reîncearcă vocal';
+  }
+
+  /// Verifică dacă textul recunoscut conține comanda "sună șoferul"
+  static bool matchesCallDriver(String text, {String languageCode = 'ro'}) {
+    final lower = text.toLowerCase().trim();
+    if (languageCode == 'en') {
+      return lower.contains('call driver') || lower.contains('call the driver') || lower.contains('phone driver');
+    }
+    return lower.contains('sună șoferul') ||
+        lower.contains('suna soferul') ||
+        lower.contains('sună soferul') ||
+        lower.contains('apelează șoferul') ||
+        lower.contains('apeleaza soferul');
+  }
+
+  /// Verifică dacă textul recunoscut conține comanda "anulează cursa"
+  static bool matchesCancelRide(String text, {String languageCode = 'ro'}) {
+    final lower = text.toLowerCase().trim();
+    if (languageCode == 'en') {
+      return lower.contains('cancel ride') || lower.contains('cancel the ride') || lower.contains('cancel trip');
+    }
+    return lower.contains('anulează cursa') ||
+        lower.contains('anuleaza cursa') ||
+        lower.contains('anulare cursă') ||
+        lower.contains('anulare cursa');
+  }
+
+  /// Verifică dacă textul recunoscut conține comanda "trimite locația"
+  static bool matchesShareLocation(String text, {String languageCode = 'ro'}) {
+    final lower = text.toLowerCase().trim();
+    if (languageCode == 'en') {
+      return lower.contains('share location') || lower.contains('send location') || lower.contains('share my location');
+    }
+    return lower.contains('trimite locația') ||
+        lower.contains('trimite locatia') ||
+        lower.contains('partajează locația') ||
+        lower.contains('partajeaza locatia') ||
+        lower.contains('trimite loc');
+  }
 }
 

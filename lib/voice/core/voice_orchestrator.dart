@@ -32,6 +32,15 @@ class VoiceOrchestrator {
   bool _isInitialized = false;
   bool _isListening = false;
   bool _isSpeaking = false;
+
+  /// Guards STT from starting while TTS is active (mirrors naturalTts.isSpeaking
+  /// but also covers speak() calls routed through the orchestrator itself).
+  bool _isTtsSpeaking = false;
+
+  // 🔢 Failure tracking for consecutive STT errors / empty results
+  int _consecutiveFailures = 0;
+  static const int _failureThreshold = 2;
+  Function(int)? _onFailureThreshold;
   
   // 🎤 Callback-uri pentru UI
   Function(String)? _onSpeechResult;
@@ -62,6 +71,16 @@ class VoiceOrchestrator {
   /// 🎯 NOU: Setez callback-ul pentru completarea TTS
   void setTtsCompletedCallback(Function() callback) {
     _onTtsCompleted = callback;
+  }
+
+  /// Register a callback that fires when consecutive STT failures reach the threshold.
+  void setFailureThresholdCallback(Function(int count) callback) {
+    _onFailureThreshold = callback;
+  }
+
+  /// Reset the consecutive failure counter (e.g. after a successful recognition).
+  void resetFailureCount() {
+    _consecutiveFailures = 0;
   }
   
   /// 🎯 NOU: Setez manager-ul pentru conversația vocală
@@ -132,15 +151,15 @@ class VoiceOrchestrator {
       await stopSpeaking();
     }
     
-    // ✅ FIX: Also wait for the shared NaturalVoiceSynthesizer to finish if it
-    // is currently speaking (e.g. called directly from RideFlowManager).
-    if (naturalTts.isSpeaking) {
+    // ✅ TTS-STT sync: Never start STT while TTS is still speaking.
+    // Check both the local _isTtsSpeaking flag (set by orchestrator speak calls)
+    // and naturalTts.isSpeaking (for direct TTS calls from RideFlowManager).
+    if (_isTtsSpeaking || naturalTts.isSpeaking) {
       Logger.warning('TTS still active, waiting for it to finish...', tag: 'VOICE_ORCHESTRATOR');
-      while (naturalTts.isSpeaking) {
+      while (_isTtsSpeaking || naturalTts.isSpeaking) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
-      // Wait an extra 300 ms after speech ends so the mic doesn't capture
-      // the tail end of the TTS audio as user input.
+      // Extra buffer so mic doesn't capture tail-end TTS audio as user speech.
       await Future.delayed(const Duration(milliseconds: 300));
     }
     
@@ -162,6 +181,14 @@ class VoiceOrchestrator {
         onResult: (result) {
           if (result.finalResult) {
             Logger.debug('Final result: "${result.recognizedWords}"', tag: 'VOICE_ORCHESTRATOR');
+
+            // Reset failure counter on successful recognition with actual words.
+            if (result.recognizedWords.trim().isNotEmpty) {
+              _consecutiveFailures = 0;
+            } else {
+              // Empty final result counts as a failure (e.g. timeout / silence).
+              _incrementFailure();
+            }
             
             // 🔔🔔 Beep-uri duble când AI procesează informația
             beepService.playProcessingStartBeeps();
@@ -184,6 +211,7 @@ class VoiceOrchestrator {
     } catch (e) {
       Logger.error('Listening error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isListening = false;
+      _incrementFailure();
       _updateState(VoiceProcessingState.error);
       _onSpeechError?.call(e.toString());
       return null;
@@ -209,6 +237,7 @@ class VoiceOrchestrator {
     
     try {
       _isSpeaking = true;
+      _isTtsSpeaking = true;
       _updateState(VoiceProcessingState.speaking);
       
       Logger.debug('Speaking: "$text"', tag: 'VOICE_ORCHESTRATOR');
@@ -217,6 +246,7 @@ class VoiceOrchestrator {
       await naturalTts.speakWithEmotion(text, emotion);
       
       _isSpeaking = false;
+      _isTtsSpeaking = false;
       _updateState(VoiceProcessingState.idle);
       
       // 🎯 NOU: Notifică că TTS-ul s-a terminat
@@ -227,6 +257,7 @@ class VoiceOrchestrator {
     } catch (e) {
       Logger.error('Speech error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isSpeaking = false;
+      _isTtsSpeaking = false;
       _updateState(VoiceProcessingState.error);
       _onSpeechError?.call(e.toString());
     }
@@ -253,6 +284,7 @@ class VoiceOrchestrator {
     
     try {
       _isSpeaking = true;
+      _isTtsSpeaking = true;
       _updateState(VoiceProcessingState.speaking);
       
       Logger.debug('Speaking: "$text"', tag: 'VOICE_ORCHESTRATOR');
@@ -260,6 +292,7 @@ class VoiceOrchestrator {
       await naturalTts.speakWithNaturalPauses(text);
       
       _isSpeaking = false;
+      _isTtsSpeaking = false;
       _updateState(VoiceProcessingState.idle);
       
       Logger.info('Speech completed, transitioning to listening...', tag: 'VOICE_ORCHESTRATOR');
@@ -276,6 +309,7 @@ class VoiceOrchestrator {
     } catch (e) {
       Logger.error('Natural pauses speech error: $e', tag: 'VOICE_ORCHESTRATOR', error: e);
       _isSpeaking = false;
+      _isTtsSpeaking = false;
       _updateState(VoiceProcessingState.error);
     }
   }
@@ -300,6 +334,7 @@ class VoiceOrchestrator {
       if (_isSpeaking) {
         await naturalTts.stop();
         _isSpeaking = false;
+        _isTtsSpeaking = false;
         _updateState(VoiceProcessingState.idle);
         Logger.debug('Speech stopped', tag: 'VOICE_ORCHESTRATOR');
       }
@@ -362,6 +397,16 @@ class VoiceOrchestrator {
   void _updateState(VoiceProcessingState newState) {
     _onStateChange?.call(newState);
   }
+
+  /// Increments the consecutive failure count and fires the threshold callback
+  /// once the count reaches [_failureThreshold].
+  void _incrementFailure() {
+    _consecutiveFailures++;
+    Logger.warning('Consecutive STT failures: $_consecutiveFailures', tag: 'VOICE_ORCHESTRATOR');
+    if (_consecutiveFailures >= _failureThreshold) {
+      _onFailureThreshold?.call(_consecutiveFailures);
+    }
+  }
   
   /// 🎯 Convertește status-ul STT în starea noastră
   VoiceProcessingState _getStateFromStatus(String status) {
@@ -387,12 +432,15 @@ class VoiceOrchestrator {
   
   /// 🗣️ Verifică dacă vorbește
   bool get isSpeaking => _isSpeaking;
+
+  /// Whether TTS is currently active (guards STT from starting).
+  bool get isTtsSpeaking => _isTtsSpeaking || naturalTts.isSpeaking;
+
+  /// Current consecutive STT failure count.
+  int get consecutiveFailures => _consecutiveFailures;
   
   /// 🎯 Verifică dacă e disponibil
-  // ✅ FIX: Also check naturalTts.isSpeaking so the continuous-listen loop
-  // does not start a new STT session while TTS (called from RideFlowManager)
-  // is still playing back a response.
-  bool get isAvailable => _isInitialized && !_isListening && !_isSpeaking && !naturalTts.isSpeaking;
+  bool get isAvailable => _isInitialized && !_isListening && !_isTtsSpeaking && !naturalTts.isSpeaking;
   
   /// 🎯 AUTOMAT: Pornește ascultarea imediat după TTS
   Future<void> _startAutomaticListening() async {
