@@ -3697,4 +3697,7 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get selectExpiryDate => 'Selectați data de expirare';
+
+  @override
+  String get yes => 'Da';
 }

@@ -1683,5 +1683,6 @@
     "connectionError": "Connection problem. Please check your internet",
     "unexpectedError": "Unexpected error. Please try again",
   "uploadedAt": "Uploaded: {date}",
-  "selectExpiryDate": "Select expiry date"
+  "selectExpiryDate": "Select expiry date",
+  "yes": "Yes"
 }

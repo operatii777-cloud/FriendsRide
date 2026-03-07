@@ -312,7 +312,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Da'),
+            child: Text(AppLocalizations.of(context)!.yes),
           ),
         ],
       ),
@@ -510,7 +510,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(AppLocalizations.of(context)!.applicationSubmitSuccess),
             backgroundColor: Colors.green,
           ),
@@ -946,7 +946,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                         children: [
                           TextFormField(
                             controller: _fullNameController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: AppLocalizations.of(context)!.fullNameLabel,
                               border: OutlineInputBorder(),
                             ),
@@ -954,7 +954,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _ageController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: AppLocalizations.of(context)!.ageLabel,
                               border: OutlineInputBorder(),
                             ),
@@ -980,7 +980,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _carBrandController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: AppLocalizations.of(context)!.carBrandLabel,
                                     border: OutlineInputBorder(),
                                   ),
@@ -990,7 +990,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _carModelController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: AppLocalizations.of(context)!.carModelLabel,
                                     border: OutlineInputBorder(),
                                   ),
@@ -1004,7 +1004,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _carColorController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: AppLocalizations.of(context)!.carColorLabel,
                                     border: OutlineInputBorder(),
                                   ),
@@ -1014,7 +1014,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _carYearController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: AppLocalizations.of(context)!.carYearLabel,
                                     border: OutlineInputBorder(),
                                   ),
@@ -1026,7 +1026,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _licensePlateController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: AppLocalizations.of(context)!.licensePlateLabel,
                               border: OutlineInputBorder(),
                             ),
@@ -1049,7 +1049,7 @@ class _DriverApplicationScreenState extends State<DriverApplicationScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _bankAccountController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: AppLocalizations.of(context)!.bankAccountLabel,
                               border: OutlineInputBorder(),
                               hintText: 'RO49 AAAA 1B31 0075 9384 0000',

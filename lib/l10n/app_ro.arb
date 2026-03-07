@@ -1681,5 +1681,6 @@
     "connectionError": "Problemă de conexiune. Verificați internetul",
     "unexpectedError": "Eroare neașteptată. Încercați din nou",
   "uploadedAt": "Încărcat: {date}",
-  "selectExpiryDate": "Selectați data de expirare"
+  "selectExpiryDate": "Selectați data de expirare",
+  "yes": "Da"
 }

@@ -3654,4 +3654,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectExpiryDate => 'Select expiry date';
+
+  @override
+  String get yes => 'Yes';
 }

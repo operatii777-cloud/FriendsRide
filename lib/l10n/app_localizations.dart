@@ -6701,6 +6701,12 @@ abstract class AppLocalizations {
   /// In ro, this message translates to:
   /// **'Selectați data de expirare'**
   String get selectExpiryDate;
+
+  /// No description provided for @yes.
+  ///
+  /// In ro, this message translates to:
+  /// **'Da'**
+  String get yes;
 }
 
 class _AppLocalizationsDelegate
